@@ -7,11 +7,11 @@ import {
   FolderOpen,
   Redo2,
   Save,
-  Shirt,
   Undo2,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+import logoUrl from '@/assets/kypzl-logo.png';
 import { toast } from 'sonner';
 import { useDesignStore } from '@/store/useDesignStore';
 import { getCanvas } from '@/lib/canvasBridge';
@@ -100,11 +100,9 @@ export function Topbar() {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-3">
       {/* Marca */}
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Shirt className="h-4 w-4" />
-        </div>
-        <span className="hidden text-sm font-semibold sm:inline">
+      <div className="flex items-center gap-2.5">
+        <img src={logoUrl} alt="KYPZL" className="h-6 w-auto" />
+        <span className="hidden text-xs font-medium text-muted-foreground md:inline">
           Editor de Uniformes
         </span>
       </div>

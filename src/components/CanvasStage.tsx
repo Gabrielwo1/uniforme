@@ -51,12 +51,12 @@ export function CanvasStage() {
     });
     fabricRef.current = canvas;
 
-    // Controles uniformes/limpos por padrão (azul primário da UI).
+    // Controles uniformes/limpos por padrão (vermelho KYPZL).
     FabricObject.ownDefaults.transparentCorners = false;
     FabricObject.ownDefaults.cornerColor = '#ffffff';
-    FabricObject.ownDefaults.cornerStrokeColor = '#2563eb';
+    FabricObject.ownDefaults.cornerStrokeColor = '#B62126';
     FabricObject.ownDefaults.cornerStyle = 'circle';
-    FabricObject.ownDefaults.borderColor = '#2563eb';
+    FabricObject.ownDefaults.borderColor = '#B62126';
     FabricObject.ownDefaults.cornerSize = 12;
     FabricObject.ownDefaults.padding = 4;
 
@@ -119,7 +119,7 @@ export function CanvasStage() {
       if (!v && !h) return;
       const ctx = canvas.getContext();
       ctx.save();
-      ctx.strokeStyle = 'rgba(59,130,246,0.9)';
+      ctx.strokeStyle = 'rgba(182,33,38,0.9)';
       ctx.lineWidth = 1;
       const vp = canvas.viewportTransform;
       const toScreen = (x: number, y: number): [number, number] => [

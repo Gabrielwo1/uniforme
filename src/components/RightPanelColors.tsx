@@ -6,11 +6,29 @@ import { DebouncedColor } from './ui/DebouncedControls';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 
-/** Paleta rápida de cores comuns para preenchimento ágil. */
-const SWATCHES = [
-  '#ffffff', '#000000', '#e53935', '#1e88e5', '#43a047',
-  '#fdd835', '#fb8c00', '#8e24aa', '#00acc1', '#6d4c41',
-  '#cfd8dc', '#37474f',
+/**
+ * Paleta de cores padrão do catálogo KYPZL 2023 (nomes/aproximações de cor).
+ * Facilita escolher uma cor de tecido que a marca realmente produz.
+ */
+const SWATCHES: { hex: string; name: string }[] = [
+  { hex: '#2B2A29', name: 'Preto' },
+  { hex: '#FFFFFF', name: 'Branco' },
+  { hex: '#383E42', name: 'Cinza Antracite' },
+  { hex: '#C0C5C9', name: 'Cinza Prata' },
+  { hex: '#1B2A4A', name: 'Azul Marinho' },
+  { hex: '#1E50A2', name: 'Azul Royal' },
+  { hex: '#7EC8E3', name: 'Azul Celeste' },
+  { hex: '#1AA7A0', name: 'Azul Turquesa' },
+  { hex: '#1E8E3E', name: 'Verde' },
+  { hex: '#14532D', name: 'Verde Garrafa' },
+  { hex: '#9CCC2E', name: 'Verde Lima' },
+  { hex: '#B62126', name: 'Vermelho' },
+  { hex: '#6E1423', name: 'Grená' },
+  { hex: '#F57C00', name: 'Laranja' },
+  { hex: '#FFD400', name: 'Amarelo' },
+  { hex: '#E1A100', name: 'Amarelo Dourado' },
+  { hex: '#E91E63', name: 'Rosa' },
+  { hex: '#C19A6B', name: 'Camel' },
 ];
 
 export function RightPanelColors() {
@@ -47,19 +65,20 @@ export function RightPanelColors() {
             </div>
             <div className="grid grid-cols-6 gap-1.5">
               {SWATCHES.map((c) => {
-                const active = (colors[region.key] ?? '').toLowerCase() === c;
+                const active =
+                  (colors[region.key] ?? '').toLowerCase() === c.hex.toLowerCase();
                 return (
                   <button
-                    key={c}
-                    title={c}
-                    onClick={() => setColor(region.key, c)}
+                    key={c.hex}
+                    title={c.name}
+                    onClick={() => setColor(region.key, c.hex)}
                     className={cn(
                       'h-6 w-full rounded-md border ring-offset-background transition',
                       active
                         ? 'ring-2 ring-ring ring-offset-1'
                         : 'border-border hover:scale-105',
                     )}
-                    style={{ background: c }}
+                    style={{ background: c.hex }}
                   />
                 );
               })}

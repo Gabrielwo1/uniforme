@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Azul como cor primária (botões de ação + seleção no canvas). */
-    --primary: 221 83% 53%;
+    /* Vermelho KYPZL (#B62126) como cor primária — botões + seleção no canvas. */
+    --primary: 358 69% 42%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 4.8% 95.9%;
@@ -31,7 +31,7 @@
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 221 83% 53%;
+    --ring: 358 69% 42%;
 
     --radius: 0.65rem;
   }
