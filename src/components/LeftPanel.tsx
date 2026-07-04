@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Image, Scissors, Shirt, Type, Upload } from 'lucide-react';
+import { useOrderStore } from '@/store/useOrderStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { TabProducts } from './panels/TabProducts';
 import { TabFinishes } from './panels/TabFinishes';
@@ -15,9 +17,16 @@ const TABS = [
 ];
 
 export function LeftPanel() {
+  const [tab, setTab] = useState('products');
+  // O fluxo do pedido ("Sim, continuar") pede a volta à aba Produtos.
+  const gotoProducts = useOrderStore((s) => s.gotoProductsSignal);
+  useEffect(() => {
+    if (gotoProducts > 0) setTab('products');
+  }, [gotoProducts]);
+
   return (
     <aside className="flex h-full w-72 shrink-0 flex-col border-r bg-background">
-      <Tabs defaultValue="products" className="flex h-full flex-col">
+      <Tabs value={tab} onValueChange={setTab} className="flex h-full flex-col">
         <div className="border-b p-2">
           <TabsList className="grid w-full grid-cols-5 gap-0.5 bg-muted/60">
             {TABS.map(({ key, label, Icon }) => (

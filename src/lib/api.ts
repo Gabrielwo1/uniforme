@@ -4,6 +4,7 @@ import type {
   DesignState,
   ProductCategory,
 } from '@/types/design';
+import type { OrderCustomer, OrderItem } from '@/types/order';
 import { supabase } from './supabase';
 import { uid } from './id';
 
@@ -116,6 +117,21 @@ export async function getDesignCloud(id: string): Promise<DesignRow | null> {
 export async function deleteDesignCloud(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('designs').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/* --------------------------------------------------------------- PEDIDOS -- */
+
+/**
+ * Envia o pedido (sem preço/cobrança). A tabela `orders` só permite INSERT
+ * para o anon — os pedidos são lidos pela KYPZL no dashboard do Supabase.
+ */
+export async function submitOrder(
+  customer: OrderCustomer,
+  items: OrderItem[],
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { error } = await supabase.from('orders').insert({ customer, items });
   if (error) throw new Error(error.message);
 }
 

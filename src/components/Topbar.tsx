@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
-  Braces,
+  Check,
   Download,
   Eye,
   FilePlus,
   FolderOpen,
   Redo2,
   Save,
+  ShoppingBag,
   Undo2,
   ZoomIn,
   ZoomOut,
@@ -14,11 +15,14 @@ import {
 import logoUrl from '@/assets/kypzl-logo.png';
 import { toast } from 'sonner';
 import { useDesignStore } from '@/store/useDesignStore';
+import { useOrderStore } from '@/store/useOrderStore';
 import { getCanvas } from '@/lib/canvasBridge';
-import { downloadDataUrl, downloadText } from '@/lib/download';
+import { downloadDataUrl } from '@/lib/download';
 import { saveDesign } from '@/lib/storage';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { saveDesignCloud } from '@/lib/api';
+import { getProduct } from '@/lib/products';
+import { uid } from '@/lib/id';
 import { CloudDesignsModal } from './CloudDesignsModal';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
@@ -37,8 +41,10 @@ export function Topbar() {
   const canRedo = useDesignStore((s) => s.future.length > 0);
   const zoom = useDesignStore((s) => s.zoom);
   const setZoom = useDesignStore((s) => s.setZoom);
-  const exportJSON = useDesignStore((s) => s.exportJSON);
   const newSimulation = useDesignStore((s) => s.newSimulation);
+  const orderCount = useOrderStore((s) => s.items.length);
+  const setOrderStep = useOrderStore((s) => s.setStep);
+  const addOrderItem = useOrderStore((s) => s.addItem);
 
   const [preview, setPreview] = useState<string | null>(null);
   const [showCloud, setShowCloud] = useState(false);
@@ -86,9 +92,20 @@ export function Topbar() {
     }
   };
 
-  const handleExportJSON = () => {
-    downloadText(exportJSON(), `orcamento-${Date.now()}.json`);
-    toast.success('Orçamento (JSON) exportado');
+  /** Finaliza o artigo atual: captura preview, adiciona ao pedido e pergunta. */
+  const handleFinalize = () => {
+    const design = useDesignStore.getState().design;
+    const product = getProduct(design.productId);
+    const preview = getCanvas().exportPNG(0.5);
+    addOrderItem({
+      id: uid('item'),
+      productId: product.id,
+      productName: product.name,
+      preview,
+      design: JSON.parse(JSON.stringify(design)),
+      createdAt: new Date().toISOString(),
+    });
+    setOrderStep('ask');
   };
 
   const handleNew = () => {
@@ -163,9 +180,27 @@ export function Topbar() {
           <Save />
           <span className="hidden lg:inline">{saving ? 'Salvando…' : 'Salvar'}</span>
         </Button>
-        <Button size="sm" onClick={handleExportJSON}>
-          <Braces />
-          <span className="hidden md:inline">Orçamento</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative"
+              onClick={() => setOrderStep('view')}
+            >
+              <ShoppingBag />
+              {orderCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {orderCount}
+                </span>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Ver o pedido</TooltipContent>
+        </Tooltip>
+        <Button size="sm" onClick={handleFinalize}>
+          <Check />
+          <span className="hidden md:inline">Finalizar</span>
         </Button>
       </div>
 

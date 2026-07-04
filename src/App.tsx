@@ -4,6 +4,7 @@ import { Topbar } from './components/Topbar';
 import { LeftPanel } from './components/LeftPanel';
 import { CanvasStage } from './components/CanvasStage';
 import { RightPanelColors } from './components/RightPanelColors';
+import { OrderFlow } from './components/OrderFlow';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useDesignStore } from './store/useDesignStore';
 
@@ -40,6 +41,7 @@ export default function App() {
           <RightPanelColors />
         </div>
       </div>
+      <OrderFlow />
       <Toaster position="bottom-right" richColors closeButton />
     </TooltipProvider>
   );
