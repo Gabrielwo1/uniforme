@@ -3,6 +3,9 @@ import { useDesignStore } from '@/store/useDesignStore';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
+  { key: 'jogo', label: 'Equipamentos de Jogo' },
+  { key: 'treino', label: 'Equipamentos de Treino' },
+  { key: 'saida', label: 'Vestuário de Saída' },
   { key: 'camisa', label: 'Camisas' },
   { key: 'calcao', label: 'Calções' },
 ] as const;

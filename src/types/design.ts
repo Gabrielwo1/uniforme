@@ -57,14 +57,17 @@ export interface ImageElement extends BaseElement {
 
 export type DesignElement = TextElement | ImageElement;
 
+/** Categorias seguem as seções do catálogo KYPZL (+ legadas). */
+export type ProductCategory = 'jogo' | 'treino' | 'saida' | 'camisa' | 'calcao';
+
 /** Definição estática de um produto disponível na galeria. */
 export interface ProductDef {
   id: string;
   name: string;
-  category: 'camisa' | 'calcao';
+  category: ProductCategory;
   baseImages: BaseImages;
   thumbnail: string;
-  /** Regiões coloríveis deste produto. */
+  /** Regiões coloríveis deste produto (vazio = estampa fixa, não recolorível). */
   regions: ColorRegion[];
 }
 

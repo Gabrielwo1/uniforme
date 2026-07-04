@@ -47,13 +47,24 @@ export function RightPanelColors() {
           <Palette className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-semibold">Cores</span>
         </div>
-        <Label className="flex cursor-pointer items-center gap-2">
-          <span>Sincronizar</span>
-          <Switch checked={syncColors} onCheckedChange={toggleSync} />
-        </Label>
+        {product.recolorable && (
+          <Label className="flex cursor-pointer items-center gap-2">
+            <span>Sincronizar</span>
+            <Switch checked={syncColors} onCheckedChange={toggleSync} />
+          </Label>
+        )}
       </div>
 
       <div className="scrollbar-clean flex-1 space-y-3 overflow-y-auto p-4">
+        {!product.recolorable && (
+          <div className="rounded-lg border bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
+            <p className="mb-1 font-medium text-foreground">Estampa do modelo</p>
+            Este produto usa o render oficial do catálogo — as cores fazem
+            parte da estampa. Personalize com <b>nome, número, escudo e
+            logos</b> nas abas à esquerda. Cores por região chegam quando o
+            modelo tiver arte vetorial separada.
+          </div>
+        )}
         {product.regions.map((region) => (
           <div key={region.key} className="rounded-lg border bg-card p-3 shadow-sm">
             <div className="mb-2.5">
@@ -86,11 +97,13 @@ export function RightPanelColors() {
           </div>
         ))}
 
-        <p className="px-1 text-xs leading-relaxed text-muted-foreground">
-          {syncColors
-            ? 'Sincronizar ativo: a cor escolhida é aplicada a todas as regiões.'
-            : 'Cada região é colorida de forma independente.'}
-        </p>
+        {product.recolorable && (
+          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+            {syncColors
+              ? 'Sincronizar ativo: a cor escolhida é aplicada a todas as regiões.'
+              : 'Cada região é colorida de forma independente.'}
+          </p>
+        )}
       </div>
     </aside>
   );

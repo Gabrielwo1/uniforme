@@ -359,10 +359,16 @@ export const useDesignStore = create<DesignStore>((set, get) => {
   };
 });
 
-/** Restaura o último design salvo (chamado uma vez no boot da app). */
+/**
+ * Restaura o último design salvo (chamado uma vez no boot, APÓS o catálogo
+ * carregar). Sem design salvo, reinicializa para o 1º produto do catálogo —
+ * o estado inicial do módulo pode ter sido criado antes do catálogo chegar.
+ */
 export function hydrateFromStorage() {
   const saved = loadFromStorage();
   if (saved) {
     useDesignStore.getState().loadDesign(saved);
+  } else {
+    useDesignStore.getState().newSimulation();
   }
 }

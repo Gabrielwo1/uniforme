@@ -1,4 +1,9 @@
-import type { ColorRegion, DesignState } from '@/types/design';
+import type {
+  BaseImages,
+  ColorRegion,
+  DesignState,
+  ProductCategory,
+} from '@/types/design';
 import { supabase } from './supabase';
 import { uid } from './id';
 
@@ -7,9 +12,11 @@ import { uid } from './id';
 export interface ProductRow {
   id: string;
   name: string;
-  category: 'camisa' | 'calcao';
-  template: string; // 'shirt' | 'shorts' -> render no client
+  category: ProductCategory;
+  template: string; // 'shirt' | 'shorts' (SVG recolorível) | 'image' (render fixo)
   regions: ColorRegion[];
+  /** Para template 'image': caminhos/URLs dos renders frente/verso. */
+  base_images: BaseImages | null;
   sort_order: number;
 }
 
@@ -18,7 +25,7 @@ export async function fetchProducts(): Promise<ProductRow[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, category, template, regions, sort_order')
+    .select('id, name, category, template, regions, base_images, sort_order')
     .order('sort_order', { ascending: true });
   if (error) {
     console.warn('[api] fetchProducts:', error.message);

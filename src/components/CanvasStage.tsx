@@ -247,13 +247,17 @@ export function CanvasStage() {
     FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img) => {
       // descarta resultado obsoleto (troca rápida de lado/cor).
       if (token !== bgTokenRef.current || !fabricRef.current) return;
+      // contain-fit centralizado: renders do catálogo não são quadrados.
+      const w = img.width || STAGE;
+      const h = img.height || STAGE;
+      const scale = Math.min(STAGE / w, STAGE / h);
       img.set({
         originX: 'left',
         originY: 'top',
-        left: 0,
-        top: 0,
-        scaleX: STAGE / (img.width || STAGE),
-        scaleY: STAGE / (img.height || STAGE),
+        left: (STAGE - w * scale) / 2,
+        top: (STAGE - h * scale) / 2,
+        scaleX: scale,
+        scaleY: scale,
         selectable: false,
         evented: false,
       });

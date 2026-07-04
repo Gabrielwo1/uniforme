@@ -1,27 +1,34 @@
-import type { ColorRegion, ProductDef, Side } from '@/types/design';
+import type {
+  BaseImages,
+  ColorRegion,
+  ProductCategory,
+  ProductDef,
+  Side,
+} from '@/types/design';
 import { renderShirt, renderShorts } from './jerseyTemplates';
 import { fetchProducts, type ProductRow } from './api';
 
 /**
- * Catálogo de produtos.
+ * Catálogo de produtos. Dois tipos de template:
  *
- * O RENDER (SVG parametrizado por cor) vive no client, indexado por `template`.
- * O banco (Supabase) guarda apenas metadados (id, nome, categoria, template,
- * regiões), então adicionar um produto = inserir uma linha + reusar um template.
+ *  - SVG paramétrico ('shirt' | 'shorts'): renderizado no client por cor de
+ *    região — produto RECOLORÍVEL.
+ *  - 'image': render real do catálogo (PNG em /products/*.png ou URL). A
+ *    estampa é fixa; a personalização é por camadas (nome/número/logos).
  *
- * Há um catálogo embutido (fallback) para o app funcionar offline / sem backend.
+ * O banco (Supabase) guarda os metadados; há um catálogo embutido de fallback
+ * para o app funcionar offline / sem backend.
  */
 
-/** template -> função de render. Para um produto novo, escolha um template. */
 export const TEMPLATES: Record<string, (side: Side, colors: Record<string, string>) => string> = {
   shirt: renderShirt,
   shorts: renderShorts,
 };
 
-const FALLBACK_TEMPLATE = 'shirt';
-
 export interface ProductCatalogEntry extends ProductDef {
   template: string;
+  /** true quando o produto tem regiões recoloríveis (SVG paramétrico). */
+  recolorable: boolean;
   render: (side: Side, colors: Record<string, string>) => string;
 }
 
@@ -31,20 +38,40 @@ const SHIRT_REGIONS: ColorRegion[] = [
   { key: 'collar', label: 'Gola', defaultColor: '#ffffff' },
 ];
 
-const SHORTS_REGIONS: ColorRegion[] = [
-  { key: 'body', label: 'Corpo', defaultColor: '#222831' },
-  { key: 'waist', label: 'Cós', defaultColor: '#e0e0e0' },
-  { key: 'stripe', label: 'Faixa lateral', defaultColor: '#ff5722' },
-];
+interface EntrySource {
+  id: string;
+  name: string;
+  category: ProductCategory;
+  template: string;
+  regions: ColorRegion[];
+  baseImages?: BaseImages | null;
+}
 
-/** Monta uma entrada de catálogo (anexa render + thumbnail + imagens-base). */
-function makeEntry(
-  base: { id: string; name: string; category: 'camisa' | 'calcao'; template: string; regions: ColorRegion[] },
-): ProductCatalogEntry {
-  const render = TEMPLATES[base.template] ?? TEMPLATES[FALLBACK_TEMPLATE];
-  const colors = defaultsOf(base.regions);
+/** Monta uma entrada de catálogo (render + thumbnail + imagens-base). */
+function makeEntry(src: EntrySource): ProductCatalogEntry {
+  if (src.template === 'image' && src.baseImages) {
+    const images = src.baseImages;
+    return {
+      id: src.id,
+      name: src.name,
+      category: src.category,
+      template: 'image',
+      regions: [],
+      recolorable: false,
+      render: (side) => images[side],
+      thumbnail: images.front,
+      baseImages: images,
+    };
+  }
+  const render = TEMPLATES[src.template] ?? TEMPLATES.shirt;
+  const colors = defaultsOf(src.regions);
   return {
-    ...base,
+    id: src.id,
+    name: src.name,
+    category: src.category,
+    template: src.template,
+    regions: src.regions,
+    recolorable: src.regions.length > 0,
     render,
     thumbnail: render('front', colors),
     baseImages: { front: render('front', colors), back: render('back', colors) },
@@ -57,7 +84,6 @@ function makeEntry(
  */
 export const PRODUCTS: ProductCatalogEntry[] = [
   makeEntry({ id: 'shirt-classic', name: 'Camisa Clássica', category: 'camisa', template: 'shirt', regions: SHIRT_REGIONS }),
-  makeEntry({ id: 'shorts-pro', name: 'Calção Pro', category: 'calcao', template: 'shorts', regions: SHORTS_REGIONS }),
 ];
 
 export function defaultsOf(regions: ColorRegion[]): Record<string, string> {
@@ -71,9 +97,10 @@ export function getProduct(id: string): ProductCatalogEntry {
   return PRODUCTS.find((p) => p.id === id) ?? PRODUCTS[0];
 }
 
-/** Recalcula as imagens-base (frente/verso) de um produto com as cores atuais. */
+/** Imagens-base (frente/verso) do produto com as cores atuais. */
 export function renderBaseImages(productId: string, colors: Record<string, string>) {
   const product = getProduct(productId);
+  if (!product.recolorable) return { ...product.baseImages };
   return {
     front: product.render('front', colors),
     back: product.render('back', colors),
@@ -90,6 +117,7 @@ function applyRows(rows: ProductRow[]) {
       category: r.category,
       template: r.template,
       regions: r.regions ?? [],
+      baseImages: r.base_images,
     }),
   );
   PRODUCTS.splice(0, PRODUCTS.length, ...entries);
