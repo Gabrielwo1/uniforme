@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  ArrowLeft,
   Check,
   Download,
   Eye,
@@ -16,6 +17,7 @@ import logoUrl from '@/assets/kypzl-logo.png';
 import { toast } from 'sonner';
 import { useDesignStore } from '@/store/useDesignStore';
 import { useOrderStore } from '@/store/useOrderStore';
+import { useFlowStore } from '@/store/useFlowStore';
 import { getCanvas } from '@/lib/canvasBridge';
 import { downloadDataUrl } from '@/lib/download';
 import { saveDesign } from '@/lib/storage';
@@ -111,13 +113,26 @@ export function Topbar() {
   const handleNew = () => {
     if (confirm('Iniciar nova simulação? As alterações não salvas serão perdidas.')) {
       newSimulation();
+      useFlowStore.getState().restart();
     }
   };
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-3">
-      {/* Marca */}
+      {/* Marca + voltar aos modelos */}
       <div className="flex items-center gap-2.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => useFlowStore.getState().back()}
+            >
+              <ArrowLeft />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Voltar aos modelos</TooltipContent>
+        </Tooltip>
         <img src={logoUrl} alt="KYPZL" className="h-6 w-auto" />
         <span className="hidden text-xs font-medium text-muted-foreground md:inline">
           Editor de Uniformes

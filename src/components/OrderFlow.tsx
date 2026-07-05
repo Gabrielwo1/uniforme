@@ -3,6 +3,7 @@ import { CheckCircle2, PackageCheck, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOrderStore } from '@/store/useOrderStore';
 import { useDesignStore } from '@/store/useDesignStore';
+import { useFlowStore } from '@/store/useFlowStore';
 import { submitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
@@ -41,8 +42,10 @@ export function OrderFlow() {
   const handleMore = () => {
     close();
     useDesignStore.getState().newSimulation();
+    // "SE SIM VOLTAR A PÁGINA 2" — escolha de categoria, mantendo a modalidade.
+    useFlowStore.getState().gotoCategory();
     requestProductsTab();
-    toast.success('Escolha o próximo produto');
+    toast.success('Escolha o próximo artigo');
   };
 
   const handleSubmit = async (customer: OrderCustomer) => {
@@ -70,6 +73,8 @@ export function OrderFlow() {
   const handleDone = () => {
     close();
     useDesignStore.getState().newSimulation();
+    // Pedido concluído: recomeça na página 1 (modalidade).
+    useFlowStore.getState().restart();
     requestProductsTab();
   };
 
