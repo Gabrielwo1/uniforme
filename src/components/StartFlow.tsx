@@ -12,7 +12,17 @@ import { Button } from './ui/button';
  * Sem preços — o orçamento é combinado com a KYPZL após o pedido.
  */
 
-const MODALITIES: { key: string; label: string }[] = [
+/** Textura escura premium partilhada (pode ser trocada por foto por modalidade). */
+const CARD_BG = '/card-bg.jpg';
+
+interface Modality {
+  key: string;
+  label: string;
+  /** Foto de fundo opcional (escurecida na apresentação). */
+  image?: string;
+}
+
+const MODALITIES: Modality[] = [
   { key: 'futebol', label: 'Futebol / Futsal' },
   { key: 'basquetebol', label: 'Basquetebol' },
   { key: 'andebol', label: 'Andebol' },
@@ -32,6 +42,76 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'saida', label: 'Saída' },
   { key: 'acessorios', label: 'Acessórios' },
 ];
+
+/** Card premium: fundo escurecido + acento vermelho KYPZL. */
+function PremiumCard({
+  label,
+  sublabel,
+  disabled,
+  image,
+  className,
+  onClick,
+}: {
+  label: string;
+  sublabel?: string;
+  disabled?: boolean;
+  image?: string;
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'group relative overflow-hidden rounded-2xl shadow-md ring-1 transition',
+        disabled
+          ? 'cursor-not-allowed ring-white/5'
+          : 'ring-white/10 hover:-translate-y-0.5 hover:shadow-xl hover:ring-primary',
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          'absolute inset-0 bg-cover bg-center transition-transform duration-500',
+          !disabled && 'group-hover:scale-105',
+        )}
+        style={{ backgroundImage: `url(${image ?? CARD_BG})` }}
+      />
+      <div
+        className={cn(
+          'absolute inset-0 transition-colors',
+          disabled
+            ? 'bg-black/80 backdrop-grayscale'
+            : 'bg-gradient-to-t from-black/85 via-black/45 to-black/25 group-hover:from-black/75',
+        )}
+      />
+      {!disabled && (
+        <span className="absolute inset-x-0 top-0 h-[3px] bg-primary" />
+      )}
+      <div className="relative flex h-full flex-col items-center justify-center gap-1 px-4 py-6 text-center">
+        <span
+          className={cn(
+            'text-lg font-bold drop-shadow-sm',
+            disabled ? 'text-white/45' : 'text-white',
+          )}
+        >
+          {label}
+        </span>
+        {sublabel && (
+          <span
+            className={cn(
+              'text-[10px] font-medium uppercase tracking-widest',
+              disabled ? 'text-white/35' : 'text-primary-foreground/70',
+            )}
+          >
+            {sublabel}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
 
 export function StartFlow() {
   const screen = useFlowStore((s) => s.screen);
@@ -79,28 +159,19 @@ export function StartFlow() {
 
       {/* -------------------------------------------------- 1. modalidade */}
       {screen === 'modalidade' && (
-        <div className="mt-8 grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {MODALITIES.map((m) => {
             const active = ACTIVE_MODALITIES.has(m.key);
             return (
-              <button
+              <PremiumCard
                 key={m.key}
+                className="h-32"
+                label={m.label}
+                image={m.image}
                 disabled={!active}
+                sublabel={active ? undefined : 'Brevemente'}
                 onClick={() => chooseModality(m.key)}
-                className={cn(
-                  'flex h-28 flex-col items-center justify-center rounded-xl px-4 text-center text-base font-semibold transition',
-                  active
-                    ? 'bg-primary text-primary-foreground shadow hover:scale-[1.02] hover:bg-primary/90'
-                    : 'cursor-not-allowed bg-muted text-muted-foreground',
-                )}
-              >
-                {m.label}
-                {!active && (
-                  <span className="mt-1 text-[10px] font-normal uppercase tracking-wide">
-                    Brevemente
-                  </span>
-                )}
-              </button>
+              />
             );
           })}
         </div>
@@ -108,27 +179,21 @@ export function StartFlow() {
 
       {/* --------------------------------------------------- 2. categoria */}
       {screen === 'categoria' && (
-        <div className="mt-8 grid w-full max-w-2xl grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-8 grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
           {CATEGORIES.map((c) => {
             const count = PRODUCTS.filter((p) => p.category === c.key).length;
             const active = count > 0;
             return (
-              <button
+              <PremiumCard
                 key={c.key}
+                className="h-28"
+                label={c.label}
                 disabled={!active}
+                sublabel={
+                  active ? `${count} ${count === 1 ? 'modelo' : 'modelos'}` : 'Brevemente'
+                }
                 onClick={() => chooseCategory(c.key)}
-                className={cn(
-                  'flex h-24 flex-col items-center justify-center rounded-xl px-4 text-center text-base font-semibold transition',
-                  active
-                    ? 'bg-primary text-primary-foreground shadow hover:scale-[1.02] hover:bg-primary/90'
-                    : 'cursor-not-allowed bg-muted text-muted-foreground',
-                )}
-              >
-                {c.label}
-                <span className="mt-1 text-[10px] font-normal uppercase tracking-wide">
-                  {active ? `${count} ${count === 1 ? 'modelo' : 'modelos'}` : 'Brevemente'}
-                </span>
-              </button>
+              />
             );
           })}
         </div>
