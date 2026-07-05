@@ -23,14 +23,14 @@ interface Modality {
 }
 
 const MODALITIES: Modality[] = [
-  { key: 'futebol', label: 'Futebol / Futsal' },
-  { key: 'basquetebol', label: 'Basquetebol' },
-  { key: 'andebol', label: 'Andebol' },
-  { key: 'voleibol', label: 'Voleibol' },
-  { key: 'hoquei', label: 'Hóquei' },
-  { key: 'atletismo', label: 'Atletismo' },
-  { key: 'padel', label: 'Padel / Ténis' },
-  { key: 'motocross', label: 'Motocross' },
+  { key: 'futebol', label: 'Futebol / Futsal', image: '/modalities/futebol.jpg' },
+  { key: 'basquetebol', label: 'Basquetebol', image: '/modalities/basquetebol.jpg' },
+  { key: 'andebol', label: 'Andebol', image: '/modalities/andebol.jpg' },
+  { key: 'voleibol', label: 'Voleibol', image: '/modalities/voleibol.jpg' },
+  { key: 'hoquei', label: 'Hóquei', image: '/modalities/hoquei.jpg' },
+  { key: 'atletismo', label: 'Atletismo', image: '/modalities/atletismo.jpg' },
+  { key: 'padel', label: 'Padel / Ténis', image: '/modalities/padel.jpg' },
+  { key: 'motocross', label: 'Motocross', image: '/modalities/motocross.jpg' },
 ];
 
 /** Por enquanto o catálogo digitalizado cobre futebol/futsal. */
@@ -82,18 +82,18 @@ function PremiumCard({
         className={cn(
           'absolute inset-0 transition-colors',
           disabled
-            ? 'bg-black/80 backdrop-grayscale'
-            : 'bg-gradient-to-t from-black/85 via-black/45 to-black/25 group-hover:from-black/75',
+            ? 'bg-black/70 backdrop-grayscale'
+            : 'bg-gradient-to-t from-black/90 via-black/30 to-black/40 group-hover:via-black/20',
         )}
       />
       {!disabled && (
-        <span className="absolute inset-x-0 top-0 h-[3px] bg-primary" />
+        <span className="absolute inset-x-0 top-0 h-1 bg-primary" />
       )}
-      <div className="relative flex h-full flex-col items-center justify-center gap-1 px-4 py-6 text-center">
+      <div className="relative flex h-full flex-col items-end justify-end gap-0.5 p-5 text-left">
         <span
           className={cn(
-            'text-lg font-bold drop-shadow-sm',
-            disabled ? 'text-white/45' : 'text-white',
+            'w-full text-xl font-extrabold tracking-tight [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]',
+            disabled ? 'text-white/55' : 'text-white',
           )}
         >
           {label}
@@ -101,8 +101,8 @@ function PremiumCard({
         {sublabel && (
           <span
             className={cn(
-              'text-[10px] font-medium uppercase tracking-widest',
-              disabled ? 'text-white/35' : 'text-primary-foreground/70',
+              'w-full text-[11px] font-semibold uppercase tracking-widest',
+              disabled ? 'text-white/40' : 'text-white/80',
             )}
           >
             {sublabel}
@@ -159,17 +159,17 @@ export function StartFlow() {
 
       {/* -------------------------------------------------- 1. modalidade */}
       {screen === 'modalidade' && (
-        <div className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-8 grid w-full max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {MODALITIES.map((m) => {
             const active = ACTIVE_MODALITIES.has(m.key);
             return (
               <PremiumCard
                 key={m.key}
-                className="h-32"
+                className="h-52"
                 label={m.label}
                 image={m.image}
                 disabled={!active}
-                sublabel={active ? undefined : 'Brevemente'}
+                sublabel={active ? 'Personalizar agora' : 'Brevemente'}
                 onClick={() => chooseModality(m.key)}
               />
             );
