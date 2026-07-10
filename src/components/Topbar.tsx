@@ -26,15 +26,10 @@ import { saveDesignCloud } from '@/lib/api';
 import { getProduct } from '@/lib/products';
 import { uid } from '@/lib/id';
 import { CloudDesignsModal } from './CloudDesignsModal';
+import { ModelPreviewDialog } from './ModelPreviewDialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
 
 export function Topbar() {
   const undo = useDesignStore((s) => s.undo);
@@ -47,6 +42,7 @@ export function Topbar() {
   const orderCount = useOrderStore((s) => s.items.length);
   const setOrderStep = useOrderStore((s) => s.setStep);
   const addOrderItem = useOrderStore((s) => s.addItem);
+  const productId = useDesignStore((s) => s.design.productId);
 
   const [preview, setPreview] = useState<string | null>(null);
   const [showCloud, setShowCloud] = useState(false);
@@ -82,7 +78,7 @@ export function Topbar() {
   };
 
   const handlePreview = () => {
-    const png = getCanvas().exportPNG(2);
+    const png = getCanvas().exportPNG(1);
     if (png) setPreview(png);
   };
 
@@ -222,21 +218,14 @@ export function Topbar() {
       {/* Modal de designs na nuvem */}
       {showCloud && <CloudDesignsModal onClose={() => setShowCloud(false)} />}
 
-      {/* Pré-visualização */}
-      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Pré-visualização</DialogTitle>
-          </DialogHeader>
-          {preview && (
-            <img
-              src={preview}
-              alt="Pré-visualização do uniforme"
-              className="mx-auto max-h-[70vh] w-auto rounded-lg border bg-muted"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Pré-visualização: prancha (plano) + no modelo (fotorrealista) */}
+      <ModelPreviewDialog
+        open={!!preview}
+        onOpenChange={(o) => !o && setPreview(null)}
+        title="Pré-visualização"
+        boardSrc={preview}
+        modelTemplate={getProduct(productId).modelTemplate}
+      />
     </header>
   );
 }

@@ -39,10 +39,27 @@ interface EntrySource {
   template: string;
   regions: ColorRegion[];
   baseImages?: BaseImages | null;
+  modelTemplate?: string;
 }
+
+/**
+ * Produtos "vestíveis no torso" (camisas/polos) têm preview fotorrealista
+ * "No Modelo". Calções e meias ainda não têm template compatível — mapeado
+ * por id para funcionar tanto no catálogo embutido quanto em linhas do banco
+ * (que ainda não guardam esta coluna).
+ */
+const MODEL_TEMPLATE_BY_ID: Record<string, string> = {
+  maradona: 'camisola',
+  garrincha: 'camisola',
+  zenga: 'camisola',
+  taffarel: 'camisola',
+  socrates: 'camisola',
+  bebeto: 'camisola',
+};
 
 /** Monta uma entrada de catálogo (render + thumbnail + imagens-base). */
 function makeEntry(src: EntrySource): ProductCatalogEntry {
+  const modelTemplate = src.modelTemplate ?? MODEL_TEMPLATE_BY_ID[src.id];
   if (src.template === 'image' && src.baseImages) {
     const images = src.baseImages;
     return {
@@ -55,6 +72,7 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
       render: (side) => images[side],
       thumbnail: images.front,
       baseImages: images,
+      modelTemplate,
     };
   }
   const render = TEMPLATES[src.template] ?? TEMPLATES.shirt;
@@ -69,6 +87,7 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
     render,
     thumbnail: render('front', colors),
     baseImages: { front: render('front', colors), back: render('back', colors) },
+    modelTemplate,
   };
 }
 

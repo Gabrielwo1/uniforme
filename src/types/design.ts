@@ -69,6 +69,12 @@ export interface ProductDef {
   thumbnail: string;
   /** Regiões coloríveis deste produto (vazio = estampa fixa, não recolorível). */
   regions: ColorRegion[];
+  /**
+   * Nome do template em /public/models/<nome>/ para o preview "No Modelo"
+   * (mockup fotorrealista). Omitido para peças que não são vestíveis no
+   * torso (calções, meias) — não há template compatível ainda.
+   */
+  modelTemplate?: string;
 }
 
 export interface ColorRegion {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, PackageCheck, ShoppingBag, Trash2 } from 'lucide-react';
+import { CheckCircle2, PackageCheck, ShoppingBag, Trash2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOrderStore } from '@/store/useOrderStore';
 import { useDesignStore } from '@/store/useDesignStore';
@@ -7,7 +7,8 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { submitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
-import type { OrderCustomer } from '@/types/order';
+import { getProduct } from '@/lib/products';
+import type { OrderCustomer, OrderItem } from '@/types/order';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { ModelPreviewDialog } from './ModelPreviewDialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -36,6 +38,7 @@ export function OrderFlow() {
   const requestProductsTab = useOrderStore((s) => s.requestProductsTab);
 
   const [sending, setSending] = useState(false);
+  const [previewItem, setPreviewItem] = useState<OrderItem | null>(null);
 
   const close = () => setStep('idle');
 
@@ -124,27 +127,45 @@ export function OrderFlow() {
 
           {items.length > 0 && (
             <div className="scrollbar-clean grid max-h-[50vh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
-              {items.map((it) => (
-                <div key={it.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                  <div className="flex aspect-square items-center justify-center bg-muted">
-                    {it.preview ? (
-                      <img src={it.preview} alt={it.productName} className="h-full w-full object-contain p-1" />
-                    ) : (
-                      <ShoppingBag className="h-8 w-8 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between px-2.5 py-1.5">
-                    <span className="truncate text-xs font-medium">{it.productName}</span>
+              {items.map((it) => {
+                const modelTemplate = getProduct(it.productId).modelTemplate;
+                return (
+                  <div key={it.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                     <button
-                      className="text-muted-foreground transition hover:text-destructive"
-                      title="Remover"
-                      onClick={() => removeItem(it.id)}
+                      className="block aspect-square w-full bg-muted"
+                      onClick={() => it.preview && setPreviewItem(it)}
+                      title={modelTemplate ? 'Ver prancha e no modelo' : 'Ver prancha'}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      {it.preview ? (
+                        <img src={it.preview} alt={it.productName} className="h-full w-full object-contain p-1" />
+                      ) : (
+                        <ShoppingBag className="mx-auto mt-8 h-8 w-8 text-muted-foreground" />
+                      )}
                     </button>
+                    <div className="flex items-center justify-between px-2.5 py-1.5">
+                      <span className="truncate text-xs font-medium">{it.productName}</span>
+                      <div className="flex items-center gap-2">
+                        {modelTemplate && (
+                          <button
+                            className="text-muted-foreground transition hover:text-primary"
+                            title="Ver no modelo"
+                            onClick={() => setPreviewItem(it)}
+                          >
+                            <UserRound className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        <button
+                          className="text-muted-foreground transition hover:text-destructive"
+                          title="Remover"
+                          onClick={() => removeItem(it.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -190,6 +211,15 @@ export function OrderFlow() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* -------------------------------- prancha + no modelo (por item) */}
+      <ModelPreviewDialog
+        open={!!previewItem}
+        onOpenChange={(o) => !o && setPreviewItem(null)}
+        title={previewItem?.productName ?? ''}
+        boardSrc={previewItem?.preview ?? null}
+        modelTemplate={previewItem ? getProduct(previewItem.productId).modelTemplate : undefined}
+      />
     </>
   );
 }
