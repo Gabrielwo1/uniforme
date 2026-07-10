@@ -32,12 +32,6 @@ export interface ProductCatalogEntry extends ProductDef {
   render: (side: Side, colors: Record<string, string>) => string;
 }
 
-const SHIRT_REGIONS: ColorRegion[] = [
-  { key: 'body', label: 'Corpo', defaultColor: '#1e88e5' },
-  { key: 'sleeves', label: 'Mangas', defaultColor: '#1565c0' },
-  { key: 'collar', label: 'Gola', defaultColor: '#ffffff' },
-];
-
 interface EntrySource {
   id: string;
   name: string;
@@ -78,13 +72,28 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
   };
 }
 
+/** Renders reais do Catálogo KYPZL 2023 (servidos por /public — funcionam sem Supabase). */
+const CATALOG_IMAGE_PRODUCTS: EntrySource[] = [
+  { id: 'maradona', name: 'Camisola Maradona', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/maradona.png', back: '/products/maradona.png' } },
+  { id: 'garrincha', name: 'Camisola Garrincha', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/garrincha.png', back: '/products/garrincha.png' } },
+  { id: 'zenga', name: 'Camisola Zenga', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/zenga.png', back: '/products/zenga.png' } },
+  { id: 'taffarel', name: 'Camisola Taffarel', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/taffarel.png', back: '/products/taffarel.png' } },
+  { id: 'nene', name: 'Calção Nené', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/nene.png', back: '/products/nene.png' } },
+  { id: 'elite', name: 'Meia de Jogo Elite', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/elite.png', back: '/products/elite.png' } },
+  { id: 'socrates', name: 'T-shirt Sócrates', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/socrates.png', back: '/products/socrates.png' } },
+  { id: 'zico', name: 'Calção Zico', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/zico.png', back: '/products/zico.png' } },
+  { id: 'bebeto', name: 'Polo Técnico Bebeto', category: 'saida', template: 'image', regions: [], baseImages: { front: '/products/bebeto.png', back: '/products/bebeto.png' } },
+];
+
 /**
  * Catálogo mutável (mesma referência de array sempre) para que componentes que
  * o importam vejam as atualizações vindas do banco após o boot.
+ *
+ * Começa com o catálogo real embutido (imagens em /public, sempre disponíveis)
+ * — o app funciona por completo sem Supabase. Se o banco responder no boot,
+ * `applyRows` substitui por essas mesmas linhas (ou por edições feitas lá).
  */
-export const PRODUCTS: ProductCatalogEntry[] = [
-  makeEntry({ id: 'shirt-classic', name: 'Camisa Clássica', category: 'camisa', template: 'shirt', regions: SHIRT_REGIONS }),
-];
+export const PRODUCTS: ProductCatalogEntry[] = CATALOG_IMAGE_PRODUCTS.map(makeEntry);
 
 export function defaultsOf(regions: ColorRegion[]): Record<string, string> {
   return regions.reduce<Record<string, string>>((acc, r) => {
