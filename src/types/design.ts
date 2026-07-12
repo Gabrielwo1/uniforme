@@ -71,10 +71,16 @@ export interface ProductDef {
   regions: ColorRegion[];
   /**
    * Nome do template em /public/models/<nome>/ para o preview "No Modelo"
-   * (mockup fotorrealista). Omitido para peças que não são vestíveis no
-   * torso (calções, meias) — não há template compatível ainda.
+   * (mockup fotorrealista sintético). Omitido para peças que não são
+   * vestíveis no torso (calções, meias) — não há template compatível ainda.
    */
   modelTemplate?: string;
+  /**
+   * true quando `baseImages` já É uma foto real de um modelo vestindo a peça
+   * (ex.: equipamentos completos do catálogo) — não precisa de composição
+   * sintética; a própria imagem do produto serve como "foto do modelo".
+   */
+  isModelPhoto?: boolean;
 }
 
 export interface ColorRegion {

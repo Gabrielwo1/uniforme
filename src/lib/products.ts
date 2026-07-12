@@ -57,9 +57,19 @@ const MODEL_TEMPLATE_BY_ID: Record<string, string> = {
   bebeto: 'camisola',
 };
 
+/**
+ * Produtos cuja imagem já É uma foto real de um modelo vestindo a peça (os
+ * "Equipamento *" — fotografia profissional do catálogo). Detectado por
+ * prefixo de id para funcionar tanto no catálogo embutido quanto no banco.
+ */
+function isModelPhotoId(id: string): boolean {
+  return id.startsWith('kit-');
+}
+
 /** Monta uma entrada de catálogo (render + thumbnail + imagens-base). */
 function makeEntry(src: EntrySource): ProductCatalogEntry {
   const modelTemplate = src.modelTemplate ?? MODEL_TEMPLATE_BY_ID[src.id];
+  const isModelPhoto = isModelPhotoId(src.id);
   if (src.template === 'image' && src.baseImages) {
     const images = src.baseImages;
     return {
@@ -73,6 +83,7 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
       thumbnail: images.front,
       baseImages: images,
       modelTemplate,
+      isModelPhoto,
     };
   }
   const render = TEMPLATES[src.template] ?? TEMPLATES.shirt;
@@ -88,6 +99,7 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
     thumbnail: render('front', colors),
     baseImages: { front: render('front', colors), back: render('back', colors) },
     modelTemplate,
+    isModelPhoto,
   };
 }
 
