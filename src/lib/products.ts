@@ -102,6 +102,22 @@ const CATALOG_IMAGE_PRODUCTS: EntrySource[] = [
   { id: 'socrates', name: 'T-shirt Sócrates', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/socrates.png', back: '/products/socrates.png' } },
   { id: 'zico', name: 'Calção Zico', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/zico.png', back: '/products/zico.png' } },
   { id: 'bebeto', name: 'Polo Técnico Bebeto', category: 'saida', template: 'image', regions: [], baseImages: { front: '/products/bebeto.png', back: '/products/bebeto.png' } },
+
+  // Camisolas avulsas novas (Catálogo em desenvolvimento). Base já é foto real
+  // do produto — sem preview "No Modelo" sintético (fundo escuro, não claro).
+  { id: 'batistuta', name: 'Camisola Batistuta', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/batistuta.jpg', back: '/products/batistuta.jpg' } },
+  { id: 'totti', name: 'Camisola Totti', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/totti.jpg', back: '/products/totti.jpg' } },
+
+  // Equipamentos completos: foto real do modelo já vestindo o kit (jogador +
+  // equipamento). Personalização (nome/número/logos) entra por cima, igual
+  // aos demais produtos "image". Sem preview sintético — já é 100% real.
+  { id: 'kit-champions', name: 'Equipamento Champions', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-champions.jpg', back: '/products/kit-champions.jpg' } },
+  { id: 'kit-galatico', name: 'Equipamento Galático', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-galatico.jpg', back: '/products/kit-galatico.jpg' } },
+  { id: 'kit-titan', name: 'Equipamento Titan', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-titan.jpg', back: '/products/kit-titan.jpg' } },
+  { id: 'kit-olimpico-vermelho', name: 'Equipamento Olímpico Vermelho', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-olimpico-vermelho.jpg', back: '/products/kit-olimpico-vermelho.jpg' } },
+  { id: 'kit-olimpico-verde', name: 'Equipamento Olímpico Verde', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-olimpico-verde.jpg', back: '/products/kit-olimpico-verde.jpg' } },
+  { id: 'kit-olimpico-azul', name: 'Equipamento Olímpico Azul', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-olimpico-azul.jpg', back: '/products/kit-olimpico-azul.jpg' } },
+  { id: 'kit-guarda-redes', name: 'Equipamento Guarda-Redes', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-guarda-redes.jpg', back: '/products/kit-guarda-redes.jpg' } },
 ];
 
 /**
