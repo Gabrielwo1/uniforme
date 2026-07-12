@@ -2,16 +2,15 @@ import { create } from 'zustand';
 import type { OrderItem } from '@/types/order';
 
 /**
- * Pedido em montagem (carrinho sem preço) + máquina de estados do fluxo de
- * finalização:
+ * Pedido em montagem (carrinho sem preço).
  *
  *  idle → (Finalizar) → ask "Pretende mais alguma coisa?"
  *    SIM → idle (nova simulação, volta aos produtos)
- *    NÃO → checkout (formulário de dados) → done (modal "Pedido Realizado")
- *  view = visualização do pedido (aberta pela sacola do topo)
+ *    NÃO → useFlowStore.goToCheckout() — página real de checkout (ver
+ *          src/components/CheckoutPage.tsx), não um dialog.
  */
 
-export type OrderStep = 'idle' | 'ask' | 'view' | 'checkout' | 'done';
+export type OrderStep = 'idle' | 'ask';
 
 const KEY = 'esportes:order:v1';
 

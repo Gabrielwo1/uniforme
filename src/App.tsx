@@ -6,6 +6,7 @@ import { CanvasStage } from './components/CanvasStage';
 import { RightPanelColors } from './components/RightPanelColors';
 import { OrderFlow } from './components/OrderFlow';
 import { StartFlow } from './components/StartFlow';
+import { CheckoutPage } from './components/CheckoutPage';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useDesignStore } from './store/useDesignStore';
 import { useFlowStore } from './store/useFlowStore';
@@ -47,6 +48,8 @@ export default function App() {
             <RightPanelColors />
           </div>
         </div>
+      ) : screen === 'checkout' ? (
+        <CheckoutPage />
       ) : (
         <StartFlow />
       )}

@@ -197,7 +197,7 @@ export function Topbar() {
               variant="outline"
               size="icon"
               className="relative"
-              onClick={() => setOrderStep('view')}
+              onClick={() => useFlowStore.getState().goToCheckout()}
             >
               <ShoppingBag />
               {orderCount > 0 && (
