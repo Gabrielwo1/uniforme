@@ -25,7 +25,10 @@ import { Textarea } from './ui/textarea';
 /**
  * Fluxo de fecho do pedido (sem preço/cobrança):
  *  ask      → "Pretende mais alguma coisa?" SIM/NÃO
- *  view     → visualização do pedido (itens adicionados)
+ *               SIM → volta à categoria (mais um artigo)
+ *               NÃO → view
+ *  view     → prancha técnica + imagens de cada item; "Continuar a montar"
+ *             (volta a editar) ou "Finalizar pedido" → checkout
  *  checkout → formulário de dados do cliente
  *  done     → modal "Pedido Realizado"
  */
@@ -99,7 +102,7 @@ export function OrderFlow() {
             <Button variant="outline" onClick={handleMore}>
               Sim, continuar
             </Button>
-            <Button onClick={() => setStep('checkout')}>Não, finalizar</Button>
+            <Button onClick={() => setStep('view')}>Não, finalizar</Button>
           </div>
           <button
             className="text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
