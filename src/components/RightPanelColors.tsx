@@ -2,34 +2,10 @@ import { Palette } from 'lucide-react';
 import { useDesignStore } from '@/store/useDesignStore';
 import { getProduct } from '@/lib/products';
 import { cn } from '@/lib/utils';
+import { KYPZL_SWATCHES as SWATCHES } from '@/lib/colors';
 import { DebouncedColor } from './ui/DebouncedControls';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-
-/**
- * Paleta de cores padrão do catálogo KYPZL 2023 (nomes/aproximações de cor).
- * Facilita escolher uma cor de tecido que a marca realmente produz.
- */
-const SWATCHES: { hex: string; name: string }[] = [
-  { hex: '#2B2A29', name: 'Preto' },
-  { hex: '#FFFFFF', name: 'Branco' },
-  { hex: '#383E42', name: 'Cinza Antracite' },
-  { hex: '#C0C5C9', name: 'Cinza Prata' },
-  { hex: '#1B2A4A', name: 'Azul Marinho' },
-  { hex: '#1E50A2', name: 'Azul Royal' },
-  { hex: '#7EC8E3', name: 'Azul Celeste' },
-  { hex: '#1AA7A0', name: 'Azul Turquesa' },
-  { hex: '#1E8E3E', name: 'Verde' },
-  { hex: '#14532D', name: 'Verde Garrafa' },
-  { hex: '#9CCC2E', name: 'Verde Lima' },
-  { hex: '#B62126', name: 'Vermelho' },
-  { hex: '#6E1423', name: 'Grená' },
-  { hex: '#F57C00', name: 'Laranja' },
-  { hex: '#FFD400', name: 'Amarelo' },
-  { hex: '#E1A100', name: 'Amarelo Dourado' },
-  { hex: '#E91E63', name: 'Rosa' },
-  { hex: '#C19A6B', name: 'Camel' },
-];
 
 export function RightPanelColors() {
   const productId = useDesignStore((s) => s.design.productId);

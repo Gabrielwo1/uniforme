@@ -66,6 +66,22 @@ function isModelPhotoId(id: string): boolean {
   return id.startsWith('kit-');
 }
 
+/**
+ * Imagem "só a peça" (sem jogador) para produtos que só têm foto de modelo —
+ * recorte do torso/peça, feito manualmente a partir da foto original (ver
+ * public/products/items/). Para os demais produtos, a própria imagem já é
+ * "só peça" (não precisa de entrada aqui).
+ */
+const ITEM_IMAGE_BY_ID: Record<string, string> = {
+  'kit-champions': '/products/items/kit-champions-item.jpg',
+  'kit-galatico': '/products/items/kit-galatico-item.jpg',
+  'kit-titan': '/products/items/kit-titan-item.jpg',
+  'kit-olimpico-vermelho': '/products/items/kit-olimpico-vermelho-item.jpg',
+  'kit-olimpico-verde': '/products/items/kit-olimpico-verde-item.jpg',
+  'kit-olimpico-azul': '/products/items/kit-olimpico-azul-item.jpg',
+  'kit-guarda-redes': '/products/items/kit-guarda-redes-item.jpg',
+};
+
 /** Monta uma entrada de catálogo (render + thumbnail + imagens-base). */
 function makeEntry(src: EntrySource): ProductCatalogEntry {
   const modelTemplate = src.modelTemplate ?? MODEL_TEMPLATE_BY_ID[src.id];
@@ -84,10 +100,12 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
       baseImages: images,
       modelTemplate,
       isModelPhoto,
+      itemImage: ITEM_IMAGE_BY_ID[src.id] ?? images.front,
     };
   }
   const render = TEMPLATES[src.template] ?? TEMPLATES.shirt;
   const colors = defaultsOf(src.regions);
+  const front = render('front', colors);
   return {
     id: src.id,
     name: src.name,
@@ -96,10 +114,11 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
     regions: src.regions,
     recolorable: src.regions.length > 0,
     render,
-    thumbnail: render('front', colors),
-    baseImages: { front: render('front', colors), back: render('back', colors) },
+    thumbnail: front,
+    baseImages: { front, back: render('back', colors) },
     modelTemplate,
     isModelPhoto,
+    itemImage: ITEM_IMAGE_BY_ID[src.id] ?? front,
   };
 }
 

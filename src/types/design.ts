@@ -81,6 +81,13 @@ export interface ProductDef {
    * sintética; a própria imagem do produto serve como "foto do modelo".
    */
   isModelPhoto?: boolean;
+  /**
+   * Imagem "só a peça" (sem jogador) — para produtos com foto de modelo
+   * (isModelPhoto), é um recorte à parte; para os demais, coincide com
+   * baseImages.front. Usada como referência de entrada para a geração de
+   * foto do jogador por IA (ver src/lib/aiPortrait.ts).
+   */
+  itemImage: string;
 }
 
 export interface ColorRegion {
