@@ -1,15 +1,13 @@
 // Supabase Edge Function: gera a foto do jogador vestindo um item
 // personalizado, via API de imagem da OpenAI (gpt-image-1).
 //
-// ⚠️ NÃO IMPLANTADA/ATIVA — falta configurar o secret OPENAI_API_KEY no
-// projeto Supabase. Até lá, o app usa o compositor sintético local
-// (src/lib/modelPreview.ts) como preview gratuito e instantâneo.
-//
 // Recebe o `AIPortraitInput` montado por src/lib/aiPortrait.ts
-// (buildAIPortraitInput) e devolve um `AIPortraitResult`.
+// (buildAIPortraitInput) e devolve um `AIPortraitResult`. Se
+// OPENAI_API_KEY não estiver configurada como secret do projeto, responde
+// 501 com uma mensagem explicativa em vez de falhar sem contexto.
 //
-// Deploy: supabase functions deploy generate-model-photo
-// Secret:  supabase secrets set OPENAI_API_KEY=sk-...
+// Redeploy: supabase functions deploy generate-model-photo
+// Secret:   supabase secrets set OPENAI_API_KEY=sk-...
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'jsr:@supabase/supabase-js@2';

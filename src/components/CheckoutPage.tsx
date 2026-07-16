@@ -17,6 +17,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
 import { getProduct } from '@/lib/products';
 import { renderOnModel } from '@/lib/modelPreview';
+import { buildAIPortraitInput, requestAIPortrait } from '@/lib/aiPortrait';
 import type { OrderCustomer, OrderItem } from '@/types/order';
 import { ModelPreviewDialog } from './ModelPreviewDialog';
 import { Button } from './ui/button';
@@ -39,14 +40,20 @@ export function CheckoutPage() {
   const [done, setDone] = useState(false);
   const [previewItem, setPreviewItem] = useState<OrderItem | null>(null);
   const [heroSrc, setHeroSrc] = useState<string | null>(null);
+  const [heroItem, setHeroItem] = useState<OrderItem | null>(null);
   const [heroLoading, setHeroLoading] = useState(false);
+  const [aiSrc, setAiSrc] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // "Foto do modelo": prefere um artigo cuja imagem já é uma foto real
   // (equipamentos completos); senão, sintetiza via renderOnModel a partir
-  // do primeiro artigo compatível (camisa/polo).
+  // do primeiro artigo compatível (camisa/polo). Este preview é grátis e
+  // instantâneo — aparece na hora enquanto a foto real por IA (abaixo) é
+  // gerada em segundo plano.
   useEffect(() => {
     if (items.length === 0) {
       setHeroSrc(null);
+      setHeroItem(null);
       return;
     }
     let cancelled = false;
@@ -54,10 +61,12 @@ export function CheckoutPage() {
     const realPhoto = items.find((it) => getProduct(it.productId).isModelPhoto);
     if (realPhoto?.preview) {
       setHeroSrc(realPhoto.preview);
+      setHeroItem(realPhoto);
       return;
     }
 
     const synthesizable = items.find((it) => getProduct(it.productId).modelTemplate && it.preview);
+    setHeroItem(synthesizable ?? items[0] ?? null);
     if (!synthesizable?.preview) {
       setHeroSrc(null);
       return;
@@ -79,6 +88,35 @@ export function CheckoutPage() {
       cancelled = true;
     };
   }, [items]);
+
+  // Foto real por IA: gerada automaticamente para todo item finalizado,
+  // para todos os utilizadores — sem botão, sem passo manual. Roda em
+  // segundo plano assim que o item "herói" do checkout é definido acima; o
+  // preview grátis (heroSrc) continua visível até a foto real ficar pronta.
+  useEffect(() => {
+    setAiSrc(null);
+    if (!heroItem) {
+      setAiLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setAiLoading(true);
+    requestAIPortrait(buildAIPortraitInput(heroItem))
+      .then((result) => {
+        if (!cancelled) setAiSrc(result.imageUrl);
+      })
+      .catch((e) => {
+        console.warn('[checkout] geração automática de foto por IA:', e);
+      })
+      .finally(() => {
+        if (!cancelled) setAiLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroItem?.id]);
 
   const handleBack = () => useFlowStore.getState().back();
 
@@ -174,21 +212,30 @@ export function CheckoutPage() {
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Foto do modelo
                 </p>
-                <div className="flex aspect-[4/5] items-center justify-center overflow-hidden rounded-xl border bg-muted">
-                  {heroLoading ? (
+                <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-xl border bg-muted">
+                  {aiSrc ?? heroSrc ? (
+                    <img src={aiSrc ?? heroSrc ?? ''} alt="Modelo com o pedido" className="h-full w-full object-contain" />
+                  ) : heroLoading ? (
                     <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
                       <LoaderCircle className="h-5 w-5 animate-spin" />
                       Gerando pré-visualização…
                     </div>
-                  ) : heroSrc ? (
-                    <img src={heroSrc} alt="Modelo com o pedido" className="h-full w-full object-contain" />
                   ) : (
                     <div className="flex flex-col items-center gap-1 px-6 text-center text-xs text-muted-foreground">
                       <UserRound className="h-6 w-6" />
                       Foto do modelo indisponível para estas peças.
                     </div>
                   )}
+                  {aiLoading && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium text-muted-foreground shadow">
+                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                      Gerando foto real…
+                    </div>
+                  )}
                 </div>
+                {aiSrc && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">Foto gerada por IA.</p>
+                )}
               </div>
 
               <div>
