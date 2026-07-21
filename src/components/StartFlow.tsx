@@ -36,11 +36,12 @@ const MODALITIES: Modality[] = [
 /** Por enquanto o catálogo digitalizado cobre futebol/futsal. */
 const ACTIVE_MODALITIES = new Set(['futebol']);
 
-const CATEGORIES: { key: string; label: string }[] = [
-  { key: 'jogo', label: 'Jogo' },
-  { key: 'treino', label: 'Treino' },
-  { key: 'saida', label: 'Saída' },
-  { key: 'acessorios', label: 'Acessórios' },
+/** Fotos reais do catálogo (estúdio escuro) — dão o mesmo aspecto premium da etapa de modalidade. */
+const CATEGORIES: { key: string; label: string; image?: string }[] = [
+  { key: 'jogo', label: 'Jogo', image: '/products/kit-champions.jpg' },
+  { key: 'treino', label: 'Treino', image: '/products/kit-titan.jpg' },
+  { key: 'saida', label: 'Saída', image: '/products/kit-galatico.jpg' },
+  { key: 'acessorios', label: 'Acessórios', image: '/products/kit-guarda-redes.jpg' },
 ];
 
 /** Card premium: fundo escurecido + acento vermelho KYPZL. */
@@ -179,15 +180,16 @@ export function StartFlow() {
 
       {/* --------------------------------------------------- 2. categoria */}
       {screen === 'categoria' && (
-        <div className="mt-8 grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-8 grid w-full max-w-5xl grid-cols-2 gap-5 lg:grid-cols-4">
           {CATEGORIES.map((c) => {
             const count = PRODUCTS.filter((p) => p.category === c.key).length;
             const active = count > 0;
             return (
               <PremiumCard
                 key={c.key}
-                className="h-28"
+                className="h-52"
                 label={c.label}
+                image={c.image}
                 disabled={!active}
                 sublabel={
                   active ? `${count} ${count === 1 ? 'modelo' : 'modelos'}` : 'Brevemente'
