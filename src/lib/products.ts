@@ -67,20 +67,13 @@ function isModelPhotoId(id: string): boolean {
 }
 
 /**
- * Imagem "só a peça" (sem jogador) para produtos que só têm foto de modelo —
- * recorte do torso/peça, feito manualmente a partir da foto original (ver
- * public/products/items/). Para os demais produtos, a própria imagem já é
- * "só peça" (não precisa de entrada aqui).
+ * Imagem "só a peça" (sem jogador) usada como referência de entrada para a
+ * geração de foto do jogador por IA (ver src/lib/aiPortrait.ts). Hoje todo
+ * produto do catálogo já é "só peça" (mockup), então coincide com a imagem
+ * frontal; se algum dia voltarmos a ter produtos com foto de modelo
+ * (isModelPhoto), mapeie o recorte aqui por id.
  */
-const ITEM_IMAGE_BY_ID: Record<string, string> = {
-  'kit-champions': '/products/items/kit-champions-item.jpg',
-  'kit-galatico': '/products/items/kit-galatico-item.jpg',
-  'kit-titan': '/products/items/kit-titan-item.jpg',
-  'kit-olimpico-vermelho': '/products/items/kit-olimpico-vermelho-item.jpg',
-  'kit-olimpico-verde': '/products/items/kit-olimpico-verde-item.jpg',
-  'kit-olimpico-azul': '/products/items/kit-olimpico-azul-item.jpg',
-  'kit-guarda-redes': '/products/items/kit-guarda-redes-item.jpg',
-};
+const ITEM_IMAGE_BY_ID: Record<string, string> = {};
 
 /** Monta uma entrada de catálogo (render + thumbnail + imagens-base). */
 function makeEntry(src: EntrySource): ProductCatalogEntry {
@@ -139,16 +132,12 @@ const CATALOG_IMAGE_PRODUCTS: EntrySource[] = [
   { id: 'batistuta', name: 'Camisola Batistuta', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/batistuta.jpg', back: '/products/batistuta.jpg' } },
   { id: 'totti', name: 'Camisola Totti', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/totti.jpg', back: '/products/totti.jpg' } },
 
-  // Equipamentos completos: foto real do modelo já vestindo o kit (jogador +
-  // equipamento). Personalização (nome/número/logos) entra por cima, igual
-  // aos demais produtos "image". Sem preview sintético — já é 100% real.
-  { id: 'kit-champions', name: 'Equipamento Champions', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-champions.jpg', back: '/products/kit-champions.jpg' } },
-  { id: 'kit-galatico', name: 'Equipamento Galático', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-galatico.jpg', back: '/products/kit-galatico.jpg' } },
-  { id: 'kit-titan', name: 'Equipamento Titan', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-titan.jpg', back: '/products/kit-titan.jpg' } },
-  { id: 'kit-olimpico-vermelho', name: 'Equipamento Olímpico Vermelho', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-olimpico-vermelho.jpg', back: '/products/kit-olimpico-vermelho.jpg' } },
-  { id: 'kit-olimpico-verde', name: 'Equipamento Olímpico Verde', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-olimpico-verde.jpg', back: '/products/kit-olimpico-verde.jpg' } },
-  { id: 'kit-olimpico-azul', name: 'Equipamento Olímpico Azul', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-olimpico-azul.jpg', back: '/products/kit-olimpico-azul.jpg' } },
-  { id: 'kit-guarda-redes', name: 'Equipamento Guarda-Redes', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/kit-guarda-redes.jpg', back: '/products/kit-guarda-redes.jpg' } },
+  // Nota: os 7 "Equipamento *" (Champions, Galático, Titan, Olímpico
+  // Vermelho/Verde/Azul, Guarda-Redes) foram removidos — eram fotos de um
+  // modelo já vestindo o kit, sem versão "peça avulsa" no catálogo. Nesta
+  // primeira fase seguimos só o portfólio real (peças separadas, sem
+  // jogador); a foto do jogador entra depois, gerada por IA (ver
+  // src/lib/aiPortrait.ts).
 ];
 
 /**
