@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
+  AtSign,
   CheckCircle2,
+  Globe,
   LoaderCircle,
+  Mail,
+  MessageSquareText,
+  PackageCheck,
+  Phone,
+  Plus,
+  RefreshCcw,
+  ShieldCheck,
   ShoppingBag,
+  Sparkles,
   Trash2,
-  UserRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoUrl from '@/assets/kypzl-logo.png';
@@ -15,21 +24,21 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { submitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
-import { getProduct } from '@/lib/products';
-import { renderOnModel } from '@/lib/modelPreview';
 import { buildAIPortraitInput, requestAIPortrait } from '@/lib/aiPortrait';
-import type { OrderCustomer, OrderItem } from '@/types/order';
-import { ModelPreviewDialog } from './ModelPreviewDialog';
+import type { OrderCustomer } from '@/types/order';
+import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 
 /**
- * Página real de checkout (não um popup) — layout tipo e-commerce:
- * formulário de dados de um lado, resumo do pedido (foto do modelo + peças)
- * do outro. Substitui inteiramente a tela (como o editor/funil), acessada
- * via useFlowStore.screen === 'checkout'.
+ * Página real de checkout (não um popup) — layout tipo e-commerce premium:
+ *   · Esquerda: formulário + "o que acontece a seguir" + contactos KYPZL.
+ *   · Direita: passerelle — foto GRANDE do jogador vestindo a peça (gerada
+ *     por IA, uma por artigo, com cache de sessão) + trilho de miniaturas
+ *     AO LADO da foto para trocar o artigo em destaque.
+ * Sem sobreposição sintética: a foto do modelo é 100% gerada por IA.
  */
 export function CheckoutPage() {
   const items = useOrderStore((s) => s.items);
@@ -38,85 +47,46 @@ export function CheckoutPage() {
 
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
-  const [previewItem, setPreviewItem] = useState<OrderItem | null>(null);
-  const [heroSrc, setHeroSrc] = useState<string | null>(null);
-  const [heroItem, setHeroItem] = useState<OrderItem | null>(null);
-  const [heroLoading, setHeroLoading] = useState(false);
-  const [aiSrc, setAiSrc] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
 
-  // "Foto do modelo": prefere um artigo cuja imagem já é uma foto real
-  // (equipamentos completos); senão, sintetiza via renderOnModel a partir
-  // do primeiro artigo compatível (camisa/polo). Este preview é grátis e
-  // instantâneo — aparece na hora enquanto a foto real por IA (abaixo) é
-  // gerada em segundo plano.
+  // Artigo em destaque na passerelle.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = items.find((it) => it.id === selectedId) ?? items[0] ?? null;
+
+  // Fotos geradas por IA, por artigo (cache da sessão — 1 chamada por artigo).
+  const [aiPhotos, setAiPhotos] = useState<Record<string, string>>({});
+  const [aiFailed, setAiFailed] = useState<Record<string, boolean>>({});
+  const [retryTick, setRetryTick] = useState(0);
+
+  const selectedPhoto = selected ? aiPhotos[selected.id] : undefined;
+  const selectedFailed = selected ? !!aiFailed[selected.id] : false;
+  const generating = !!selected && !selectedPhoto && !selectedFailed;
+
   useEffect(() => {
-    if (items.length === 0) {
-      setHeroSrc(null);
-      setHeroItem(null);
-      return;
-    }
+    if (!selected || aiPhotos[selected.id] || aiFailed[selected.id]) return;
     let cancelled = false;
-
-    const realPhoto = items.find((it) => getProduct(it.productId).isModelPhoto);
-    if (realPhoto?.preview) {
-      setHeroSrc(realPhoto.preview);
-      setHeroItem(realPhoto);
-      return;
-    }
-
-    const synthesizable = items.find((it) => getProduct(it.productId).modelTemplate && it.preview);
-    setHeroItem(synthesizable ?? items[0] ?? null);
-    if (!synthesizable?.preview) {
-      setHeroSrc(null);
-      return;
-    }
-    setHeroLoading(true);
-    renderOnModel(synthesizable.preview, getProduct(synthesizable.productId).modelTemplate!)
-      .then((src) => {
-        if (!cancelled) setHeroSrc(src);
+    requestAIPortrait(buildAIPortraitInput(selected))
+      .then((r) => {
+        if (!cancelled) setAiPhotos((p) => ({ ...p, [selected.id]: r.imageUrl }));
       })
       .catch((e) => {
-        console.warn('[checkout] falha ao gerar foto do modelo:', e);
-        if (!cancelled) setHeroSrc(null);
-      })
-      .finally(() => {
-        if (!cancelled) setHeroLoading(false);
+        console.warn('[checkout] geração de foto por IA:', e);
+        if (!cancelled) setAiFailed((p) => ({ ...p, [selected.id]: true }));
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [items]);
-
-  // Foto real por IA: gerada automaticamente para todo item finalizado,
-  // para todos os utilizadores — sem botão, sem passo manual. Roda em
-  // segundo plano assim que o item "herói" do checkout é definido acima; o
-  // preview grátis (heroSrc) continua visível até a foto real ficar pronta.
-  useEffect(() => {
-    setAiSrc(null);
-    if (!heroItem) {
-      setAiLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setAiLoading(true);
-    requestAIPortrait(buildAIPortraitInput(heroItem))
-      .then((result) => {
-        if (!cancelled) setAiSrc(result.imageUrl);
-      })
-      .catch((e) => {
-        console.warn('[checkout] geração automática de foto por IA:', e);
-      })
-      .finally(() => {
-        if (!cancelled) setAiLoading(false);
-      });
-
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroItem?.id]);
+  }, [selected?.id, retryTick]);
+
+  const retryAI = () => {
+    if (!selected) return;
+    setAiFailed((p) => {
+      const next = { ...p };
+      delete next[selected.id];
+      return next;
+    });
+    setRetryTick((t) => t + 1);
+  };
 
   const handleBack = () => useFlowStore.getState().back();
 
@@ -165,9 +135,13 @@ export function CheckoutPage() {
         )}
         <img src={logoUrl} alt="KYPZL" className="h-6 w-auto" />
         <span className="text-sm font-semibold">Finalizar Pedido</span>
+        <span className="ml-auto hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+          Sem pagamento agora · orçamento à medida
+        </span>
       </header>
 
-      <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         {done ? (
           <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
             <CheckCircle2 className="h-16 w-16 text-primary" />
@@ -192,117 +166,250 @@ export function CheckoutPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-            {/* Coluna: informações */}
+          <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)]">
+            {/* ------------------------------------ coluna: dados + contactos */}
             <div className="order-2 lg:order-1">
               <h1 className="text-xl font-bold">Os seus dados</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Para enviarmos o seu pedido ({items.length}{' '}
-                {items.length === 1 ? 'artigo' : 'artigos'}) à equipa KYPZL. Sem
-                pagamento agora — entraremos em contacto.
+                {items.length === 1 ? 'artigo' : 'artigos'}) à equipa KYPZL —
+                entraremos em contacto para afinar tudo consigo.
               </p>
               <div className="mt-6">
                 <CheckoutForm sending={sending} onSubmit={handleSubmit} />
               </div>
+
+              <NextSteps className="mt-8" />
+              <ContactCard className="mt-5" />
             </div>
 
-            {/* Coluna: resumo (foto do modelo + peças) */}
-            <div className="order-1 space-y-5 lg:order-2">
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Foto do modelo
+            {/* ----------------------------------------- coluna: passerelle */}
+            <div className="order-1 lg:order-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  O seu equipamento no jogador
                 </p>
-                <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-xl border bg-muted">
-                  {aiSrc ?? heroSrc ? (
-                    <img src={aiSrc ?? heroSrc ?? ''} alt="Modelo com o pedido" className="h-full w-full object-contain" />
-                  ) : heroLoading ? (
-                    <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                      <LoaderCircle className="h-5 w-5 animate-spin" />
-                      Gerando pré-visualização…
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 px-6 text-center text-xs text-muted-foreground">
-                      <UserRound className="h-6 w-6" />
-                      Foto do modelo indisponível para estas peças.
-                    </div>
-                  )}
-                  {aiLoading && (
-                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium text-muted-foreground shadow">
-                      <LoaderCircle className="h-3 w-3 animate-spin" />
-                      Gerando foto real…
-                    </div>
-                  )}
-                </div>
-                {aiSrc && (
-                  <p className="mt-1.5 text-xs text-muted-foreground">Foto gerada por IA.</p>
+                {selectedPhoto && (
+                  <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    Foto gerada por IA
+                  </span>
                 )}
               </div>
 
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Peças selecionadas
-                </p>
-                <div className="space-y-2">
+              <div className="mt-3 flex flex-col gap-4 sm:flex-row">
+                {/* trilho de artigos — AO LADO da foto */}
+                <div className="order-2 flex gap-3 overflow-x-auto pb-1 sm:order-1 sm:w-[92px] sm:flex-col sm:overflow-visible sm:pb-0">
                   {items.map((it) => {
-                    const modelTemplate = getProduct(it.productId).modelTemplate;
+                    const isSel = selected?.id === it.id;
                     return (
-                      <div
-                        key={it.id}
-                        className="flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm"
-                      >
+                      <div key={it.id} className="group relative shrink-0">
                         <button
-                          className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted"
-                          onClick={() => it.preview && setPreviewItem(it)}
-                          title={modelTemplate ? 'Ver prancha e no modelo' : 'Ver prancha'}
+                          onClick={() => setSelectedId(it.id)}
+                          title={it.productName}
+                          className={cn(
+                            'h-20 w-20 overflow-hidden rounded-xl border bg-card p-1.5 shadow-sm transition sm:h-[88px] sm:w-full',
+                            isSel
+                              ? 'border-primary ring-2 ring-primary/25'
+                              : 'hover:-translate-y-0.5 hover:border-primary/50',
+                          )}
                         >
                           {it.preview ? (
-                            <img src={it.preview} alt={it.productName} className="h-full w-full object-contain" />
+                            <img
+                              src={it.preview}
+                              alt={it.productName}
+                              className="h-full w-full object-contain"
+                            />
                           ) : (
-                            <ShoppingBag className="mx-auto mt-3 h-6 w-6 text-muted-foreground" />
+                            <ShoppingBag className="mx-auto h-6 w-6 text-muted-foreground" />
                           )}
                         </button>
-                        <span className="flex-1 truncate text-sm font-medium">{it.productName}</span>
+                        {aiPhotos[it.id] && (
+                          <span
+                            className="absolute left-1 top-1 rounded-full bg-primary p-1 shadow"
+                            title="Foto do jogador pronta"
+                          >
+                            <Sparkles className="h-2.5 w-2.5 text-primary-foreground" />
+                          </span>
+                        )}
                         <button
-                          className="text-muted-foreground transition hover:text-destructive"
-                          title="Remover"
+                          className="absolute -right-1.5 -top-1.5 hidden rounded-full border bg-background p-1 text-muted-foreground shadow-sm transition hover:text-destructive group-hover:block"
+                          title="Remover artigo"
                           onClick={() => useOrderStore.getState().removeItem(it.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </button>
                       </div>
                     );
                   })}
+                  <button
+                    onClick={handleMore}
+                    className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed text-muted-foreground transition hover:border-primary hover:text-primary sm:h-[88px] sm:w-full"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="text-[10px] font-semibold">Adicionar</span>
+                  </button>
+                </div>
+
+                {/* foto grande do jogador */}
+                <div className="order-1 min-w-0 flex-1 sm:order-2">
+                  <div className="relative mx-auto aspect-[2/3] w-full max-w-[560px] overflow-hidden rounded-2xl bg-[#0e0e0e] shadow-xl ring-1 ring-black/10">
+                    {/* brilho vermelho de estúdio (assinatura KYPZL) */}
+                    <div className="absolute inset-0 bg-[radial-gradient(85%_60%_at_50%_0%,rgba(182,33,38,0.28),transparent_60%)]" />
+
+                    {selectedPhoto ? (
+                      <img
+                        src={selectedPhoto}
+                        alt={`Jogador com ${selected?.productName ?? 'o equipamento'}`}
+                        className="relative h-full w-full object-cover"
+                      />
+                    ) : generating ? (
+                      <div className="relative flex h-full flex-col items-center justify-center gap-5 px-8 text-center">
+                        {selected?.preview && (
+                          <img
+                            src={selected.preview}
+                            alt=""
+                            className="h-44 w-44 animate-pulse object-contain opacity-25"
+                          />
+                        )}
+                        <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur">
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                          A gerar fotografia do jogador…
+                        </div>
+                        <p className="max-w-[240px] text-xs leading-relaxed text-white/50">
+                          A vestir o seu design num modelo profissional de
+                          estúdio · cerca de 20 segundos
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="relative flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
+                        {selected?.preview && (
+                          <img
+                            src={selected.preview}
+                            alt={selected?.productName}
+                            className="max-h-[55%] w-auto object-contain"
+                          />
+                        )}
+                        <p className="text-xs text-white/60">
+                          Não foi possível gerar a foto do jogador agora.
+                        </p>
+                        <Button size="sm" variant="secondary" onClick={retryAI}>
+                          <RefreshCcw /> Tentar novamente
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* faixa de identificação */}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 pt-16">
+                      <p className="text-base font-bold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
+                        {selected?.productName}
+                      </p>
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
+                        Design exclusivo · Sublimação KYPZL
+                      </p>
+                    </div>
+                    <span className="absolute inset-x-0 top-0 h-1 bg-primary" />
+                  </div>
+
+                  {/* resumo compacto */}
+                  <div className="mx-auto mt-3 flex w-full max-w-[560px] items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3.5 py-2.5 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {items.length} {items.length === 1 ? 'artigo' : 'artigos'} no pedido
+                    </span>
+                    <span>Sem compromisso — orçamento combinado com a KYPZL</span>
+                  </div>
                 </div>
               </div>
-
-              <div className="rounded-lg border bg-muted/40 p-3 text-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Resumo do pedido
-                </p>
-                <p className="mt-1">
-                  {items.length} {items.length === 1 ? 'artigo' : 'artigos'} — sem
-                  compromisso; o orçamento é combinado com a KYPZL.
-                </p>
-              </div>
-
-              <button
-                className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                onClick={handleMore}
-              >
-                + Continuar a montar (adicionar outro artigo)
-              </button>
             </div>
           </div>
         )}
       </div>
+    </div>
+  );
+}
 
-      <ModelPreviewDialog
-        open={!!previewItem}
-        onOpenChange={(o) => !o && setPreviewItem(null)}
-        title={previewItem?.productName ?? ''}
-        boardSrc={previewItem?.preview ?? null}
-        modelTemplate={previewItem ? getProduct(previewItem.productId).modelTemplate : undefined}
-      />
+/** Passo-a-passo do que acontece após o envio (comunicação/confiança). */
+function NextSteps({ className }: { className?: string }) {
+  const steps = [
+    {
+      icon: PackageCheck,
+      title: 'Enviamos o seu pedido',
+      desc: 'O design segue exatamente como o criou, com todas as personalizações.',
+    },
+    {
+      icon: MessageSquareText,
+      title: 'A equipa entra em contacto',
+      desc: 'Afinamos tamanhos, quantidades e orçamento consigo — sem compromisso.',
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Produção sublimada KYPZL',
+      desc: 'Peças produzidas à medida, com sublimação de alta durabilidade.',
+    },
+  ];
+  return (
+    <div className={cn('rounded-xl border bg-card p-4 shadow-sm', className)}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        O que acontece a seguir
+      </p>
+      <div className="mt-3 space-y-3.5">
+        {steps.map((s, i) => (
+          <div key={s.title} className="flex gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <s.icon className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold leading-tight">
+                {i + 1}. {s.title}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                {s.desc}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Cartão de contactos da KYPZL (canais reais da marca). */
+function ContactCard({ className }: { className?: string }) {
+  const rows = [
+    { icon: Phone, label: '+351 912 300 289', href: 'tel:+351912300289', external: false },
+    { icon: Mail, label: 'info@kypzl.pt', href: 'mailto:info@kypzl.pt', external: false },
+    { icon: Globe, label: 'www.kypzl.pt', href: 'https://www.kypzl.pt', external: true },
+    { icon: AtSign, label: '@kypzl_', href: 'https://instagram.com/kypzl_', external: true },
+  ];
+  return (
+    <div className={cn('overflow-hidden rounded-xl border shadow-sm', className)}>
+      <div className="relative bg-[#131313] p-4">
+        <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(182,33,38,0.35),transparent_55%)]" />
+        <img
+          src={logoUrl}
+          alt="KYPZL"
+          className="relative h-5 w-auto brightness-0 invert"
+        />
+        <p className="relative mt-2.5 text-sm font-semibold text-white">
+          Fale connosco a qualquer momento
+        </p>
+        <p className="relative mt-0.5 text-xs text-white/60">
+          Dúvidas sobre tecidos, prazos ou quantidades? Estamos por perto.
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-px bg-border">
+        {rows.map((r) => (
+          <a
+            key={r.label}
+            href={r.href}
+            {...(r.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+            className="flex items-center gap-2.5 bg-card px-3.5 py-3 text-xs font-medium transition hover:bg-accent"
+          >
+            <r.icon className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">{r.label}</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
