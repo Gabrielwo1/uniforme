@@ -24,7 +24,8 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { submitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
-import { buildAIPortraitInput, requestAIPortrait } from '@/lib/aiPortrait';
+import { useAiPortraitStore } from '@/store/useAiPortraitStore';
+import { pickHeroItem } from '@/lib/heroItem';
 import type { OrderCustomer } from '@/types/order';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -48,14 +49,16 @@ export function CheckoutPage() {
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
 
-  // Artigo em destaque na passerelle.
+  // Artigo em destaque na passerelle — por omissão, o "herói" do pedido.
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = items.find((it) => it.id === selectedId) ?? items[0] ?? null;
+  const selected = items.find((it) => it.id === selectedId) ?? pickHeroItem(items);
 
-  // Fotos geradas por IA, por artigo (cache da sessão — 1 chamada por artigo).
-  const [aiPhotos, setAiPhotos] = useState<Record<string, string>>({});
-  const [aiFailed, setAiFailed] = useState<Record<string, boolean>>({});
-  const [retryTick, setRetryTick] = useState(0);
+  // Fotos geradas por IA — cache partilhado com o CartDrawer/AiGenerationModal
+  // (o artigo "herói" já pode chegar pronto, pré-gerado ao finalizar o pedido).
+  const aiPhotos = useAiPortraitStore((s) => s.cache);
+  const aiFailed = useAiPortraitStore((s) => s.failed);
+  const fetchOne = useAiPortraitStore((s) => s.fetchOne);
+  const clearFailed = useAiPortraitStore((s) => s.clearFailed);
 
   const selectedPhoto = selected ? aiPhotos[selected.id] : undefined;
   const selectedFailed = selected ? !!aiFailed[selected.id] : false;
@@ -63,29 +66,14 @@ export function CheckoutPage() {
 
   useEffect(() => {
     if (!selected || aiPhotos[selected.id] || aiFailed[selected.id]) return;
-    let cancelled = false;
-    requestAIPortrait(buildAIPortraitInput(selected))
-      .then((r) => {
-        if (!cancelled) setAiPhotos((p) => ({ ...p, [selected.id]: r.imageUrl }));
-      })
-      .catch((e) => {
-        console.warn('[checkout] geração de foto por IA:', e);
-        if (!cancelled) setAiFailed((p) => ({ ...p, [selected.id]: true }));
-      });
-    return () => {
-      cancelled = true;
-    };
+    fetchOne(selected);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id, retryTick]);
+  }, [selected?.id]);
 
   const retryAI = () => {
     if (!selected) return;
-    setAiFailed((p) => {
-      const next = { ...p };
-      delete next[selected.id];
-      return next;
-    });
-    setRetryTick((t) => t + 1);
+    clearFailed(selected.id);
+    fetchOne(selected);
   };
 
   const handleBack = () => useFlowStore.getState().back();

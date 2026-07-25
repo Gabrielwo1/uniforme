@@ -4,13 +4,11 @@ import type { OrderItem } from '@/types/order';
 /**
  * Pedido em montagem (carrinho sem preço).
  *
- *  idle → (Finalizar) → ask "Pretende mais alguma coisa?"
- *    SIM → idle (nova simulação, volta aos produtos)
- *    NÃO → useFlowStore.goToCheckout() — página real de checkout (ver
- *          src/components/CheckoutPage.tsx), não um dialog.
+ * "Finalizar" no editor e o botão de carrinho abrem o CartDrawer (painel
+ * lateral estilo e-commerce) — lá o utilizador escolhe "Finalizar pedido"
+ * (segue para o checkout, com o modal de geração da foto por IA) ou
+ * "Continuar a editar" (só fecha o painel).
  */
-
-export type OrderStep = 'idle' | 'ask';
 
 const KEY = 'esportes:order:v1';
 
@@ -33,20 +31,22 @@ function persist(items: OrderItem[]) {
 
 export interface OrderStore {
   items: OrderItem[];
-  step: OrderStep;
+  /** Painel lateral do carrinho (CartDrawer) aberto? */
+  drawerOpen: boolean;
   /** Incrementa para pedir ao LeftPanel que volte à aba Produtos. */
   gotoProductsSignal: number;
 
   addItem: (item: OrderItem) => void;
   removeItem: (id: string) => void;
   clearItems: () => void;
-  setStep: (step: OrderStep) => void;
+  openDrawer: () => void;
+  closeDrawer: () => void;
   requestProductsTab: () => void;
 }
 
 export const useOrderStore = create<OrderStore>((set, get) => ({
   items: loadItems(),
-  step: 'idle',
+  drawerOpen: false,
   gotoProductsSignal: 0,
 
   addItem: (item) => {
@@ -66,7 +66,8 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     persist([]);
   },
 
-  setStep: (step) => set({ step }),
+  openDrawer: () => set({ drawerOpen: true }),
+  closeDrawer: () => set({ drawerOpen: false }),
 
   requestProductsTab: () =>
     set((s) => ({ gotoProductsSignal: s.gotoProductsSignal + 1 })),

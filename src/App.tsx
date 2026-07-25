@@ -5,7 +5,8 @@ import { SimulatorHeader } from './components/SimulatorHeader';
 import { LeftPanel } from './components/LeftPanel';
 import { CanvasStage } from './components/CanvasStage';
 import { RightPanelColors } from './components/RightPanelColors';
-import { OrderFlow } from './components/OrderFlow';
+import { CartDrawer } from './components/CartDrawer';
+import { AiGenerationModal } from './components/AiGenerationModal';
 import { StartFlow } from './components/StartFlow';
 import { SiteLanding } from './components/SiteLanding';
 import { CheckoutPage } from './components/CheckoutPage';
@@ -58,7 +59,8 @@ export default function App() {
       ) : (
         <StartFlow />
       )}
-      <OrderFlow />
+      <CartDrawer />
+      <AiGenerationModal />
       <Toaster position="bottom-right" richColors closeButton />
     </TooltipProvider>
   );

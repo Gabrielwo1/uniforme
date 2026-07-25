@@ -13,7 +13,6 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import logoUrl from '@/assets/kypzl-logo.png';
 import { toast } from 'sonner';
 import { useDesignStore } from '@/store/useDesignStore';
 import { useOrderStore } from '@/store/useOrderStore';
@@ -40,7 +39,7 @@ export function Topbar() {
   const setZoom = useDesignStore((s) => s.setZoom);
   const newSimulation = useDesignStore((s) => s.newSimulation);
   const orderCount = useOrderStore((s) => s.items.length);
-  const setOrderStep = useOrderStore((s) => s.setStep);
+  const openDrawer = useOrderStore((s) => s.openDrawer);
   const addOrderItem = useOrderStore((s) => s.addItem);
   const productId = useDesignStore((s) => s.design.productId);
 
@@ -103,7 +102,7 @@ export function Topbar() {
       design: JSON.parse(JSON.stringify(design)),
       createdAt: new Date().toISOString(),
     });
-    setOrderStep('ask');
+    openDrawer();
   };
 
   const handleNew = () => {
@@ -129,7 +128,6 @@ export function Topbar() {
           </TooltipTrigger>
           <TooltipContent>Voltar aos modelos</TooltipContent>
         </Tooltip>
-        <img src={logoUrl} alt="KYPZL" className="h-6 w-auto" />
         <span className="hidden text-xs font-medium text-muted-foreground md:inline">
           Editor de Uniformes
         </span>
@@ -197,7 +195,7 @@ export function Topbar() {
               variant="outline"
               size="icon"
               className="relative"
-              onClick={() => useFlowStore.getState().goToCheckout()}
+              onClick={openDrawer}
             >
               <ShoppingBag />
               {orderCount > 0 && (

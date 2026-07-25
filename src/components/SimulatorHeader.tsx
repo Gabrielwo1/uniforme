@@ -16,7 +16,7 @@ export function SimulatorHeader() {
   const modality = useFlowStore((s) => s.modality);
   const category = useFlowStore((s) => s.category);
   const goToSite = useFlowStore((s) => s.goToSite);
-  const goToCheckout = useFlowStore((s) => s.goToCheckout);
+  const openDrawer = useOrderStore((s) => s.openDrawer);
   const items = useOrderStore((s) => s.items);
 
   const modalityLabel = MODALITIES.find((m) => m.key === modality)?.label;
@@ -68,7 +68,7 @@ export function SimulatorHeader() {
             size="sm"
             className="relative"
             disabled={items.length === 0}
-            onClick={goToCheckout}
+            onClick={openDrawer}
           >
             <ShoppingBag />
             <span className="hidden sm:inline">Pedido</span>
