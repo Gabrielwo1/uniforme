@@ -6,6 +6,7 @@ import { CanvasStage } from './components/CanvasStage';
 import { RightPanelColors } from './components/RightPanelColors';
 import { OrderFlow } from './components/OrderFlow';
 import { StartFlow } from './components/StartFlow';
+import { SiteLanding } from './components/SiteLanding';
 import { CheckoutPage } from './components/CheckoutPage';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useDesignStore } from './store/useDesignStore';
@@ -37,7 +38,9 @@ export default function App() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      {screen === 'editor' ? (
+      {screen === 'site' ? (
+        <SiteLanding />
+      ) : screen === 'editor' ? (
         <div className="flex h-full flex-col bg-background">
           <Topbar />
           <div className="flex min-h-0 flex-1">

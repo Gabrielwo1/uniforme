@@ -3,22 +3,28 @@ import { create } from 'zustand';
 /**
  * Navegação de tela cheia do app (briefing KYPZL):
  *
- *   modalidade → categoria → modelo → editor → checkout
+ *   site → modalidade → categoria → modelo → editor → checkout
  *
- * - "Nova" e o fecho do pedido voltam à modalidade (página 1).
+ * - "site" é a landing page institucional (entrada real do app) — o
+ *   simulador só começa quando o utilizador clica "Entrar no simulador".
+ * - "Nova" e o fecho do pedido voltam à modalidade (página 1 do funil).
  * - "Sim, continuar" (mais artigos) volta à categoria (página 2), mantendo a
  *   modalidade escolhida.
  * - "checkout" é a página real de finalização (não um popup) — resumo do
  *   pedido + formulário de dados.
  */
 
-export type FlowScreen = 'modalidade' | 'categoria' | 'modelo' | 'editor' | 'checkout';
+export type FlowScreen = 'site' | 'modalidade' | 'categoria' | 'modelo' | 'editor' | 'checkout';
 
 export interface FlowStore {
   screen: FlowScreen;
   modality: string | null; // ex.: 'futebol'
   category: string | null; // ex.: 'jogo'
 
+  /** Sai da landing page e entra no funil do simulador. */
+  enterSimulator: () => void;
+  /** Volta à landing page institucional. */
+  goToSite: () => void;
   chooseModality: (m: string) => void;
   chooseCategory: (c: string) => void;
   openEditor: () => void;
@@ -33,10 +39,12 @@ export interface FlowStore {
 }
 
 export const useFlowStore = create<FlowStore>((set, get) => ({
-  screen: 'modalidade',
+  screen: 'site',
   modality: null,
   category: null,
 
+  enterSimulator: () => set({ screen: 'modalidade' }),
+  goToSite: () => set({ screen: 'site', modality: null, category: null }),
   chooseModality: (m) => set({ modality: m, screen: 'categoria' }),
   chooseCategory: (c) => set({ category: c, screen: 'modelo' }),
   openEditor: () => set({ screen: 'editor' }),
@@ -48,6 +56,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     else if (screen === 'editor') set({ screen: 'modelo' });
     else if (screen === 'modelo') set({ screen: 'categoria' });
     else if (screen === 'categoria') set({ screen: 'modalidade', modality: null });
+    else if (screen === 'modalidade') set({ screen: 'site' });
   },
 
   restart: () => set({ screen: 'modalidade', modality: null, category: null }),
