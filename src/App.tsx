@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { Topbar } from './components/Topbar';
+import { SimulatorHeader } from './components/SimulatorHeader';
 import { LeftPanel } from './components/LeftPanel';
 import { CanvasStage } from './components/CanvasStage';
 import { RightPanelColors } from './components/RightPanelColors';
@@ -42,6 +43,7 @@ export default function App() {
         <SiteLanding />
       ) : screen === 'editor' ? (
         <div className="flex h-full flex-col bg-background">
+          <SimulatorHeader />
           <Topbar />
           <div className="flex min-h-0 flex-1">
             <LeftPanel />

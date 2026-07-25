@@ -2,18 +2,16 @@ import { useState } from 'react';
 import {
   ArrowUpRight,
   Clock,
+  Lightbulb,
   Mail,
   MapPin,
-  MessageCircle,
   PackageCheck,
   PenTool,
   Phone,
   Printer,
   Scissors,
-  Search,
   ShieldCheck,
   Shirt,
-  Sparkle,
   Star,
   AtSign,
   Globe,
@@ -31,10 +29,20 @@ import { Button } from './ui/button';
  * O simulador (funil modalidade→categoria→modelo→editor→checkout) só
  * começa quando o utilizador clica "Entrar no simulador" — ver
  * useFlowStore.enterSimulator().
+ *
+ * Paleta de texto/botões conferida pixel a pixel contra o Figma: o
+ * vermelho da marca só aparece em detalhes pequenos (ícones, tarjas
+ * "Passo 0X"/tags, stripe dos cards, estrelas). Títulos e botões usam
+ * preto/branco em alto contraste — nunca vermelho.
  */
 
 const enterSimulator = () => useFlowStore.getState().enterSimulator();
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+/** Botão claro (pílula branca) — usado sobre fundos escuros/fotos. */
+const CTA_LIGHT = 'rounded-full bg-white text-[#0e0e0e] hover:bg-white/90';
+/** Botão escuro (pílula preta) — usado sobre fundos claros. */
+const CTA_DARK = 'rounded-full bg-[#0e0e0e] text-white hover:bg-[#0e0e0e]/85';
 
 const NAV_LINKS = [
   { label: 'Equipamentos', id: 'equipamentos' },
@@ -52,6 +60,7 @@ export function SiteLanding() {
       <ProcessSection />
       <HowItWorks />
       <ModalitiesSection />
+      <CompeteSection />
       <PremiumSection />
       <TrainingBanner />
       <LifestyleSection />
@@ -139,7 +148,7 @@ function Hero() {
 
       <div className="relative mx-auto flex max-w-[1360px] flex-col gap-10 px-5 pb-16 pt-14 sm:px-8 lg:pb-24 lg:pt-20">
         <h1 className="max-w-xl text-3xl font-bold leading-tight sm:text-4xl lg:text-[44px]">
-          Equipamentos desportivos <span className="text-primary">personalizados</span> para clubes, equipas e atletas
+          Equipamentos desportivos personalizados para clubes, equipas e atletas
         </h1>
 
         <div className="grid gap-10 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-end">
@@ -160,10 +169,10 @@ function Hero() {
           <div className="max-w-md space-y-5">
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2.5">
-                {['/site/mod-futebol.jpg', '/site/mod-basquetebol.jpg', '/site/mod-voleibol.jpg'].map((src) => (
+                {[0, 1, 2].map((i) => (
                   <img
-                    key={src}
-                    src={src}
+                    key={i}
+                    src="/site/avatar.jpg"
                     alt=""
                     className="h-8 w-8 rounded-full border-2 border-[#0a0a0a] object-cover"
                   />
@@ -182,7 +191,7 @@ function Hero() {
               totalmente personalizadas para a sua equipa.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="rounded-full" onClick={enterSimulator}>
+              <Button size="lg" className={CTA_LIGHT} onClick={enterSimulator}>
                 Entrar no simulador <ArrowUpRight />
               </Button>
               <Button
@@ -206,8 +215,8 @@ function ProcessSection() {
   return (
     <section id="processo" className="mx-auto max-w-[1360px] px-5 py-16 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-2xl font-bold sm:text-3xl">
-          Todo o processo. <span className="text-primary">Sob o mesmo compromisso</span> de qualidade.
+        <h2 className="text-2xl sm:text-3xl">
+          Todo o processo. <span className="font-bold">Sob o mesmo compromisso</span> de qualidade.
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Na KYPZL controlamos todas as etapas da produção, desde o design até à confeção. Este
@@ -232,7 +241,7 @@ function ProcessSection() {
       </div>
 
       <div className="mt-10 flex justify-center">
-        <Button size="lg" className="rounded-full" onClick={enterSimulator}>
+        <Button size="lg" className={CTA_DARK} onClick={enterSimulator}>
           Entrar no simulador <ArrowUpRight />
         </Button>
       </div>
@@ -272,7 +281,7 @@ function ProcessCard({
 const STEPS = [
   {
     n: '01',
-    icon: Search,
+    icon: Lightbulb,
     title: 'Partilhe a sua ideia conosco.',
     desc: 'Conta-nos sobre a sua equipa, cores, modalidade e tudo o que imagina.',
   },
@@ -313,8 +322,8 @@ function HowItWorks() {
     <section id="como-funciona" className="bg-muted/40 py-16 lg:py-24">
       <div className="mx-auto max-w-[1360px] px-5 sm:px-8">
         <div className="grid gap-6 lg:grid-cols-2 lg:items-end">
-          <h2 className="text-2xl font-bold sm:text-3xl">
-            Desenvolvemos equipamentos que <span className="text-primary">representam a identidade</span> da sua equipa.
+          <h2 className="text-2xl sm:text-3xl">
+            Desenvolvemos equipamentos que <span className="font-bold">representam a identidade</span> da sua equipa.
           </h2>
           <div>
             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -322,7 +331,7 @@ function HowItWorks() {
               personalizados através de tecnologia de sublimação, materiais técnicos e
               acabamentos de elevada qualidade.
             </p>
-            <Button className="mt-5 rounded-full" onClick={() => scrollTo('contacto')}>
+            <Button className={cn(CTA_DARK, 'mt-5')} onClick={() => scrollTo('contacto')}>
               Contato
             </Button>
           </div>
@@ -330,9 +339,9 @@ function HowItWorks() {
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {STEPS.map((s) => (
-            <div key={s.n} className="rounded-xl border bg-card p-4 shadow-sm">
+            <div key={s.n} className="rounded-xl border border-b-2 border-b-primary bg-card p-4 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Passo {s.n}</p>
-              <div className="mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground">
                 <s.icon className="h-4 w-4" />
               </div>
               <p className="mt-4 text-sm font-bold leading-snug">{s.title}</p>
@@ -370,8 +379,8 @@ function ModalitiesSection() {
             ))}
           </div>
           <div className="flex flex-col justify-center">
-            <h2 className="text-2xl font-bold sm:text-3xl">
-              Soluções para <span className="text-primary">qualquer modalidade</span> desportiva
+            <h2 className="text-2xl sm:text-3xl">
+              Soluções para <span className="font-bold">qualquer modalidade</span> desportiva
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/60">
               Produzimos equipamentos personalizados adaptados às exigências de cada modalidade.
@@ -384,16 +393,6 @@ function ModalitiesSection() {
             <ModalityCard key={m.label} {...m} />
           ))}
         </div>
-      </div>
-
-      <div className="mx-auto mt-16 max-w-xl px-5 text-center sm:px-8">
-        <h3 className="text-xl font-bold sm:text-2xl">
-          Concebidos para competir ao <span className="text-primary">mais alto nível</span>.
-        </h3>
-        <p className="mt-3 text-sm leading-relaxed text-white/60">
-          Equipamentos desenvolvidos para proporcionar conforto, resistência e total liberdade de
-          movimentos.
-        </p>
       </div>
     </section>
   );
@@ -413,6 +412,22 @@ function ModalityCard({ label, image }: { label: string; image: string }) {
         {label}
       </span>
     </div>
+  );
+}
+
+/** Faixa branca logo a seguir às modalidades (secção própria no Figma —
+ * fundo claro, texto preto, não faz parte do bloco escuro acima). */
+function CompeteSection() {
+  return (
+    <section className="mx-auto max-w-xl px-5 py-16 text-center sm:px-8 lg:py-20">
+      <h3 className="text-xl sm:text-2xl">
+        Concebidos para competir ao <span className="font-bold">mais alto nível</span>.
+      </h3>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        Equipamentos desenvolvidos para proporcionar conforto, resistência e total liberdade de
+        movimentos.
+      </p>
+    </section>
   );
 }
 
@@ -443,7 +458,7 @@ function PremiumSection() {
                 </li>
               ))}
             </ul>
-            <Button className="mt-5 rounded-full" onClick={enterSimulator}>
+            <Button className={cn(CTA_LIGHT, 'mt-5')} onClick={enterSimulator}>
               Entrar no simulador <ArrowUpRight />
             </Button>
           </div>
@@ -479,14 +494,14 @@ function TrainingBanner() {
 
       <div className="relative mx-auto max-w-[1360px] px-5 sm:px-8">
         <div className="max-w-md">
-          <h2 className="text-2xl font-bold sm:text-3xl">
-            <span className="text-primary">Preparados</span> para acompanhar cada treino.
+          <h2 className="text-2xl sm:text-3xl">
+            <span className="font-bold">Preparados</span> para acompanhar cada treino.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-white/65">
             A coleção de treino KYPZL combina conforto, respirabilidade e durabilidade para
             responder às exigências do dia a dia.
           </p>
-          <Button className="mt-5 rounded-full" onClick={enterSimulator}>
+          <Button className={cn(CTA_LIGHT, 'mt-5')} onClick={enterSimulator}>
             Entrar no simulador <ArrowUpRight />
           </Button>
         </div>
@@ -521,8 +536,8 @@ function LifestyleSection() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold sm:text-3xl">
-            Uma imagem <span className="text-primary">profissional</span> dentro e fora da competição.
+          <h2 className="text-2xl sm:text-3xl">
+            Uma imagem <span className="font-bold">profissional dentro e fora</span> da competição.
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
             Coleção desenvolvida para deslocações, eventos e representação institucional,
@@ -542,7 +557,7 @@ function LifestyleSection() {
             ))}
           </div>
 
-          <Button className="mt-6 rounded-full" onClick={() => scrollTo('contacto')}>
+          <Button className={cn(CTA_DARK, 'mt-6')} onClick={() => scrollTo('contacto')}>
             Contato
           </Button>
         </div>
@@ -557,8 +572,8 @@ function AccessoriesSection() {
     <section className="bg-muted/40 py-16 lg:py-24">
       <div className="mx-auto max-w-[1360px] px-5 sm:px-8">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-bold sm:text-3xl">
-            Tudo o que a sua equipa precisa <span className="text-primary">num só lugar</span>.
+          <h2 className="text-2xl sm:text-3xl">
+            Tudo o que a sua equipa precisa <span className="font-bold">num só lugar</span>.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Complete o equipamento com acessórios desenvolvidos para facilitar o transporte, a
@@ -653,7 +668,7 @@ function Testimonials() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {TESTIMONIALS.map((t) => (
           <div key={t.name} className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-            <div className="flex gap-0.5 text-primary">
+            <div className="flex gap-0.5 text-amber-400">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="h-3.5 w-3.5 fill-current" />
               ))}
@@ -796,11 +811,7 @@ function Footer() {
       <div className="border-t border-white/10 py-5">
         <div className="mx-auto flex max-w-[1360px] flex-col items-center justify-between gap-2 px-5 text-xs text-white/40 sm:flex-row sm:px-8">
           <p>© {new Date().getFullYear()} KYPZL. Todos os direitos reservados.</p>
-          <p className="flex items-center gap-1.5">
-            <Sparkle className="h-3 w-3" />
-            <MessageCircle className="hidden h-3 w-3" />
-            Feito com sublimação de alta qualidade
-          </p>
+          <p>Feito com sublimação de alta qualidade</p>
         </div>
       </div>
     </footer>
