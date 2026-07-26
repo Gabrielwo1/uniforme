@@ -73,13 +73,16 @@ function buildPiece(item: OrderItem): AIPortraitPiece {
   };
 }
 
-/** Monta o prompt final descrevendo TODAS as peças juntas, num só jogador. */
+/** Monta o prompt final descrevendo TODAS as peças juntas, num só jogador, de frente e de costas. */
 function buildPrompt(pieces: AIPortraitPiece[], style: AIPortraitInput['style']): string {
   const parts: string[] = [];
 
   const nomesPecas = pieces.map((p) => p.productName).join(', ');
   parts.push(
-    `Fotografia profissional de estúdio de um atleta masculino vestindo o equipamento completo da marca KYPZL, composto por: ${nomesPecas}. Todas as peças pertencem ao mesmo jogador, na mesma fotografia.`,
+    `Fotografia profissional desportiva de um atleta masculino vestindo o equipamento completo da marca KYPZL, composto por: ${nomesPecas}. Todas as peças pertencem ao mesmo jogador, na mesma fotografia.`,
+  );
+  parts.push(
+    `A imagem é uma fotografia LARGA (formato paisagem) com DUAS poses do MESMO jogador, lado a lado: a figura da ESQUERDA está de frente para a câmara (mostra o peito); a figura da DIREITA está de costas para a câmara (mostra as costas). Mesma iluminação, mesmo fundo, mesma pessoa e mesmo equipamento nas duas poses — como um spread de catálogo frente/verso.`,
   );
 
   for (const piece of pieces) {
@@ -90,27 +93,34 @@ function buildPrompt(pieces: AIPortraitPiece[], style: AIPortraitInput['style'])
       parts.push(`${capitalize(piece.pieceLabel)}: ${coresTxt}.`);
     }
 
-    const name = piece.texts.find((t) => t.kind === 'name');
-    const number = piece.texts.find((t) => t.kind === 'number');
-    if (name || number) {
-      const bits: string[] = [];
-      if (name) bits.push(`nome "${name.value}"`);
-      if (number) bits.push(`número "${number.value}"`);
-      parts.push(`${capitalize(piece.pieceLabel)} com personalização impressa: ${bits.join(' e ')}.`);
+    const front = piece.texts.filter((t) => t.side === 'front');
+    const back = piece.texts.filter((t) => t.side === 'back');
+    const describeTexts = (texts: AITextInput[]) =>
+      texts
+        .map((t) => (t.kind === 'name' ? `nome "${t.value}"` : t.kind === 'number' ? `número "${t.value}"` : `texto "${t.value}"`))
+        .join(' e ');
+    if (front.length > 0) {
+      parts.push(`${capitalize(piece.pieceLabel)}, impresso na FRENTE (pose da esquerda): ${describeTexts(front)}.`);
+    }
+    if (back.length > 0) {
+      parts.push(`${capitalize(piece.pieceLabel)}, impresso nas COSTAS (pose da direita): ${describeTexts(back)}.`);
     }
 
-    if (piece.logos.length > 0) {
-      parts.push(
-        `Logótipos em ${piece.pieceLabel.toLowerCase()}: ${piece.logos.map((l) => l.placement).join(', ')}.`,
-      );
+    const logosFront = piece.logos.filter((l) => l.side === 'front');
+    const logosBack = piece.logos.filter((l) => l.side === 'back');
+    if (logosFront.length > 0) {
+      parts.push(`Logótipos na frente de ${piece.pieceLabel.toLowerCase()}: ${logosFront.map((l) => l.placement).join(', ')}.`);
+    }
+    if (logosBack.length > 0) {
+      parts.push(`Logótipos nas costas de ${piece.pieceLabel.toLowerCase()}: ${logosBack.map((l) => l.placement).join(', ')}.`);
     }
   }
 
   parts.push(
-    `Cada peça deve seguir EXATAMENTE o design de referência fornecido (uma imagem anexada por peça) — cores, texto e posição dos logótipos idênticos aos anexos, sem alterações e sem inventar texto adicional.`,
+    `Cada peça deve seguir EXATAMENTE o design de referência fornecido (uma imagem anexada por peça) — cores, texto e posição dos logótipos idênticos aos anexos, sem alterações e sem inventar texto adicional. Se o texto/logótipo de referência está apenas na frente ou apenas nas costas, mostre-o só na pose correspondente.`,
   );
   parts.push(
-    `Estilo fotográfico: ${style.background}, ${style.pose}, enquadramento de ${style.framing} para que todas as peças do equipamento fiquem visíveis na imagem. Iluminação de estúdio, alta definição, sem texto ou marca d'água adicionais.`,
+    `Estilo fotográfico: ${style.background}, ${style.pose}, enquadramento de ${style.framing} para que todas as peças do equipamento fiquem visíveis em ambas as poses. Iluminação natural de fim de tarde, alta definição, sem texto ou marca d'água adicionais.`,
   );
 
   return parts.join(' ');
@@ -136,10 +146,10 @@ export function buildAIPortraitInput(items: OrderItem[]): AIPortraitInput {
     .join('+');
 
   const style: AIPortraitInput['style'] = {
-    preset: 'kypzl-studio',
-    background: 'fundo escuro em estúdio com leve gradiente vermelho',
-    pose: 'em pé, de frente para a câmara, postura atlética',
-    framing: 'corpo inteiro, da cabeça aos pés',
+    preset: 'kypzl-pitch',
+    background: 'campo de futebol relvado, gramado verde nítido em primeiro plano, arquibancadas e luzes de estádio desfocadas ao fundo, luz quente de fim de tarde',
+    pose: 'em pé, postura atlética; duas poses lado a lado da mesma pessoa — esquerda de frente, direita de costas',
+    framing: 'corpo inteiro, da cabeça aos pés, as duas poses enquadradas juntas numa única fotografia larga',
   };
 
   return {

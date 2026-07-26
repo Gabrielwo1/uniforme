@@ -128,7 +128,7 @@ export function CheckoutPage() {
         </span>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
         {done ? (
           <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
             <CheckCircle2 className="h-16 w-16 text-primary" />
@@ -229,16 +229,16 @@ export function CheckoutPage() {
                   </button>
                 </div>
 
-                {/* foto grande do jogador com o equipamento completo */}
+                {/* foto grande e larga do jogador — frente + costas lado a lado */}
                 <div className="order-1 min-w-0 flex-1 sm:order-2">
-                  <div className="relative mx-auto aspect-[2/3] w-full max-w-[560px] overflow-hidden rounded-2xl bg-[#0e0e0e] shadow-xl ring-1 ring-black/10">
-                    {/* brilho vermelho de estúdio (assinatura KYPZL) */}
-                    <div className="absolute inset-0 bg-[radial-gradient(85%_60%_at_50%_0%,rgba(182,33,38,0.28),transparent_60%)]" />
+                  <div className="relative mx-auto aspect-[3/2] w-full max-w-[880px] overflow-hidden rounded-2xl bg-[#0e2412] shadow-xl ring-1 ring-black/10">
+                    {/* clarão quente de fim de tarde (assinatura do fundo de campo) */}
+                    <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_0%,rgba(182,33,38,0.22),transparent_60%)]" />
 
                     {groupPhoto ? (
                       <img
                         src={groupPhoto}
-                        alt="Jogador vestindo o equipamento completo"
+                        alt="Jogador vestindo o equipamento completo, de frente e de costas"
                         className="relative h-full w-full object-cover"
                       />
                     ) : generating ? (
@@ -247,16 +247,16 @@ export function CheckoutPage() {
                           <img
                             src={items[0].preview}
                             alt=""
-                            className="h-44 w-44 animate-pulse object-contain opacity-25"
+                            className="h-32 w-32 animate-pulse object-contain opacity-25"
                           />
                         )}
                         <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur">
                           <LoaderCircle className="h-4 w-4 animate-spin" />
                           A gerar fotografia do jogador…
                         </div>
-                        <p className="max-w-[240px] text-xs leading-relaxed text-white/50">
-                          A vestir o seu design completo num modelo
-                          profissional de estúdio · cerca de 20 segundos
+                        <p className="max-w-[280px] text-xs leading-relaxed text-white/50">
+                          A vestir o seu design completo, de frente e de
+                          costas, num jogador em campo · cerca de 20 segundos
                         </p>
                       </div>
                     ) : (
@@ -265,7 +265,7 @@ export function CheckoutPage() {
                           <img
                             src={items[0].preview}
                             alt=""
-                            className="max-h-[55%] w-auto object-contain"
+                            className="max-h-[45%] w-auto object-contain"
                           />
                         )}
                         <p className="text-xs text-white/60">
@@ -283,14 +283,14 @@ export function CheckoutPage() {
                         {items.map((it) => it.productName).join(' + ')}
                       </p>
                       <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
-                        Design exclusivo · Sublimação KYPZL
+                        Frente e verso · Sublimação KYPZL
                       </p>
                     </div>
                     <span className="absolute inset-x-0 top-0 h-1 bg-primary" />
                   </div>
 
                   {/* resumo compacto */}
-                  <div className="mx-auto mt-3 flex w-full max-w-[560px] items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3.5 py-2.5 text-xs text-muted-foreground">
+                  <div className="mx-auto mt-3 flex w-full max-w-[880px] items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3.5 py-2.5 text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">
                       {items.length} {items.length === 1 ? 'artigo' : 'artigos'} no pedido
                     </span>

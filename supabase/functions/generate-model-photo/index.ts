@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
     const form = new FormData();
     form.append('model', 'gpt-image-1');
     form.append('prompt', input.prompt);
-    form.append('size', '1024x1536'); // retrato, corpo inteiro
+    form.append('size', '1536x1024'); // paisagem larga: jogador de frente + de costas lado a lado
     for (let i = 0; i < input.pieces.length; i++) {
       const blob = await dataUrlToBlob(input.pieces[i].flatDesign);
       form.append('image[]', blob, `peca-${i}.png`);

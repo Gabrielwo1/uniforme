@@ -39,7 +39,7 @@ export function AiGenerationModal() {
         <p className="mt-4 text-sm font-semibold">A preparar a sua prancha final…</p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           Estamos a vestir o seu design completo — {items.length}{' '}
-          {items.length === 1 ? 'peça' : 'peças'} — num modelo profissional de estúdio.
+          {items.length === 1 ? 'peça' : 'peças'} — num jogador em campo, de frente e de costas.
         </p>
         <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-muted">
           <div

@@ -67,12 +67,13 @@ export interface AIPortraitInput {
 
   /**
    * Preset de estilo fotográfico — mantém consistência com a identidade
-   * visual da KYPZL (estúdio escuro, chevron vermelho, pose de estúdio).
-   * Corpo inteiro (não só cintura para cima) para que todas as peças —
-   * incluindo calção e meia — fiquem visíveis na mesma imagem.
+   * visual da KYPZL (fundo de campo, luz de fim de tarde). Corpo inteiro,
+   * de frente e de costas lado a lado, para que todas as peças — incluindo
+   * calção e meia, e a personalização impressa nas costas — fiquem visíveis
+   * na mesma imagem.
    */
   style: {
-    preset: 'kypzl-studio';
+    preset: 'kypzl-pitch';
     background: string;
     pose: string;
     framing: string;
