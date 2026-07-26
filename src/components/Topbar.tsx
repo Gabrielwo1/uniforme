@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import {
   ArrowLeft,
-  Check,
   Download,
   Eye,
   FilePlus,
   FolderOpen,
+  Plus,
   Redo2,
   Save,
   ShoppingBag,
@@ -89,8 +89,8 @@ export function Topbar() {
     }
   };
 
-  /** Finaliza o artigo atual: captura preview, adiciona ao pedido e pergunta. */
-  const handleFinalize = () => {
+  /** Adiciona o artigo atual (com o design em curso) ao pedido e abre o carrinho. */
+  const handleAddToCart = () => {
     const design = useDesignStore.getState().design;
     const product = getProduct(design.productId);
     const preview = getCanvas().exportPNG(0.5);
@@ -102,6 +102,7 @@ export function Topbar() {
       design: JSON.parse(JSON.stringify(design)),
       createdAt: new Date().toISOString(),
     });
+    toast.success('Artigo adicionado ao carrinho');
     openDrawer();
   };
 
@@ -207,9 +208,9 @@ export function Topbar() {
           </TooltipTrigger>
           <TooltipContent>Ver o pedido</TooltipContent>
         </Tooltip>
-        <Button size="sm" onClick={handleFinalize}>
-          <Check />
-          <span className="hidden md:inline">Finalizar</span>
+        <Button size="sm" onClick={handleAddToCart}>
+          <Plus />
+          <span className="hidden md:inline">Adicionar ao carrinho</span>
         </Button>
       </div>
 
