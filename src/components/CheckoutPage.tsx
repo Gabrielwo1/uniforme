@@ -25,7 +25,7 @@ import { submitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
 import { useAiPortraitStore } from '@/store/useAiPortraitStore';
-import { pickHeroItem } from '@/lib/heroItem';
+import { buildAIPortraitInput } from '@/lib/aiPortrait';
 import type { OrderCustomer } from '@/types/order';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -49,31 +49,30 @@ export function CheckoutPage() {
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
 
-  // Artigo em destaque na passerelle — por omissão, o "herói" do pedido.
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = items.find((it) => it.id === selectedId) ?? pickHeroItem(items);
+  // Foto do jogador vestindo TODAS as peças do pedido juntas — cache
+  // partilhado com o CartDrawer/AiGenerationModal, chaveado pelo conjunto
+  // de artigos (já pode chegar pronta, pré-gerada ao finalizar o pedido).
+  const cacheKey = items.length > 0 ? buildAIPortraitInput(items).cacheKey : null;
 
-  // Fotos geradas por IA — cache partilhado com o CartDrawer/AiGenerationModal
-  // (o artigo "herói" já pode chegar pronto, pré-gerado ao finalizar o pedido).
   const aiPhotos = useAiPortraitStore((s) => s.cache);
   const aiFailed = useAiPortraitStore((s) => s.failed);
-  const fetchOne = useAiPortraitStore((s) => s.fetchOne);
+  const fetchCombined = useAiPortraitStore((s) => s.fetchCombined);
   const clearFailed = useAiPortraitStore((s) => s.clearFailed);
 
-  const selectedPhoto = selected ? aiPhotos[selected.id] : undefined;
-  const selectedFailed = selected ? !!aiFailed[selected.id] : false;
-  const generating = !!selected && !selectedPhoto && !selectedFailed;
+  const groupPhoto = cacheKey ? aiPhotos[cacheKey] : undefined;
+  const groupFailed = cacheKey ? !!aiFailed[cacheKey] : false;
+  const generating = items.length > 0 && !groupPhoto && !groupFailed;
 
   useEffect(() => {
-    if (!selected || aiPhotos[selected.id] || aiFailed[selected.id]) return;
-    fetchOne(selected);
+    if (items.length === 0 || !cacheKey || aiPhotos[cacheKey] || aiFailed[cacheKey]) return;
+    fetchCombined(items);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id]);
+  }, [cacheKey]);
 
   const retryAI = () => {
-    if (!selected) return;
-    clearFailed(selected.id);
-    fetchOne(selected);
+    if (!cacheKey) return;
+    clearFailed(cacheKey);
+    fetchCombined(items);
   };
 
   const handleBack = () => useFlowStore.getState().back();
@@ -177,7 +176,7 @@ export function CheckoutPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   O seu equipamento no jogador
                 </p>
-                {selectedPhoto && (
+                {groupPhoto && (
                   <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                     <Sparkles className="h-3 w-3 text-primary" />
                     Foto gerada por IA
@@ -186,50 +185,41 @@ export function CheckoutPage() {
               </div>
 
               <div className="mt-3 flex flex-col gap-4 sm:flex-row">
-                {/* trilho de artigos — AO LADO da foto */}
+                {/* trilho — peças incluídas nesta foto (não trocam a foto) */}
                 <div className="order-2 flex gap-3 overflow-x-auto pb-1 sm:order-1 sm:w-[92px] sm:flex-col sm:overflow-visible sm:pb-0">
-                  {items.map((it) => {
-                    const isSel = selected?.id === it.id;
-                    return (
-                      <div key={it.id} className="group relative shrink-0">
-                        <button
-                          onClick={() => setSelectedId(it.id)}
-                          title={it.productName}
-                          className={cn(
-                            'h-20 w-20 overflow-hidden rounded-xl border bg-card p-1.5 shadow-sm transition sm:h-[88px] sm:w-full',
-                            isSel
-                              ? 'border-primary ring-2 ring-primary/25'
-                              : 'hover:-translate-y-0.5 hover:border-primary/50',
-                          )}
-                        >
-                          {it.preview ? (
-                            <img
-                              src={it.preview}
-                              alt={it.productName}
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <ShoppingBag className="mx-auto h-6 w-6 text-muted-foreground" />
-                          )}
-                        </button>
-                        {aiPhotos[it.id] && (
-                          <span
-                            className="absolute left-1 top-1 rounded-full bg-primary p-1 shadow"
-                            title="Foto do jogador pronta"
-                          >
-                            <Sparkles className="h-2.5 w-2.5 text-primary-foreground" />
-                          </span>
+                  {items.map((it) => (
+                    <div key={it.id} className="group relative shrink-0">
+                      <div
+                        title={it.productName}
+                        className="h-20 w-20 overflow-hidden rounded-xl border bg-card p-1.5 shadow-sm sm:h-[88px] sm:w-full"
+                      >
+                        {it.preview ? (
+                          <img
+                            src={it.preview}
+                            alt={it.productName}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <ShoppingBag className="mx-auto h-6 w-6 text-muted-foreground" />
                         )}
-                        <button
-                          className="absolute -right-1.5 -top-1.5 hidden rounded-full border bg-background p-1 text-muted-foreground shadow-sm transition hover:text-destructive group-hover:block"
-                          title="Remover artigo"
-                          onClick={() => useOrderStore.getState().removeItem(it.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
                       </div>
-                    );
-                  })}
+                      {groupPhoto && (
+                        <span
+                          className="absolute left-1 top-1 rounded-full bg-primary p-1 shadow"
+                          title="Incluída nesta foto"
+                        >
+                          <Sparkles className="h-2.5 w-2.5 text-primary-foreground" />
+                        </span>
+                      )}
+                      <button
+                        className="absolute -right-1.5 -top-1.5 hidden rounded-full border bg-background p-1 text-muted-foreground shadow-sm transition hover:text-destructive group-hover:block"
+                        title="Remover artigo"
+                        onClick={() => useOrderStore.getState().removeItem(it.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                   <button
                     onClick={handleMore}
                     className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed text-muted-foreground transition hover:border-primary hover:text-primary sm:h-[88px] sm:w-full"
@@ -239,23 +229,23 @@ export function CheckoutPage() {
                   </button>
                 </div>
 
-                {/* foto grande do jogador */}
+                {/* foto grande do jogador com o equipamento completo */}
                 <div className="order-1 min-w-0 flex-1 sm:order-2">
                   <div className="relative mx-auto aspect-[2/3] w-full max-w-[560px] overflow-hidden rounded-2xl bg-[#0e0e0e] shadow-xl ring-1 ring-black/10">
                     {/* brilho vermelho de estúdio (assinatura KYPZL) */}
                     <div className="absolute inset-0 bg-[radial-gradient(85%_60%_at_50%_0%,rgba(182,33,38,0.28),transparent_60%)]" />
 
-                    {selectedPhoto ? (
+                    {groupPhoto ? (
                       <img
-                        src={selectedPhoto}
-                        alt={`Jogador com ${selected?.productName ?? 'o equipamento'}`}
+                        src={groupPhoto}
+                        alt="Jogador vestindo o equipamento completo"
                         className="relative h-full w-full object-cover"
                       />
                     ) : generating ? (
                       <div className="relative flex h-full flex-col items-center justify-center gap-5 px-8 text-center">
-                        {selected?.preview && (
+                        {items[0]?.preview && (
                           <img
-                            src={selected.preview}
+                            src={items[0].preview}
                             alt=""
                             className="h-44 w-44 animate-pulse object-contain opacity-25"
                           />
@@ -265,16 +255,16 @@ export function CheckoutPage() {
                           A gerar fotografia do jogador…
                         </div>
                         <p className="max-w-[240px] text-xs leading-relaxed text-white/50">
-                          A vestir o seu design num modelo profissional de
-                          estúdio · cerca de 20 segundos
+                          A vestir o seu design completo num modelo
+                          profissional de estúdio · cerca de 20 segundos
                         </p>
                       </div>
                     ) : (
                       <div className="relative flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
-                        {selected?.preview && (
+                        {items[0]?.preview && (
                           <img
-                            src={selected.preview}
-                            alt={selected?.productName}
+                            src={items[0].preview}
+                            alt=""
                             className="max-h-[55%] w-auto object-contain"
                           />
                         )}
@@ -290,7 +280,7 @@ export function CheckoutPage() {
                     {/* faixa de identificação */}
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 pt-16">
                       <p className="text-base font-bold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
-                        {selected?.productName}
+                        {items.map((it) => it.productName).join(' + ')}
                       </p>
                       <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
                         Design exclusivo · Sublimação KYPZL

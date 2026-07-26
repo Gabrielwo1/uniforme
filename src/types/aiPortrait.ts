@@ -1,11 +1,15 @@
 /**
- * Estrutura de input para gerar, via API de imagem por IA (ex.: OpenAI
- * gpt-image), a foto de um jogador vestindo um item PERSONALIZADO.
+ * Estrutura de input para gerar, via API de imagem por IA (OpenAI
+ * gpt-image-1), a foto de UM jogador vestindo TODAS as peças
+ * personalizadas do pedido ao mesmo tempo — não uma foto por peça.
  *
- * Cada `OrderItem` finalizado (design pronto: cores, nome, número, logos)
- * vira UM `AIPortraitInput`. O builder (`src/lib/aiPortrait.ts`) monta este
- * objeto a partir do `OrderItem` + do catálogo — nenhuma chamada de rede
- * acontece aqui, é só estrutura de dados + o texto do prompt.
+ * `buildAIPortraitInput` (src/lib/aiPortrait.ts) recebe a lista completa de
+ * `OrderItem` do carrinho e monta este objeto: cada peça vira um
+ * `AIPortraitPiece` (com a sua própria imagem de referência + cores/textos/
+ * logos), e o prompt final descreve o conjunto inteiro (camisola + calção +
+ * meia, o que estiver no pedido) num único jogador, de corpo inteiro para
+ * que todas as peças fiquem visíveis. Nenhuma chamada de rede acontece no
+ * builder — é só estrutura de dados + o texto do prompt.
  */
 
 /** Uma cor aplicada a uma região do produto, já com nome legível. */
@@ -38,48 +42,34 @@ export interface AILogoInput {
   placement: string;
 }
 
-export interface AIPortraitInput {
-  /** Id do item do pedido (rastreabilidade). */
+/** Uma peça do pedido (camisola, calção, meia…) com os seus dados de personalização. */
+export interface AIPortraitPiece {
   orderItemId: string;
-
-  product: {
-    id: string;
-    name: string;
-    /** 'jogo' | 'treino' | 'saida' | 'camisa' | 'calcao'. */
-    category: string;
-    /** Modalidade (hoje só 'futebol'; preparado para expandir). */
-    modality: string;
-  };
-
-  /**
-   * Imagens de referência (nessa ordem de prioridade para a API):
-   *  1. `flatDesign` — o design final exportado do editor (cores + nome/
-   *     número/logos já aplicados) — é A referência mais importante, mostra
-   *     exatamente o que o cliente personalizou.
-   *  2. `itemPhoto` — foto/render "só peça" do produto-base (sem jogador),
-   *     usada como referência adicional de caimento/tecido quando o produto
-   *     tem foto de modelo em vez de estampa plana.
-   */
-  images: {
-    flatDesign: string; // dataURL PNG do preview do item (OrderItem.preview)
-    itemPhoto: string; // ProductDef.itemImage
-  };
-
-  /** Cores aplicadas por região (vazio se o produto não é recolorível). */
+  productId: string;
+  productName: string;
+  /** Rótulo humano da categoria desta peça (ex.: "camisola", "calção", "meia"). */
+  pieceLabel: string;
+  /** Imagem de referência desta peça (dataURL do preview do artigo, ou o
+   * render "só peça" do catálogo se o artigo ainda não tiver preview). */
+  flatDesign: string;
   colors: AIColorInput[];
-
-  /** Nome, número e textos livres aplicados. */
   texts: AITextInput[];
-
-  /** Logos/patrocínios aplicados. */
   logos: AILogoInput[];
+}
 
-  /** Lado predominante do design a mostrar na foto (geralmente 'front'). */
-  side: 'front' | 'back';
+export interface AIPortraitInput {
+  /** Chave estável do conjunto de artigos — muda sempre que o carrinho
+   * muda (ids ordenados e concatenados), usada para cache/deduplicação. */
+  cacheKey: string;
+
+  /** Todas as peças do pedido a aparecer juntas na mesma foto. */
+  pieces: AIPortraitPiece[];
 
   /**
    * Preset de estilo fotográfico — mantém consistência com a identidade
    * visual da KYPZL (estúdio escuro, chevron vermelho, pose de estúdio).
+   * Corpo inteiro (não só cintura para cima) para que todas as peças —
+   * incluindo calção e meia — fiquem visíveis na mesma imagem.
    */
   style: {
     preset: 'kypzl-studio';
@@ -94,8 +84,8 @@ export interface AIPortraitInput {
 
 /** Resposta esperada da Edge Function de geração. */
 export interface AIPortraitResult {
-  orderItemId: string;
-  /** URL pública da imagem gerada (Supabase Storage) ou dataURL. */
+  cacheKey: string;
+  /** URL pública da imagem gerada (Supabase Storage). */
   imageUrl: string;
   provider: 'openai';
   model: string;

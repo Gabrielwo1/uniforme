@@ -4,7 +4,6 @@ import { useOrderStore } from '@/store/useOrderStore';
 import { useDesignStore } from '@/store/useDesignStore';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useAiPortraitStore } from '@/store/useAiPortraitStore';
-import { pickHeroItem } from '@/lib/heroItem';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from './ui/sheet';
 import { Button } from './ui/button';
 
@@ -29,12 +28,13 @@ export function CartDrawer() {
   };
 
   const handleFinalize = async () => {
-    const hero = pickHeroItem(items);
+    const currentItems = items;
     closeDrawer();
-    if (hero) {
-      // Bloqueia com o modal de progresso até a foto do jogador ficar
-      // pronta — o checkout já abre com a imagem final carregada.
-      await useAiPortraitStore.getState().generateWithModal(hero);
+    if (currentItems.length > 0) {
+      // Bloqueia com o modal de progresso até a foto do jogador — vestindo
+      // TODAS as peças do pedido juntas — ficar pronta. O checkout já abre
+      // com a imagem final carregada.
+      await useAiPortraitStore.getState().generateWithModal(currentItems);
     }
     useFlowStore.getState().goToCheckout();
   };

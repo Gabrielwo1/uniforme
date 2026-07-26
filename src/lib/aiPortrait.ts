@@ -6,13 +6,14 @@ import type {
   AIColorInput,
   AILogoInput,
   AIPortraitInput,
+  AIPortraitPiece,
   AIPortraitResult,
   AITextInput,
 } from '@/types/aiPortrait';
 import type { ImageElement, TextElement } from '@/types/design';
 
 const CATEGORY_LABEL: Record<string, string> = {
-  jogo: 'equipamento de jogo',
+  jogo: 'camisola de jogo',
   treino: 'equipamento de treino',
   saida: 'vestuário de saída',
   camisa: 'camisola',
@@ -26,52 +27,8 @@ function describePlacement(x: number, y: number): string {
   return horizontal === 'centrado' ? vertical : `${vertical} ${horizontal}`;
 }
 
-/** Monta o texto do prompt a partir dos dados já estruturados. */
-function buildPrompt(input: Omit<AIPortraitInput, 'prompt'>): string {
-  const parts: string[] = [];
-
-  parts.push(
-    `Fotografia profissional de estúdio de um atleta masculino vestindo ${CATEGORY_LABEL[input.product.category] ?? 'equipamento desportivo'} de ${input.product.modality}, modelo "${input.product.name}" da marca KYPZL.`,
-  );
-
-  if (input.colors.length > 0) {
-    const coresTxt = input.colors
-      .map((c) => `${c.regionLabel.toLowerCase()} em ${c.colorName.toLowerCase()}`)
-      .join(', ');
-    parts.push(`Cores: ${coresTxt}.`);
-  }
-
-  const name = input.texts.find((t) => t.kind === 'name');
-  const number = input.texts.find((t) => t.kind === 'number');
-  if (name || number) {
-    const bits: string[] = [];
-    if (name) bits.push(`nome "${name.value}"`);
-    if (number) bits.push(`número "${number.value}"`);
-    parts.push(`Personalização impressa nas costas: ${bits.join(' e ')}.`);
-  }
-
-  if (input.logos.length > 0) {
-    parts.push(
-      `Logótipos aplicados: ${input.logos.map((l) => l.placement).join(', ')}.`,
-    );
-  }
-
-  parts.push(
-    `A peça deve seguir EXATAMENTE o design de referência fornecido (imagem plana anexada) — cores, texto e posição dos logótipos idênticos, sem alterações.`,
-  );
-  parts.push(
-    `Estilo fotográfico: ${input.style.background}, ${input.style.pose}, ${input.style.framing}. Iluminação de estúdio, alta definição, sem texto ou marca d'água adicionais.`,
-  );
-
-  return parts.join(' ');
-}
-
-/**
- * Monta o input estruturado (sem chamar nenhuma API) a partir de um item já
- * finalizado no pedido. Puro/determinístico — útil também para depurar o
- * prompt antes de gastar uma chamada de geração de imagem.
- */
-export function buildAIPortraitInput(item: OrderItem): AIPortraitInput {
+/** Monta os dados estruturados de UMA peça (sem chamar nenhuma API). */
+function buildPiece(item: OrderItem): AIPortraitPiece {
   const product = getProduct(item.productId);
   const design = item.design;
 
@@ -104,31 +61,93 @@ export function buildAIPortraitInput(item: OrderItem): AIPortraitInput {
       placement: describePlacement(el.x, el.y),
     }));
 
-  const base: Omit<AIPortraitInput, 'prompt'> = {
+  return {
     orderItemId: item.id,
-    product: {
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      modality: 'futebol',
-    },
-    images: {
-      flatDesign: item.preview ?? product.itemImage,
-      itemPhoto: product.itemImage,
-    },
+    productId: product.id,
+    productName: product.name,
+    pieceLabel: CATEGORY_LABEL[product.category] ?? 'peça',
+    flatDesign: item.preview ?? product.itemImage,
     colors,
     texts,
     logos,
-    side: design.side,
-    style: {
-      preset: 'kypzl-studio',
-      background: 'fundo escuro em estúdio com leve gradiente vermelho',
-      pose: 'em pé, de frente para a câmara, postura atlética',
-      framing: 'enquadramento da cintura para cima, centrado',
-    },
+  };
+}
+
+/** Monta o prompt final descrevendo TODAS as peças juntas, num só jogador. */
+function buildPrompt(pieces: AIPortraitPiece[], style: AIPortraitInput['style']): string {
+  const parts: string[] = [];
+
+  const nomesPecas = pieces.map((p) => p.productName).join(', ');
+  parts.push(
+    `Fotografia profissional de estúdio de um atleta masculino vestindo o equipamento completo da marca KYPZL, composto por: ${nomesPecas}. Todas as peças pertencem ao mesmo jogador, na mesma fotografia.`,
+  );
+
+  for (const piece of pieces) {
+    if (piece.colors.length > 0) {
+      const coresTxt = piece.colors
+        .map((c) => `${c.regionLabel.toLowerCase()} em ${c.colorName.toLowerCase()}`)
+        .join(', ');
+      parts.push(`${capitalize(piece.pieceLabel)}: ${coresTxt}.`);
+    }
+
+    const name = piece.texts.find((t) => t.kind === 'name');
+    const number = piece.texts.find((t) => t.kind === 'number');
+    if (name || number) {
+      const bits: string[] = [];
+      if (name) bits.push(`nome "${name.value}"`);
+      if (number) bits.push(`número "${number.value}"`);
+      parts.push(`${capitalize(piece.pieceLabel)} com personalização impressa: ${bits.join(' e ')}.`);
+    }
+
+    if (piece.logos.length > 0) {
+      parts.push(
+        `Logótipos em ${piece.pieceLabel.toLowerCase()}: ${piece.logos.map((l) => l.placement).join(', ')}.`,
+      );
+    }
+  }
+
+  parts.push(
+    `Cada peça deve seguir EXATAMENTE o design de referência fornecido (uma imagem anexada por peça) — cores, texto e posição dos logótipos idênticos aos anexos, sem alterações e sem inventar texto adicional.`,
+  );
+  parts.push(
+    `Estilo fotográfico: ${style.background}, ${style.pose}, enquadramento de ${style.framing} para que todas as peças do equipamento fiquem visíveis na imagem. Iluminação de estúdio, alta definição, sem texto ou marca d'água adicionais.`,
+  );
+
+  return parts.join(' ');
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Monta o input estruturado (sem chamar nenhuma API) a partir de TODOS os
+ * artigos do pedido — a foto final mostra um único jogador vestindo o
+ * conjunto completo (camisola + calção + meia, o que estiver no carrinho),
+ * não uma foto por peça. Puro/determinístico — útil também para depurar o
+ * prompt antes de gastar uma chamada de geração de imagem.
+ */
+export function buildAIPortraitInput(items: OrderItem[]): AIPortraitInput {
+  const pieces = items.map(buildPiece);
+  const cacheKey = items
+    .map((i) => i.id)
+    .slice()
+    .sort()
+    .join('+');
+
+  const style: AIPortraitInput['style'] = {
+    preset: 'kypzl-studio',
+    background: 'fundo escuro em estúdio com leve gradiente vermelho',
+    pose: 'em pé, de frente para a câmara, postura atlética',
+    framing: 'corpo inteiro, da cabeça aos pés',
   };
 
-  return { ...base, prompt: buildPrompt(base) };
+  return {
+    cacheKey,
+    pieces,
+    style,
+    prompt: buildPrompt(pieces, style),
+  };
 }
 
 /**
