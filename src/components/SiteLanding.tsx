@@ -166,7 +166,7 @@ function Hero() {
             ))}
           </ul>
 
-          <div className="max-w-md space-y-5">
+          <div className="ml-auto max-w-md space-y-5">
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2.5">
                 {[0, 1, 2].map((i) => (
