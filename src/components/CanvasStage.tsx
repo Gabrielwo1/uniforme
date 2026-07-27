@@ -242,7 +242,8 @@ export function CanvasStage() {
   useEffect(() => {
     const canvas = fabricRef.current;
     if (!canvas) return;
-    const url = baseImages[side];
+    // `side` (perfil) é opcional no catálogo — sem foto de lado, usa a frente.
+    const url = baseImages[side] ?? baseImages.front;
     const token = ++bgTokenRef.current;
     FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img) => {
       // descarta resultado obsoleto (troca rápida de lado/cor).

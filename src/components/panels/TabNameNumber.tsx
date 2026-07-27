@@ -1,6 +1,7 @@
 import { Hash, Plus, Trash2, Type } from 'lucide-react';
 import { useDesignStore } from '@/store/useDesignStore';
 import { FONTS } from '@/lib/fonts';
+import { SIDE_LABEL } from '@/lib/products';
 import type { TextElement } from '@/types/design';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -66,7 +67,7 @@ export function TabNameNumber() {
       {texts.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Elementos ({side === 'front' ? 'frente' : 'verso'})
+            Elementos ({SIDE_LABEL[side].toLowerCase()})
           </p>
           {texts.map((t) => (
             <button

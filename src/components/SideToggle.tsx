@@ -1,14 +1,21 @@
 import { useDesignStore } from '@/store/useDesignStore';
+import { getProduct, productSides, SIDE_LABEL } from '@/lib/products';
 import { cn } from '@/lib/utils';
 
-/** Alterna entre Frente e Verso do produto (segmented control). */
+/**
+ * Alterna entre os lados do produto (segmented control). "Lado" (perfil) só
+ * aparece para produtos que têm essa foto — ver `productSides`.
+ */
 export function SideToggle() {
   const side = useDesignStore((s) => s.design.side);
+  const productId = useDesignStore((s) => s.design.productId);
   const setSide = useDesignStore((s) => s.setSide);
+
+  const sides = productSides(getProduct(productId));
 
   return (
     <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur">
-      {(['front', 'back'] as const).map((s) => (
+      {sides.map((s) => (
         <button
           key={s}
           onClick={() => setSide(s)}
@@ -19,7 +26,7 @@ export function SideToggle() {
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          {s === 'front' ? 'Frente' : 'Verso'}
+          {SIDE_LABEL[s]}
         </button>
       ))}
     </div>

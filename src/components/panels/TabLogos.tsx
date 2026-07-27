@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { useDesignStore } from '@/store/useDesignStore';
+import { SIDE_LABEL } from '@/lib/products';
 import type { ImageElement } from '@/types/design';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -37,7 +38,7 @@ export function TabLogos() {
       {logos.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Logos ({side === 'front' ? 'frente' : 'verso'})
+            Logos ({SIDE_LABEL[side].toLowerCase()})
           </p>
           <div className="grid grid-cols-4 gap-2">
             {logos.map((l) => (

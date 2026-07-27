@@ -99,20 +99,30 @@ function buildPrompt(pieces: AIPortraitPiece[], style: AIPortraitInput['style'])
       texts
         .map((t) => (t.kind === 'name' ? `nome "${t.value}"` : t.kind === 'number' ? `número "${t.value}"` : `texto "${t.value}"`))
         .join(' e ');
+    const profile = piece.texts.filter((t) => t.side === 'side');
     if (front.length > 0) {
       parts.push(`${capitalize(piece.pieceLabel)}, impresso na FRENTE (pose da esquerda): ${describeTexts(front)}.`);
     }
     if (back.length > 0) {
       parts.push(`${capitalize(piece.pieceLabel)}, impresso nas COSTAS (pose da direita): ${describeTexts(back)}.`);
     }
+    if (profile.length > 0) {
+      parts.push(
+        `${capitalize(piece.pieceLabel)}, impresso na LATERAL/MANGA (visível de perfil em ambas as poses): ${describeTexts(profile)}.`,
+      );
+    }
 
     const logosFront = piece.logos.filter((l) => l.side === 'front');
     const logosBack = piece.logos.filter((l) => l.side === 'back');
+    const logosSide = piece.logos.filter((l) => l.side === 'side');
     if (logosFront.length > 0) {
       parts.push(`Logótipos na frente de ${piece.pieceLabel.toLowerCase()}: ${logosFront.map((l) => l.placement).join(', ')}.`);
     }
     if (logosBack.length > 0) {
       parts.push(`Logótipos nas costas de ${piece.pieceLabel.toLowerCase()}: ${logosBack.map((l) => l.placement).join(', ')}.`);
+    }
+    if (logosSide.length > 0) {
+      parts.push(`Logótipos na lateral/manga de ${piece.pieceLabel.toLowerCase()}: ${logosSide.map((l) => l.placement).join(', ')}.`);
     }
   }
 

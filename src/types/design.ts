@@ -6,12 +6,17 @@
  * permite exportar em alta resolução sem reposicionar elementos.
  */
 
-export type Side = 'front' | 'back';
+export type Side = 'front' | 'back' | 'side';
 
-/** Lados visíveis de um produto. */
+/**
+ * Lados visíveis de um produto. `side` (perfil/manga) é opcional — só existe
+ * para produtos fotografados também de lado; os restantes mostram apenas
+ * frente e verso no editor.
+ */
 export interface BaseImages {
   front: string; // URL/dataURL da imagem-base (frente)
   back: string; // URL/dataURL da imagem-base (verso)
+  side?: string; // URL/dataURL da imagem-base (perfil), quando existe
 }
 
 /** Acabamentos selecionados (camadas adicionais sobre a base). */

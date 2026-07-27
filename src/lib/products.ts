@@ -89,7 +89,8 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
       template: 'image',
       regions: [],
       recolorable: false,
-      render: (side) => images[side],
+      // `side` (perfil) é opcional — sem foto de lado, cai na frente.
+      render: (side) => images[side] ?? images.front,
       thumbnail: images.front,
       baseImages: images,
       modelTemplate,
@@ -138,8 +139,9 @@ const CATALOG_IMAGE_PRODUCTS: EntrySource[] = [
   { id: 'bebeto', name: 'Polo Técnico Bebeto', category: 'saida', template: 'image', regions: [], baseImages: { front: '/products/bebeto.png', back: '/products/bebeto.png' }, enabled: false },
 
   // Camisola Batistuta: fotos reais do produto (estilo "ghost mannequin",
-  // fundo preto, sem jogador) — único produto habilitado nesta fase.
-  { id: 'batistuta', name: 'Camisola Batistuta', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/batistuta-front.png', back: '/products/batistuta-back.png' } },
+  // fundo preto, sem jogador) — único produto habilitado nesta fase, e o
+  // único com foto de perfil (lado) além de frente/verso.
+  { id: 'batistuta', name: 'Camisola Batistuta', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/batistuta-front.png', back: '/products/batistuta-back.png', side: '/products/batistuta-side.png' } },
   { id: 'totti', name: 'Camisola Totti', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/totti.jpg', back: '/products/totti.jpg' }, enabled: false },
 
   // Nota: os 7 "Equipamento *" (Champions, Galático, Titan, Olímpico
@@ -174,6 +176,22 @@ export function getProduct(id: string): ProductCatalogEntry {
 /** Produtos visíveis nas telas de seleção (funil + painel do editor). */
 export function listEnabledProducts(): ProductCatalogEntry[] {
   return PRODUCTS.filter((p) => p.enabled !== false);
+}
+
+/** Rótulo humano de cada lado (usado no alternador e nas listas de elementos). */
+export const SIDE_LABEL: Record<Side, string> = {
+  front: 'Frente',
+  back: 'Verso',
+  side: 'Lado',
+};
+
+/**
+ * Lados disponíveis para um produto. Frente e verso existem sempre; o perfil
+ * ("side") só entra quando o produto tem essa foto — os templates SVG
+ * paramétricos, por exemplo, não têm silhueta de perfil.
+ */
+export function productSides(product: ProductCatalogEntry): Side[] {
+  return product.baseImages.side ? ['front', 'back', 'side'] : ['front', 'back'];
 }
 
 /** Imagens-base (frente/verso) do produto com as cores atuais. */

@@ -12,6 +12,8 @@
  * builder — é só estrutura de dados + o texto do prompt.
  */
 
+import type { Side } from './design';
+
 /** Uma cor aplicada a uma região do produto, já com nome legível. */
 export interface AIColorInput {
   /** Chave da região (ex.: 'body', 'sleeves', 'collar'). */
@@ -30,14 +32,14 @@ export interface AITextInput {
   fillHex: string;
   fillColorName: string;
   strokeHex?: string;
-  side: 'front' | 'back';
+  side: Side;
 }
 
 /** Um logo/patrocínio aplicado ao design (posição descrita em linguagem simples). */
 export interface AILogoInput {
   /** URL/dataURL do logo (pode ser usado como imagem de referência adicional). */
   src: string;
-  side: 'front' | 'back';
+  side: Side;
   /** Posição aproximada em linguagem natural (ex.: 'peito esquerdo'). */
   placement: string;
 }

@@ -13,6 +13,7 @@ import {
   getProduct,
   listEnabledProducts,
   PRODUCTS,
+  productSides,
   renderBaseImages,
 } from '@/lib/products';
 import { loadDesign as loadFromStorage, saveDesign } from '@/lib/storage';
@@ -64,10 +65,12 @@ function makeInitialDesign(): DesignState {
 function reconcileWithCatalog(design: DesignState): DesignState {
   const product = getProduct(design.productId); // cai no 1.º produto se sumiu
   const colors = { ...defaultsOf(product.regions), ...design.colors };
+  const sides = productSides(product);
   return {
     ...design,
     productId: product.id,
     colors,
+    side: sides.includes(design.side) ? design.side : 'front',
     baseImages: renderBaseImages(product.id, colors),
   };
 }
@@ -183,12 +186,15 @@ export const useDesignStore = create<DesignStore>((set, get) => {
     setProduct: (id) => {
       const product = getProduct(id);
       const colors = defaultsOf(product.regions);
+      const sides = productSides(product);
       mutate((d) => ({
         ...d,
         productId: id,
         colors,
         finishes: {},
         baseImages: renderBaseImages(id, colors),
+        // o novo produto pode não ter o lado atual (ex.: sem foto de perfil)
+        side: sides.includes(d.side) ? d.side : 'front',
         // mantém elementos do usuário; eles continuam manipuláveis
       }));
       set({ selectedId: null });

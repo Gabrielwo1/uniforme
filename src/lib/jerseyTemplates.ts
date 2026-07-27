@@ -11,6 +11,8 @@
  * `ProductDef.render` permanece a mesma.
  */
 
+import type { Side } from '@/types/design';
+
 /** Tamanho lógico do template (o canvas trabalha nessa base e escala). */
 export const TEMPLATE_SIZE = 1000;
 
@@ -110,10 +112,17 @@ function shortsBody(_side: 'front' | 'back', colors: Colors): string {
   `;
 }
 
-export function renderShirt(side: 'front' | 'back', colors: Colors): string {
-  return svgWrap(shirtBody(side, colors));
+/**
+ * Estes templates paramétricos só desenham frente e verso — não há silhueta
+ * de perfil. Produtos assim não expõem o lado "side" no editor; se por algum
+ * motivo for pedido, cai na frente em vez de falhar.
+ */
+const flat = (side: Side): 'front' | 'back' => (side === 'back' ? 'back' : 'front');
+
+export function renderShirt(side: Side, colors: Colors): string {
+  return svgWrap(shirtBody(flat(side), colors));
 }
 
-export function renderShorts(side: 'front' | 'back', colors: Colors): string {
-  return svgWrap(shortsBody(side, colors));
+export function renderShorts(side: Side, colors: Colors): string {
+  return svgWrap(shortsBody(flat(side), colors));
 }
