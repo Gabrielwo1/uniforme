@@ -1,7 +1,7 @@
 import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useDesignStore } from '@/store/useDesignStore';
-import { PRODUCTS } from '@/lib/products';
+import { listEnabledProducts } from '@/lib/products';
 import { MODALITIES, ACTIVE_MODALITIES, CATEGORIES } from '@/lib/funnelData';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -155,7 +155,7 @@ export function StartFlow() {
       {screen === 'categoria' && (
         <div className="mt-8 grid w-full max-w-5xl grid-cols-2 gap-5 lg:grid-cols-4">
           {CATEGORIES.map((c) => {
-            const count = PRODUCTS.filter((p) => p.category === c.key).length;
+            const count = listEnabledProducts().filter((p) => p.category === c.key).length;
             const active = count > 0;
             return (
               <PremiumCard
@@ -181,7 +181,7 @@ export function StartFlow() {
             Escolha o modelo
           </h2>
           <div className="mt-4 grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {PRODUCTS.filter((p) => p.category === category).map((p) => (
+            {listEnabledProducts().filter((p) => p.category === category).map((p) => (
               <button
                 key={p.id}
                 onClick={() => pickModel(p.id)}

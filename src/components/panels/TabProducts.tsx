@@ -1,4 +1,4 @@
-import { PRODUCTS } from '@/lib/products';
+import { listEnabledProducts } from '@/lib/products';
 import { useDesignStore } from '@/store/useDesignStore';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +17,7 @@ export function TabProducts() {
   return (
     <div className="space-y-5">
       {CATEGORIES.map((cat) => {
-        const items = PRODUCTS.filter((p) => p.category === cat.key);
+        const items = listEnabledProducts().filter((p) => p.category === cat.key);
         if (items.length === 0) return null;
         return (
           <div key={cat.key}>

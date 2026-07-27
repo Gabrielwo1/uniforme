@@ -19,6 +19,8 @@ export interface ProductRow {
   /** Para template 'image': caminhos/URLs dos renders frente/verso. */
   base_images: BaseImages | null;
   sort_order: number;
+  /** false = oculto das telas de seleção. */
+  enabled: boolean;
 }
 
 /** Busca o catálogo no Supabase. Retorna [] se não configurado/falhar. */
@@ -26,7 +28,7 @@ export async function fetchProducts(): Promise<ProductRow[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, category, template, regions, base_images, sort_order')
+    .select('id, name, category, template, regions, base_images, sort_order, enabled')
     .order('sort_order', { ascending: true });
   if (error) {
     console.warn('[api] fetchProducts:', error.message);

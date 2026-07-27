@@ -11,6 +11,7 @@ import { uid } from '@/lib/id';
 import {
   defaultsOf,
   getProduct,
+  listEnabledProducts,
   PRODUCTS,
   renderBaseImages,
 } from '@/lib/products';
@@ -38,7 +39,7 @@ const eq = (a: unknown, b: unknown) =>
 /* ---------------------------------------------------------- estado inicial */
 
 function makeInitialDesign(): DesignState {
-  const product = PRODUCTS[0];
+  const product = listEnabledProducts()[0] ?? PRODUCTS[0];
   const colors = defaultsOf(product.regions);
   return {
     productId: product.id,

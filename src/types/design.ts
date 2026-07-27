@@ -88,6 +88,10 @@ export interface ProductDef {
    * foto do jogador por IA (ver src/lib/aiPortrait.ts).
    */
   itemImage: string;
+  /** false = oculto das telas de seleção (funil e painel do editor), mas
+   * continua acessível por id (ex.: designs salvos que já o usam). Omitido
+   * equivale a true. */
+  enabled?: boolean;
 }
 
 export interface ColorRegion {
