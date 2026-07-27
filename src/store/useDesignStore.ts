@@ -52,6 +52,26 @@ function makeInitialDesign(): DesignState {
   };
 }
 
+/**
+ * Reconcilia um design guardado (localStorage ou nuvem) com o catálogo ATUAL.
+ *
+ * `baseImages` fica congelado no momento em que o design foi salvo, mas o
+ * catálogo muda: um produto pode trocar de mockup para foto real, mudar de
+ * caminho ou sair do catálogo. Sem isto, um design antigo continuaria a
+ * apontar para ficheiros que já não existem — canvas quebrado. As
+ * personalizações do utilizador (elementos, cores, lado) são preservadas.
+ */
+function reconcileWithCatalog(design: DesignState): DesignState {
+  const product = getProduct(design.productId); // cai no 1.º produto se sumiu
+  const colors = { ...defaultsOf(product.regions), ...design.colors };
+  return {
+    ...design,
+    productId: product.id,
+    colors,
+    baseImages: renderBaseImages(product.id, colors),
+  };
+}
+
 /* ------------------------------------------------------------ tipo do store */
 
 export interface DesignStore {
@@ -329,15 +349,16 @@ export const useDesignStore = create<DesignStore>((set, get) => {
     },
 
     loadDesign: (design, meta) => {
+      const next = reconcileWithCatalog(clone(design));
       set({
-        design: clone(design),
+        design: next,
         past: [],
         future: [],
         selectedId: null,
         cloudId: meta?.cloudId ?? null,
         cloudName: meta?.cloudName ?? '',
       });
-      lastCommitted = clone(design);
+      lastCommitted = clone(next);
       scheduleSave();
     },
 
