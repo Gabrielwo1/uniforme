@@ -8,9 +8,11 @@ import {
   Mail,
   MessageSquareText,
   PackageCheck,
+  Pencil,
   Phone,
   Plus,
   RefreshCcw,
+  Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -26,28 +28,29 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
 import { useAiPortraitStore } from '@/store/useAiPortraitStore';
 import { buildAIPortraitInput } from '@/lib/aiPortrait';
-import type { OrderCustomer } from '@/types/order';
+import { CustomerForm, isCustomerValid } from './CustomerForm';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 
 /**
  * Página real de checkout (não um popup) — layout tipo e-commerce premium:
- *   · Esquerda: formulário + "o que acontece a seguir" + contactos KYPZL.
- *   · Direita: passerelle — foto GRANDE do jogador vestindo a peça (gerada
- *     por IA, uma por artigo, com cache de sessão) + trilho de miniaturas
- *     AO LADO da foto para trocar o artigo em destaque.
+ *   · Esquerda: revisão dos dados (já preenchidos no passo 2 do CartDrawer,
+ *     editáveis aqui) + "o que acontece a seguir" + contactos KYPZL.
+ *   · Direita: passerelle — foto GRANDE e larga do jogador vestindo TODAS as
+ *     peças do pedido, de frente e de costas (gerada por IA, com cache).
  * Sem sobreposição sintética: a foto do modelo é 100% gerada por IA.
  */
 export function CheckoutPage() {
   const items = useOrderStore((s) => s.items);
+  const customer = useOrderStore((s) => s.customer);
+  const setCustomer = useOrderStore((s) => s.setCustomer);
   const clearItems = useOrderStore((s) => s.clearItems);
   const requestProductsTab = useOrderStore((s) => s.requestProductsTab);
 
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  /** Dados vêm preenchidos do painel — só abre o form se quiser corrigir. */
+  const [editingCustomer, setEditingCustomer] = useState(false);
 
   // Foto do jogador vestindo TODAS as peças do pedido juntas — cache
   // partilhado com o CartDrawer/AiGenerationModal, chaveado pelo conjunto
@@ -84,7 +87,12 @@ export function CheckoutPage() {
     toast.success('Escolha o próximo artigo');
   };
 
-  const handleSubmit = async (customer: OrderCustomer) => {
+  const handleSubmit = async () => {
+    if (!isCustomerValid(customer)) {
+      setEditingCustomer(true);
+      toast.error('Preencha nome e e-mail para enviar o pedido.');
+      return;
+    }
     setSending(true);
     try {
       if (isSupabaseConfigured) {
@@ -154,17 +162,57 @@ export function CheckoutPage() {
           </div>
         ) : (
           <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)]">
-            {/* ------------------------------------ coluna: dados + contactos */}
+            {/* --------------------------------- coluna: revisão + contactos */}
             <div className="order-2 lg:order-1">
-              <h1 className="text-xl font-bold">Os seus dados</h1>
+              <h1 className="text-xl font-bold">Reveja e envie</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Para enviarmos o seu pedido ({items.length}{' '}
-                {items.length === 1 ? 'artigo' : 'artigos'}) à equipa KYPZL —
-                entraremos em contacto para afinar tudo consigo.
+                O seu pedido ({items.length}{' '}
+                {items.length === 1 ? 'artigo' : 'artigos'}) segue para a equipa
+                KYPZL — entraremos em contacto para afinar tudo consigo.
               </p>
-              <div className="mt-6">
-                <CheckoutForm sending={sending} onSubmit={handleSubmit} />
+
+              <div className="mt-6 rounded-xl border bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Os seus dados
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingCustomer((v) => !v)}
+                  >
+                    <Pencil />
+                    {editingCustomer ? 'Concluir' : 'Editar'}
+                  </Button>
+                </div>
+
+                {editingCustomer ? (
+                  <CustomerForm
+                    value={customer}
+                    onChange={setCustomer}
+                    idPrefix="checkout"
+                    className="mt-4"
+                  />
+                ) : (
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <SummaryRow label="Nome" value={customer.name} />
+                    <SummaryRow label="E-mail" value={customer.email} />
+                    <SummaryRow label="Telefone" value={customer.phone} />
+                    <SummaryRow label="Clube / Equipa" value={customer.club} />
+                    <SummaryRow label="Observações" value={customer.notes} />
+                  </dl>
+                )}
               </div>
+
+              <Button
+                size="lg"
+                className="mt-4 w-full"
+                disabled={sending}
+                onClick={handleSubmit}
+              >
+                <Send />
+                {sending ? 'A enviar…' : 'Enviar Pedido'}
+              </Button>
 
               <NextSteps className="mt-8" />
               <ContactCard className="mt-5" />
@@ -392,64 +440,13 @@ function ContactCard({ className }: { className?: string }) {
   );
 }
 
-function CheckoutForm({
-  sending,
-  onSubmit,
-}: {
-  sending: boolean;
-  onSubmit: (c: OrderCustomer) => void;
-}) {
-  const [form, setForm] = useState<OrderCustomer>({
-    name: '',
-    email: '',
-    phone: '',
-    club: '',
-    notes: '',
-  });
-
-  const set = (k: keyof OrderCustomer) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const valid = form.name.trim().length >= 2 && /\S+@\S+\.\S+/.test(form.email);
-
+/** Linha do resumo dos dados — omitida quando o campo está vazio. */
+function SummaryRow({ label, value }: { label: string; value?: string }) {
+  if (!value?.trim()) return null;
   return (
-    <form
-      className="max-w-md space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (valid && !sending) onSubmit(form);
-      }}
-    >
-      <div className="space-y-1.5">
-        <Label htmlFor="ord-name">Nome *</Label>
-        <Input id="ord-name" value={form.name} onChange={set('name')} placeholder="O seu nome" autoFocus />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="ord-email">E-mail *</Label>
-        <Input id="ord-email" type="email" value={form.email} onChange={set('email')} placeholder="nome@exemplo.pt" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="ord-phone">Telefone</Label>
-          <Input id="ord-phone" value={form.phone} onChange={set('phone')} placeholder="+351 ..." />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="ord-club">Clube / Equipa</Label>
-          <Input id="ord-club" value={form.club} onChange={set('club')} placeholder="Opcional" />
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="ord-notes">Observações</Label>
-        <Textarea
-          id="ord-notes"
-          value={form.notes}
-          onChange={set('notes')}
-          placeholder="Quantidades, tamanhos, prazos…"
-        />
-      </div>
-      <Button type="submit" size="lg" className="w-full" disabled={!valid || sending}>
-        {sending ? 'A enviar…' : 'Enviar Pedido'}
-      </Button>
-    </form>
+    <div className="flex gap-3">
+      <dt className="w-28 shrink-0 text-xs text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 flex-1 break-words font-medium">{value}</dd>
+    </div>
   );
 }
