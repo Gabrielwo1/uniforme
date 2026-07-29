@@ -51,9 +51,15 @@ export interface AIPortraitPiece {
   productName: string;
   /** Rótulo humano da categoria desta peça (ex.: "camisola", "calção", "meia"). */
   pieceLabel: string;
-  /** Imagem de referência desta peça (dataURL do preview do artigo, ou o
-   * render "só peça" do catálogo se o artigo ainda não tiver preview). */
+  /** Imagem de referência principal (frente) desta peça. */
   flatDesign: string;
+  /**
+   * TODAS as pranchas personalizadas da peça — frente, verso e perfil. Cada
+   * uma vai como imagem de referência para a IA; sem isto, só o lado que
+   * estava aberto ao finalizar chegava ao modelo e a personalização dos
+   * outros lados desaparecia da foto final.
+   */
+  flatDesignsBySide: { side: Side; label: string; src: string }[];
   colors: AIColorInput[];
   texts: AITextInput[];
   logos: AILogoInput[];

@@ -23,6 +23,8 @@ interface AIPortraitPiece {
   productName: string;
   pieceLabel: string;
   flatDesign: string;
+  /** Uma prancha por lado personalizado (frente/verso/perfil). */
+  flatDesignsBySide?: { side: string; label: string; src: string }[];
 }
 
 interface AIPortraitInput {
@@ -59,14 +61,27 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Input inválido: prompt e pieces (pelo menos 1 peça) são obrigatórios.' }, 400);
     }
 
-    // 1) uma imagem de referência por peça do pedido (camisola, calção, meia…)
+    // 1) referências: uma imagem por LADO personalizado de cada peça. Enviar
+    // só a frente perdia a personalização do verso e das mangas. O gpt-image-1
+    // aceita até 16 imagens por chamada — cortamos aí por segurança.
+    const MAX_REFS = 16;
+    const refs: { name: string; src: string }[] = [];
+    for (const piece of input.pieces) {
+      const sides = piece.flatDesignsBySide?.length
+        ? piece.flatDesignsBySide
+        : [{ side: 'front', label: 'Frente', src: piece.flatDesign }];
+      for (const s of sides) {
+        refs.push({ name: `${piece.pieceLabel}-${s.side}`, src: s.src });
+      }
+    }
+
     const form = new FormData();
     form.append('model', 'gpt-image-1');
     form.append('prompt', input.prompt);
     form.append('size', '1536x1024'); // paisagem larga: jogador de frente + de costas lado a lado
-    for (let i = 0; i < input.pieces.length; i++) {
-      const blob = await dataUrlToBlob(input.pieces[i].flatDesign);
-      form.append('image[]', blob, `peca-${i}.png`);
+    for (let i = 0; i < Math.min(refs.length, MAX_REFS); i++) {
+      const blob = await dataUrlToBlob(refs[i].src);
+      form.append('image[]', blob, `ref-${i}-${refs[i].name}.png`);
     }
 
     // 2) chamada à API da OpenAI (image edit com múltiplas imagens de referência)

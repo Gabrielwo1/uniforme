@@ -16,6 +16,13 @@ import { SimulatorHeader } from './SimulatorHeader';
 /** Textura escura premium partilhada (pode ser trocada por foto por modalidade). */
 const CARD_BG = '/card-bg.jpg';
 
+/** Passos do funil — alimentam o título, o trilho e a barra de progresso. */
+const STEPS = [
+  { key: 'modalidade', label: 'Modalidade', title: 'Escolha a modalidade' },
+  { key: 'categoria', label: 'Categoria', title: 'Escolha a categoria' },
+  { key: 'modelo', label: 'Modelo', title: 'Escolha o modelo' },
+] as const;
+
 /** Card premium: fundo escurecido + acento vermelho KYPZL. */
 function PremiumCard({
   label,
@@ -104,32 +111,70 @@ export function StartFlow() {
     openEditor();
   };
 
+  const stepIndex = STEPS.findIndex((s) => s.key === screen) + 1;
+  const stepTitle = STEPS[stepIndex - 1]?.title ?? '';
+  /** Contexto já escolhido, mostrado ao lado de cada passo do trilho. */
+  const stepValue: Record<number, string | undefined> = {
+    1: modalityLabel,
+    2: categoryLabel,
+  };
+
   return (
     <div className="flex h-full flex-col bg-background">
       <SimulatorHeader />
-      <div className="scrollbar-clean flex flex-1 flex-col items-center overflow-y-auto px-6 py-8">
-      <h1 className="text-2xl font-bold tracking-wide">SIMULADOR</h1>
+      <div className="scrollbar-clean flex-1 overflow-y-auto px-6 py-7">
+      <div className="mx-auto w-full max-w-5xl">
+        {/* Barra de passos, no espírito de uma ferramenta de design: ação de
+            voltar à esquerda, o passo atual em destaque e o trilho à direita. */}
+        <div className="flex items-center gap-3">
+          {screen !== 'modalidade' && (
+            <Button variant="outline" size="icon-sm" onClick={back} title="Voltar">
+              <ArrowLeft />
+            </Button>
+          )}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Passo {stepIndex} de {STEPS.length}
+            </p>
+            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+              {stepTitle}
+            </h1>
+          </div>
 
-      {/* trilha do funil (versão compacta, visível também em telas pequenas) */}
-      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground sm:hidden">
-        <span className={cn(screen === 'modalidade' && 'font-semibold text-foreground')}>
-          Modalidade
-        </span>
-        <ChevronRight className="h-3 w-3" />
-        <span className={cn(screen === 'categoria' && 'font-semibold text-foreground')}>
-          {modalityLabel ?? 'Categoria'}
-        </span>
-        <ChevronRight className="h-3 w-3" />
-        <span className={cn(screen === 'modelo' && 'font-semibold text-foreground')}>
-          {screen === 'modelo' ? (categoryLabel ?? 'Modelo') : 'Modelo'}
-        </span>
+          <div className="ml-auto hidden items-center gap-1.5 text-xs md:flex">
+            {STEPS.map((s, i) => {
+              const n = i + 1;
+              const done = n < stepIndex;
+              return (
+                <span key={s.key} className="flex items-center gap-1.5">
+                  {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
+                  <span
+                    className={cn(
+                      'rounded-full px-2.5 py-1 font-medium transition-colors',
+                      n === stepIndex
+                        ? 'bg-foreground text-background'
+                        : done
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground',
+                    )}
+                  >
+                    {done ? (stepValue[n] ?? s.label) : s.label}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-300"
+            style={{ width: `${(stepIndex / STEPS.length) * 100}%` }}
+          />
+        </div>
       </div>
 
-      {screen !== 'modalidade' && (
-        <Button variant="ghost" size="sm" className="mt-4" onClick={back}>
-          <ArrowLeft /> Voltar
-        </Button>
-      )}
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center">
 
       {/* -------------------------------------------------- 1. modalidade */}
       {screen === 'modalidade' && (
@@ -176,12 +221,8 @@ export function StartFlow() {
 
       {/* ------------------------------------------------------ 3. modelo */}
       {screen === 'modelo' && (
-        <>
-          <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Escolha o modelo
-          </h2>
-          <div className="mt-4 grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {listEnabledProducts().filter((p) => p.category === category).map((p) => (
+        <div className="mt-8 grid w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {listEnabledProducts().filter((p) => p.category === category).map((p) => (
               <button
                 key={p.id}
                 onClick={() => pickModel(p.id)}
@@ -201,14 +242,14 @@ export function StartFlow() {
                 </span>
               </button>
             ))}
-          </div>
-        </>
+        </div>
       )}
 
-      <p className="mt-10 max-w-md text-center text-xs leading-relaxed text-muted-foreground">
-        Tem uma ideia? Nós concretizamos. Monte o seu equipamento e envie o
-        pedido — a equipa KYPZL entra em contacto para combinar os detalhes.
-      </p>
+        <p className="mt-10 max-w-md text-center text-xs leading-relaxed text-muted-foreground">
+          Tem uma ideia? Nós concretizamos. Monte o seu equipamento e envie o
+          pedido — a equipa KYPZL entra em contacto para combinar os detalhes.
+        </p>
+      </div>
       </div>
     </div>
   );

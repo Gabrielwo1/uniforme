@@ -52,6 +52,86 @@ const NAV_LINKS = [
   { label: 'Contacto', id: 'contacto' },
 ];
 
+/**
+ * Seletor de idioma — por agora é SÓ visual: marca a bandeira escolhida mas
+ * não traduz nada (o site continua em PT). As traduções entram depois.
+ *
+ * Bandeiras em SVG inline em vez de emoji, que nem todos os sistemas
+ * (Windows) desenham.
+ */
+const LANGUAGES = [
+  { code: 'pt', label: 'Português' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+] as const;
+
+function Flag({ code }: { code: (typeof LANGUAGES)[number]['code'] }) {
+  // viewBox quadrado + slice: a bandeira preenche o círculo sem deformar.
+  const common = {
+    viewBox: '0 0 6 4',
+    preserveAspectRatio: 'xMidYMid slice',
+    className: 'h-full w-full',
+  } as const;
+  if (code === 'pt')
+    return (
+      <svg {...common}>
+        <rect width="6" height="4" fill="#da291c" />
+        <rect width="2.4" height="4" fill="#046a38" />
+        <circle cx="2.4" cy="2" r="0.82" fill="#ffe900" stroke="#046a38" strokeWidth="0.12" />
+      </svg>
+    );
+  if (code === 'es')
+    return (
+      <svg {...common}>
+        <rect width="6" height="4" fill="#c60b1e" />
+        <rect y="1" width="6" height="2" fill="#ffc400" />
+      </svg>
+    );
+  if (code === 'fr')
+    return (
+      <svg {...common}>
+        <rect width="6" height="4" fill="#fff" />
+        <rect width="2" height="4" fill="#002395" />
+        <rect x="4" width="2" height="4" fill="#ed2939" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <rect width="6" height="4" fill="#012169" />
+      <path d="M0,0 L6,4 M6,0 L0,4" stroke="#fff" strokeWidth="0.8" />
+      <path d="M0,0 L6,4 M6,0 L0,4" stroke="#c8102e" strokeWidth="0.45" />
+      <path d="M3,0 V4 M0,2 H6" stroke="#fff" strokeWidth="1.3" />
+      <path d="M3,0 V4 M0,2 H6" stroke="#c8102e" strokeWidth="0.78" />
+    </svg>
+  );
+}
+
+function LanguagePicker() {
+  const [lang, setLang] = useState<string>('pt');
+  return (
+    <div className="hidden items-center gap-1.5 sm:flex">
+      {LANGUAGES.map((l) => (
+        <button
+          key={l.code}
+          onClick={() => setLang(l.code)}
+          title={l.label}
+          aria-label={l.label}
+          aria-pressed={lang === l.code}
+          className={cn(
+            'h-6 w-6 overflow-hidden rounded-full ring-1 transition',
+            lang === l.code
+              ? 'opacity-100 ring-2 ring-white'
+              : 'opacity-55 ring-white/25 hover:opacity-90',
+          )}
+        >
+          <Flag code={l.code} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function SiteLanding() {
   return (
     <div className="scrollbar-clean h-full overflow-y-auto bg-white text-[#0e0e0e]">
@@ -92,9 +172,7 @@ function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="hidden rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white/60 sm:inline">
-            PT
-          </span>
+          <LanguagePicker />
           <Button
             size="sm"
             className="hidden rounded-full sm:inline-flex"

@@ -3,25 +3,22 @@ import { Canvas, FabricImage, FabricObject, IText, Point } from 'fabric';
 import { useDesignStore } from '@/store/useDesignStore';
 import { registerCanvas } from '@/lib/canvasBridge';
 import { ensureFontLoaded } from '@/lib/fonts';
+import {
+  containFit,
+  DEFAULT_IMG_WIDTH,
+  STAGE,
+  STAGE_BG,
+} from '@/lib/stageGeometry';
 import type { DesignElement, ImageElement, TextElement } from '@/types/design';
 import { SideToggle } from './SideToggle';
 import { SelectionToolbar } from './SelectionToolbar';
 
 /**
- * Espaço lógico fixo do palco (quadrado). Todas as coordenadas internas vivem
- * em 0..STAGE; as posições no store são relativas (0..1) e convertidas aqui.
- * Manter o backstore fixo + escalar só o CSS = coordenadas estáveis em resize.
+ * Espaço lógico fixo do palco (quadrado, ver stageGeometry). Todas as
+ * coordenadas internas vivem em 0..STAGE; as posições no store são relativas
+ * (0..1) e convertidas aqui. Manter o backstore fixo + escalar só o CSS =
+ * coordenadas estáveis em resize.
  */
-const STAGE = 1000;
-
-/**
- * Fundo da prancha. As fotos de produto são recortadas sobre preto (medido
- * nas imagens: ~#040404), por isso o quadrado usa o mesmo tom — assim a área
- * à volta da foto não fica com barras claras e tudo lê como um plano só.
- */
-const STAGE_BG = '#040404';
-/** Largura lógica de uma imagem com scale = 1. */
-const DEFAULT_IMG_WIDTH = 300;
 const SNAP_THRESHOLD = 8;
 
 /** objeto Fabric carrega o id do elemento do store. */
@@ -256,14 +253,12 @@ export function CanvasStage() {
       // descarta resultado obsoleto (troca rápida de lado/cor).
       if (token !== bgTokenRef.current || !fabricRef.current) return;
       // contain-fit centralizado: renders do catálogo não são quadrados.
-      const w = img.width || STAGE;
-      const h = img.height || STAGE;
-      const scale = Math.min(STAGE / w, STAGE / h);
+      const { scale, left, top } = containFit(img.width || STAGE, img.height || STAGE);
       img.set({
         originX: 'left',
         originY: 'top',
-        left: (STAGE - w * scale) / 2,
-        top: (STAGE - h * scale) / 2,
+        left,
+        top,
         scaleX: scale,
         scaleY: scale,
         selectable: false,

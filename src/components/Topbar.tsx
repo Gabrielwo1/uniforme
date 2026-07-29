@@ -18,6 +18,7 @@ import { useDesignStore } from '@/store/useDesignStore';
 import { useOrderStore } from '@/store/useOrderStore';
 import { useFlowStore } from '@/store/useFlowStore';
 import { getCanvas } from '@/lib/canvasBridge';
+import { renderAllSides } from '@/lib/renderSides';
 import { downloadDataUrl } from '@/lib/download';
 import { saveDesign } from '@/lib/storage';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -90,15 +91,18 @@ export function Topbar() {
   };
 
   /** Adiciona o artigo atual (com o design em curso) ao pedido e abre o carrinho. */
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     const design = useDesignStore.getState().design;
     const product = getProduct(design.productId);
-    const preview = getCanvas().exportPNG(0.5);
+    // Renderiza TODOS os lados fora do ecrã: o canvas visível só desenha o
+    // lado aberto, e exportá-lo perdia a personalização dos outros.
+    const previews = await renderAllSides(design, 0.5);
     addOrderItem({
       id: uid('item'),
       productId: product.id,
       productName: product.name,
-      preview,
+      preview: previews.front ?? getCanvas().exportPNG(0.5),
+      previews,
       design: JSON.parse(JSON.stringify(design)),
       createdAt: new Date().toISOString(),
     });

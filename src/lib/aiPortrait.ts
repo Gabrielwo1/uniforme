@@ -1,4 +1,4 @@
-import { getProduct } from './products';
+import { getProduct, SIDE_LABEL } from './products';
 import { nameColor } from './colors';
 import { supabase } from './supabase';
 import type { OrderItem } from '@/types/order';
@@ -10,7 +10,7 @@ import type {
   AIPortraitResult,
   AITextInput,
 } from '@/types/aiPortrait';
-import type { ImageElement, TextElement } from '@/types/design';
+import type { ImageElement, Side, TextElement } from '@/types/design';
 
 const CATEGORY_LABEL: Record<string, string> = {
   jogo: 'camisola de jogo',
@@ -61,12 +61,25 @@ function buildPiece(item: OrderItem): AIPortraitPiece {
       placement: describePlacement(el.x, el.y),
     }));
 
+  // Uma referência por lado personalizado. Artigos guardados antes de
+  // `previews` existir só têm a miniatura única — nesse caso vai só ela.
+  const bySide = item.previews ?? {};
+  const flatDesignsBySide = (['front', 'back', 'side'] as Side[])
+    .filter((s) => !!bySide[s])
+    .map((s) => ({ side: s, label: SIDE_LABEL[s], src: bySide[s]! }));
+
+  const principal = bySide.front ?? item.preview ?? product.itemImage;
+
   return {
     orderItemId: item.id,
     productId: product.id,
     productName: product.name,
     pieceLabel: CATEGORY_LABEL[product.category] ?? 'peça',
-    flatDesign: item.preview ?? product.itemImage,
+    flatDesign: principal,
+    flatDesignsBySide:
+      flatDesignsBySide.length > 0
+        ? flatDesignsBySide
+        : [{ side: 'front' as Side, label: SIDE_LABEL.front, src: principal }],
     colors,
     texts,
     logos,
@@ -126,8 +139,17 @@ function buildPrompt(pieces: AIPortraitPiece[], style: AIPortraitInput['style'])
     }
   }
 
+  // Explica o que é cada imagem anexada — são várias por peça (um lado cada).
+  const refs = pieces.flatMap((p) =>
+    p.flatDesignsBySide.map((d) => `${p.pieceLabel} — ${d.label.toLowerCase()}`),
+  );
   parts.push(
-    `Cada peça deve seguir EXATAMENTE o design de referência fornecido (uma imagem anexada por peça) — cores, texto e posição dos logótipos idênticos aos anexos, sem alterações e sem inventar texto adicional. Se o texto/logótipo de referência está apenas na frente ou apenas nas costas, mostre-o só na pose correspondente.`,
+    `São anexadas ${refs.length} imagens de referência, por esta ordem: ${refs
+      .map((r, i) => `(${i + 1}) ${r}`)
+      .join(', ')}. Cada uma mostra o design REAL desse lado da peça.`,
+  );
+  parts.push(
+    `O design final tem de reproduzir FIELMENTE todos esses lados na mesma peça: o que está na referência da frente aparece na pose de frente, o que está na referência do verso aparece na pose de costas, e o que está na referência do lado (mangas/laterais) aparece nas mangas de ambas as poses. Cores, textos e posição dos logótipos idênticos aos anexos, sem alterações e sem inventar texto adicional. Não deixe de fora nenhuma personalização que apareça em qualquer uma das referências.`,
   );
   parts.push(
     `Estilo fotográfico: ${style.background}, ${style.pose}, enquadramento de ${style.framing} para que todas as peças do equipamento fiquem visíveis em ambas as poses. Iluminação natural de fim de tarde, alta definição, sem texto ou marca d'água adicionais.`,

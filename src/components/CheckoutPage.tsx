@@ -28,6 +28,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
 import { useAiPortraitStore } from '@/store/useAiPortraitStore';
 import { buildAIPortraitInput } from '@/lib/aiPortrait';
+import { SIDE_LABEL } from '@/lib/products';
 import { CustomerForm, isCustomerValid } from './CustomerForm';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -235,39 +236,54 @@ export function CheckoutPage() {
               <div className="mt-3 flex flex-col gap-4 sm:flex-row">
                 {/* trilho — peças incluídas nesta foto (não trocam a foto) */}
                 <div className="order-2 flex gap-3 overflow-x-auto pb-1 sm:order-1 sm:w-[92px] sm:flex-col sm:overflow-visible sm:pb-0">
-                  {items.map((it) => (
-                    <div key={it.id} className="group relative shrink-0">
-                      <div
-                        title={it.productName}
-                        className="h-20 w-20 overflow-hidden rounded-xl border bg-card p-1.5 shadow-sm sm:h-[88px] sm:w-full"
-                      >
-                        {it.preview ? (
-                          <img
-                            src={it.preview}
-                            alt={it.productName}
-                            className="h-full w-full object-contain"
-                          />
-                        ) : (
-                          <ShoppingBag className="mx-auto h-6 w-6 text-muted-foreground" />
+                  {items.map((it) => {
+                    // um cartão por LADO personalizado — o artigo é o mesmo,
+                    // por isso a remoção fica só no primeiro.
+                    const sides = (['front', 'back', 'side'] as const).filter(
+                      (s) => it.previews?.[s],
+                    );
+                    const cards = sides.length > 0 ? sides : ([null] as const);
+                    return cards.map((s, i) => (
+                      <div key={`${it.id}-${s ?? 'preview'}`} className="group relative shrink-0">
+                        <div
+                          title={`${it.productName}${s ? ` · ${SIDE_LABEL[s]}` : ''}`}
+                          className="h-20 w-20 overflow-hidden rounded-xl border bg-card p-1.5 shadow-sm sm:h-[88px] sm:w-full"
+                        >
+                          {(s ? it.previews[s] : it.preview) ? (
+                            <img
+                              src={s ? it.previews[s] : it.preview!}
+                              alt={`${it.productName} ${s ? SIDE_LABEL[s] : ''}`}
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <ShoppingBag className="mx-auto h-6 w-6 text-muted-foreground" />
+                          )}
+                        </div>
+                        {s && (
+                          <span className="absolute inset-x-1 bottom-1 rounded bg-black/70 py-0.5 text-center text-[9px] font-semibold uppercase tracking-wide text-white">
+                            {SIDE_LABEL[s]}
+                          </span>
+                        )}
+                        {groupPhoto && (
+                          <span
+                            className="absolute left-1 top-1 rounded-full bg-primary p-1 shadow"
+                            title="Incluída nesta foto"
+                          >
+                            <Sparkles className="h-2.5 w-2.5 text-primary-foreground" />
+                          </span>
+                        )}
+                        {i === 0 && (
+                          <button
+                            className="absolute -right-1.5 -top-1.5 hidden rounded-full border bg-background p-1 text-muted-foreground shadow-sm transition hover:text-destructive group-hover:block"
+                            title="Remover artigo"
+                            onClick={() => useOrderStore.getState().removeItem(it.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
                         )}
                       </div>
-                      {groupPhoto && (
-                        <span
-                          className="absolute left-1 top-1 rounded-full bg-primary p-1 shadow"
-                          title="Incluída nesta foto"
-                        >
-                          <Sparkles className="h-2.5 w-2.5 text-primary-foreground" />
-                        </span>
-                      )}
-                      <button
-                        className="absolute -right-1.5 -top-1.5 hidden rounded-full border bg-background p-1 text-muted-foreground shadow-sm transition hover:text-destructive group-hover:block"
-                        title="Remover artigo"
-                        onClick={() => useOrderStore.getState().removeItem(it.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
+                    ));
+                  })}
                   <button
                     onClick={handleMore}
                     className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed text-muted-foreground transition hover:border-primary hover:text-primary sm:h-[88px] sm:w-full"
