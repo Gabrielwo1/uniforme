@@ -60,7 +60,6 @@ export function SiteLanding() {
       <ProcessSection />
       <HowItWorks />
       <ModalitiesSection />
-      <CompeteSection />
       <PremiumSection />
       <TrainingBanner />
       <LifestyleSection />
@@ -415,22 +414,6 @@ function ModalityCard({ label, image }: { label: string; image: string }) {
   );
 }
 
-/** Faixa branca logo a seguir às modalidades (secção própria no Figma —
- * fundo claro, texto preto, não faz parte do bloco escuro acima). */
-function CompeteSection() {
-  return (
-    <section className="mx-auto max-w-xl px-5 py-16 text-center sm:px-8 lg:py-20">
-      <h3 className="text-xl sm:text-2xl">
-        Concebidos para competir ao <span className="font-bold">mais alto nível</span>.
-      </h3>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Equipamentos desenvolvidos para proporcionar conforto, resistência e total liberdade de
-        movimentos.
-      </p>
-    </section>
-  );
-}
-
 /* ----------------------------------------------------- premium/champion */
 const PREMIUM_ITEMS = [
   { label: 'Camisolas', Icon: Shirt },
@@ -442,7 +425,19 @@ const PREMIUM_ITEMS = [
 function PremiumSection() {
   return (
     <section id="equipamentos" className="mx-auto max-w-[1360px] px-5 py-16 sm:px-8 lg:py-24">
-      <div className="grid gap-5 sm:grid-cols-2">
+      {/* Cabeçalho da secção (era uma <section> à parte, o que somava o
+          padding vertical das duas e abria um vão enorme até às imagens). */}
+      <div className="mx-auto max-w-2xl text-center">
+        <h2 className="text-2xl sm:text-3xl">
+          Concebidos para competir ao <span className="font-bold">mais alto nível</span>.
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          Equipamentos desenvolvidos para proporcionar conforto, resistência e total liberdade de
+          movimentos.
+        </p>
+      </div>
+
+      <div className="mt-10 grid gap-5 sm:grid-cols-2">
         <div className="relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl">
           <img src="/site/premium.jpg" alt="Linha Premium" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
