@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Check, Plus, Trash2, X } from 'lucide-react';
 import { useDesignStore } from '@/store/useDesignStore';
 import { SIDE_LABEL } from '@/lib/products';
 import type { ImageElement } from '@/types/design';
@@ -21,10 +21,13 @@ const PRESETS = [
 export function TabLogos() {
   const side = useDesignStore((s) => s.design.side);
   const elements = useDesignStore((s) => s.design.elements);
+  const library = useDesignStore((s) => s.design.logoLibrary);
   const selectedId = useDesignStore((s) => s.selectedId);
   const setSelected = useDesignStore((s) => s.setSelected);
   const update = useDesignStore((s) => s.updateElement);
   const remove = useDesignStore((s) => s.removeElement);
+  const addImage = useDesignStore((s) => s.addImage);
+  const removeLogoAsset = useDesignStore((s) => s.removeLogoAsset);
 
   const logos = elements.filter(
     (e): e is ImageElement => e.type === 'image' && e.side === side,
@@ -35,10 +38,67 @@ export function TabLogos() {
     <div className="space-y-4">
       <LogoUploader />
 
+      {/* Biblioteca: enviada uma vez, disponível em todos os lados. */}
+      {library.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Os seus logos
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {library.map((asset) => {
+              const jaNoLado = logos.some((l) => l.src === asset.src);
+              return (
+                <div key={asset.id} className="group relative">
+                  <button
+                    title={
+                      jaNoLado
+                        ? `Adicionar outra vez (${SIDE_LABEL[side].toLowerCase()})`
+                        : `Aplicar ${SIDE_LABEL[side].toLowerCase()}`
+                    }
+                    onClick={() =>
+                      addImage({
+                        src: asset.src,
+                        naturalW: asset.naturalW,
+                        naturalH: asset.naturalH,
+                      })
+                    }
+                    className="aspect-square w-full overflow-hidden rounded-lg border bg-muted p-1 transition hover:border-primary"
+                  >
+                    <img src={asset.src} alt="logo" className="h-full w-full object-contain" />
+                  </button>
+                  <span
+                    className={cn(
+                      'pointer-events-none absolute left-1 top-1 grid h-4 w-4 place-items-center rounded-full text-[9px] shadow',
+                      jaNoLado
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background/90 text-muted-foreground',
+                    )}
+                    title={jaNoLado ? 'Já aplicado neste lado' : 'Clique para aplicar'}
+                  >
+                    {jaNoLado ? <Check className="h-2.5 w-2.5" /> : <Plus className="h-2.5 w-2.5" />}
+                  </span>
+                  <button
+                    onClick={() => removeLogoAsset(asset.id)}
+                    title="Remover da biblioteca"
+                    className="absolute -right-1.5 -top-1.5 hidden rounded-full border bg-background p-0.5 text-muted-foreground shadow-sm transition hover:text-destructive group-hover:block"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Ficam guardados no design — clique num para o aplicar à{' '}
+            {SIDE_LABEL[side].toLowerCase()} sem voltar a enviar o ficheiro.
+          </p>
+        </div>
+      )}
+
       {logos.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Logos ({SIDE_LABEL[side].toLowerCase()})
+            Aplicados ({SIDE_LABEL[side].toLowerCase()})
           </p>
           <div className="grid grid-cols-4 gap-2">
             {logos.map((l) => (

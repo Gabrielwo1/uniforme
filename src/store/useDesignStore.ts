@@ -50,6 +50,7 @@ function makeInitialDesign(): DesignState {
     colors,
     syncColors: false,
     elements: [],
+    logoLibrary: [],
   };
 }
 
@@ -72,6 +73,8 @@ function reconcileWithCatalog(design: DesignState): DesignState {
     colors,
     side: sides.includes(design.side) ? design.side : 'front',
     baseImages: renderBaseImages(product.id, colors),
+    // designs guardados antes da biblioteca de logos não têm o campo
+    logoLibrary: design.logoLibrary ?? [],
   };
 }
 
@@ -105,6 +108,10 @@ export interface DesignStore {
   // elementos
   addText: (kind: TextKind) => string;
   addImage: (img: { src: string; naturalW: number; naturalH: number }) => string;
+
+  // biblioteca de logos (reutilizáveis em qualquer lado)
+  addLogoAsset: (asset: { src: string; naturalW: number; naturalH: number }) => void;
+  removeLogoAsset: (id: string) => void;
   updateElement: (id: string, patch: Partial<DesignElement>) => void;
   removeElement: (id: string) => void;
   bringForward: (id: string) => void;
@@ -279,6 +286,23 @@ export const useDesignStore = create<DesignStore>((set, get) => {
       });
       set({ selectedId: id });
       return id;
+    },
+
+    /** Guarda o ficheiro na biblioteca do design (dedup por src). */
+    addLogoAsset: ({ src, naturalW, naturalH }) => {
+      mutate((d) => {
+        const lib = d.logoLibrary ?? [];
+        if (lib.some((l) => l.src === src)) return d;
+        return { ...d, logoLibrary: [...lib, { id: uid('logo'), src, naturalW, naturalH }] };
+      });
+    },
+
+    /** Remove da biblioteca — não mexe nos logos já aplicados nos lados. */
+    removeLogoAsset: (id) => {
+      mutate((d) => ({
+        ...d,
+        logoLibrary: (d.logoLibrary ?? []).filter((l) => l.id !== id),
+      }));
     },
 
     updateElement: (id, patch) => {

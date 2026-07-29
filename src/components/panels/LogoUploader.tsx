@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 /** Dropzone + input de arquivo para subir logos/patrocínios. */
 export function LogoUploader() {
   const addImage = useDesignStore((s) => s.addImage);
+  const addLogoAsset = useDesignStore((s) => s.addLogoAsset);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,9 @@ export function LogoUploader() {
             console.warn('[upload] fallback para dataURL:', e);
           }
         }
+        // fica guardado na biblioteca (reutilizável noutros lados) e é já
+        // aplicado ao lado que está aberto
+        addLogoAsset({ src, naturalW: norm.width, naturalH: norm.height });
         addImage({ src, naturalW: norm.width, naturalH: norm.height });
       }
     } catch {

@@ -62,6 +62,18 @@ export interface ImageElement extends BaseElement {
 
 export type DesignElement = TextElement | ImageElement;
 
+/**
+ * Logo/patrocínio enviado pelo utilizador, guardado ao nível do design e não
+ * de um lado. Assim, sai do upload uma vez e pode ser aplicado à frente, ao
+ * verso e ao lado sem voltar a enviar o ficheiro.
+ */
+export interface LogoAsset {
+  id: string;
+  src: string;
+  naturalW: number;
+  naturalH: number;
+}
+
 /** Categorias seguem as seções do catálogo KYPZL (+ legadas). */
 export type ProductCategory = 'jogo' | 'treino' | 'saida' | 'camisa' | 'calcao';
 
@@ -114,4 +126,6 @@ export interface DesignState {
   colors: Record<string, string>;
   syncColors: boolean;
   elements: DesignElement[];
+  /** Logos enviados, reutilizáveis em qualquer lado (ver LogoAsset). */
+  logoLibrary: LogoAsset[];
 }
