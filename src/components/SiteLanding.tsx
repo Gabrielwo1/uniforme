@@ -576,7 +576,9 @@ function AccessoriesSection() {
           </p>
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+        {/* A linha precisa de altura definida: sem ela, o cartão grande ficava
+            com a altura natural da foto (900x1352) e esticava tudo. */}
+        <div className="mt-10 flex flex-col gap-4 sm:h-[420px] sm:flex-row">
           <AccessoryCard
             image="/site/acc-mochilas.jpg"
             title="Mochilas"
@@ -584,8 +586,8 @@ function AccessoriesSection() {
             className="h-72 sm:h-auto sm:flex-1"
           />
           <div className="flex flex-col gap-4 sm:w-2/5">
-            <AccessoryCard image="/site/acc-sacos.jpg" title="Sacos Desportivos" className="h-52 sm:flex-1" />
-            <AccessoryCard image="/site/acc-trolleys.jpg" title="Trolleys" className="h-52 sm:flex-1" />
+            <AccessoryCard image="/site/acc-sacos.jpg" title="Sacos Desportivos" className="h-52 sm:h-auto sm:flex-1" />
+            <AccessoryCard image="/site/acc-trolleys.jpg" title="Trolleys" className="h-52 sm:h-auto sm:flex-1" />
           </div>
         </div>
       </div>
