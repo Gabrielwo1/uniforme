@@ -1,7 +1,12 @@
 import { FabricImage, IText, StaticCanvas } from 'fabric';
 import type { DesignState, ImageElement, Side, TextElement } from '@/types/design';
 import { ensureFontLoaded } from './fonts';
-import { containFit, DEFAULT_IMG_WIDTH, STAGE, STAGE_BG } from './stageGeometry';
+import {
+  containFit,
+  DEFAULT_IMG_WIDTH,
+  sampleStageBackground,
+  STAGE,
+} from './stageGeometry';
 
 /**
  * Renderiza uma prancha FORA do ecrã, para qualquer lado do produto.
@@ -69,7 +74,7 @@ export async function renderSidePNG(
   const canvas = new StaticCanvas(undefined, {
     width: STAGE,
     height: STAGE,
-    backgroundColor: STAGE_BG,
+    backgroundColor: await sampleStageBackground(url),
   });
   try {
     await addBackground(canvas, url);

@@ -120,29 +120,29 @@ function makeEntry(src: EntrySource): ProductCatalogEntry {
 }
 
 /**
- * Fase piloto: só a Camisola Batistuta fica habilitada nas telas de seleção
- * (funil e painel do editor) — os demais produtos continuam no catálogo
- * (designs salvos que já os usam continuam a abrir), só ficam ocultos da
- * escolha de um novo modelo. Ver também a coluna `enabled` em `products`.
+ * `enabled` controla o que aparece nas telas de seleção (funil e painel do
+ * editor) sem tirar nada do catálogo — designs guardados continuam a abrir.
+ * Hoje está tudo visível; para voltar à fase piloto só com a Batistuta, basta
+ * `enabled: false` nos restantes aqui e a coluna `enabled` na tabela products.
  */
 
 /** Renders reais do Catálogo KYPZL 2023 (servidos por /public — funcionam sem Supabase). */
 const CATALOG_IMAGE_PRODUCTS: EntrySource[] = [
-  { id: 'maradona', name: 'Camisola Maradona', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/maradona.png', back: '/products/maradona.png' }, enabled: false },
-  { id: 'garrincha', name: 'Camisola Garrincha', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/garrincha.png', back: '/products/garrincha.png' }, enabled: false },
-  { id: 'zenga', name: 'Camisola Zenga', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/zenga.png', back: '/products/zenga.png' }, enabled: false },
-  { id: 'taffarel', name: 'Camisola Taffarel', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/taffarel.png', back: '/products/taffarel.png' }, enabled: false },
-  { id: 'nene', name: 'Calção Nené', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/nene.png', back: '/products/nene.png' }, enabled: false },
-  { id: 'elite', name: 'Meia de Jogo Elite', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/elite.png', back: '/products/elite.png' }, enabled: false },
-  { id: 'socrates', name: 'T-shirt Sócrates', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/socrates.png', back: '/products/socrates.png' }, enabled: false },
-  { id: 'zico', name: 'Calção Zico', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/zico.png', back: '/products/zico.png' }, enabled: false },
-  { id: 'bebeto', name: 'Polo Técnico Bebeto', category: 'saida', template: 'image', regions: [], baseImages: { front: '/products/bebeto.png', back: '/products/bebeto.png' }, enabled: false },
+  { id: 'maradona', name: 'Camisola Maradona', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/maradona.png', back: '/products/maradona.png' } },
+  { id: 'garrincha', name: 'Camisola Garrincha', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/garrincha.png', back: '/products/garrincha.png' } },
+  { id: 'zenga', name: 'Camisola Zenga', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/zenga.png', back: '/products/zenga.png' } },
+  { id: 'taffarel', name: 'Camisola Taffarel', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/taffarel.png', back: '/products/taffarel.png' } },
+  { id: 'nene', name: 'Calção Nené', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/nene.png', back: '/products/nene.png' } },
+  { id: 'elite', name: 'Meia de Jogo Elite', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/elite.png', back: '/products/elite.png' } },
+  { id: 'socrates', name: 'T-shirt Sócrates', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/socrates.png', back: '/products/socrates.png' } },
+  { id: 'zico', name: 'Calção Zico', category: 'treino', template: 'image', regions: [], baseImages: { front: '/products/zico.png', back: '/products/zico.png' } },
+  { id: 'bebeto', name: 'Polo Técnico Bebeto', category: 'saida', template: 'image', regions: [], baseImages: { front: '/products/bebeto.png', back: '/products/bebeto.png' } },
 
   // Camisola Batistuta: fotos reais do produto (estilo "ghost mannequin",
-  // fundo preto, sem jogador) — único produto habilitado nesta fase, e o
-  // único com foto de perfil (lado) além de frente/verso.
+  // fundo preto, sem jogador) — o único com foto de perfil (lado) além de
+  // frente/verso.
   { id: 'batistuta', name: 'Camisola Batistuta', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/batistuta-front.png', back: '/products/batistuta-back.png', side: '/products/batistuta-side.png' } },
-  { id: 'totti', name: 'Camisola Totti', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/totti.jpg', back: '/products/totti.jpg' }, enabled: false },
+  { id: 'totti', name: 'Camisola Totti', category: 'jogo', template: 'image', regions: [], baseImages: { front: '/products/totti.jpg', back: '/products/totti.jpg' } },
 
   // Nota: os 7 "Equipamento *" (Champions, Galático, Titan, Olímpico
   // Vermelho/Verde/Azul, Guarda-Redes) foram removidos — eram fotos de um

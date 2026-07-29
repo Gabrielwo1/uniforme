@@ -27,3 +27,42 @@ export function containFit(w: number, h: number) {
     top: (STAGE - h * scale) / 2,
   };
 }
+
+const bgCache = new Map<string, string>();
+
+/**
+ * Cor de fundo da prancha para uma dada imagem de produto, lida do canto da
+ * própria foto.
+ *
+ * Nem todo o catálogo usa o mesmo fundo: as fotos novas da Batistuta são
+ * recortadas sobre preto, enquanto os renders antigos vêm sobre cinza-claro.
+ * Com um valor fixo, um dos dois ficava como um retângulo a flutuar sobre o
+ * outro; assim cada produto lê como um plano só. Cai em STAGE_BG se a leitura
+ * falhar (ex.: imagem noutra origem sem CORS).
+ */
+export async function sampleStageBackground(url: string): Promise<string> {
+  const cached = bgCache.get(url);
+  if (cached) return cached;
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = url;
+    });
+    const c = document.createElement('canvas');
+    c.width = 1;
+    c.height = 1;
+    const ctx = c.getContext('2d');
+    if (!ctx) return STAGE_BG;
+    // reduz um bloco do canto a 1px = média, imune a ruído/compressão
+    ctx.drawImage(img, 0, 0, 12, 12, 0, 0, 1, 1);
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    const hex = `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+    bgCache.set(url, hex);
+    return hex;
+  } catch {
+    return STAGE_BG;
+  }
+}

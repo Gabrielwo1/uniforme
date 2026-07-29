@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Canvas, FabricImage, FabricObject, IText, Point } from 'fabric';
 import { useDesignStore } from '@/store/useDesignStore';
 import { registerCanvas } from '@/lib/canvasBridge';
@@ -6,6 +6,7 @@ import { ensureFontLoaded } from '@/lib/fonts';
 import {
   containFit,
   DEFAULT_IMG_WIDTH,
+  sampleStageBackground,
   STAGE,
   STAGE_BG,
 } from '@/lib/stageGeometry';
@@ -34,6 +35,9 @@ export function CanvasStage() {
   const bgTokenRef = useRef(0);
   /** guias de centro ativas no frame atual. */
   const guidesRef = useRef<{ v: boolean; h: boolean }>({ v: false, h: false });
+
+  /** Fundo da prancha, lido da foto do produto (ver sampleStageBackground). */
+  const [stageBg, setStageBg] = useState(STAGE_BG);
 
   // Slices reativos que disparam reconciliação.
   const elements = useDesignStore((s) => s.design.elements);
@@ -249,6 +253,13 @@ export function CanvasStage() {
     // `side` (perfil) é opcional no catálogo — sem foto de lado, usa a frente.
     const url = baseImages[side] ?? baseImages.front;
     const token = ++bgTokenRef.current;
+    // o fundo acompanha a foto (preto nas novas, cinza-claro nos renders antigos)
+    sampleStageBackground(url).then((bg) => {
+      if (token !== bgTokenRef.current || !fabricRef.current) return;
+      setStageBg(bg);
+      fabricRef.current.backgroundColor = bg;
+      fabricRef.current.requestRenderAll();
+    });
     FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img) => {
       // descarta resultado obsoleto (troca rápida de lado/cor).
       if (token !== bgTokenRef.current || !fabricRef.current) return;
@@ -394,7 +405,7 @@ export function CanvasStage() {
       >
         <div
           className="overflow-hidden rounded-xl shadow-lg ring-1 ring-black/5"
-          style={{ backgroundColor: STAGE_BG }}
+          style={{ backgroundColor: stageBg }}
         >
           <canvas ref={canvasElRef} />
         </div>
