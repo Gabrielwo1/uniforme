@@ -13,6 +13,13 @@ import { SelectionToolbar } from './SelectionToolbar';
  * Manter o backstore fixo + escalar só o CSS = coordenadas estáveis em resize.
  */
 const STAGE = 1000;
+
+/**
+ * Fundo da prancha. As fotos de produto são recortadas sobre preto (medido
+ * nas imagens: ~#040404), por isso o quadrado usa o mesmo tom — assim a área
+ * à volta da foto não fica com barras claras e tudo lê como um plano só.
+ */
+const STAGE_BG = '#040404';
 /** Largura lógica de uma imagem com scale = 1. */
 const DEFAULT_IMG_WIDTH = 300;
 const SNAP_THRESHOLD = 8;
@@ -44,7 +51,7 @@ export function CanvasStage() {
     const canvas = new Canvas(canvasElRef.current, {
       width: STAGE,
       height: STAGE,
-      backgroundColor: '#ffffff',
+      backgroundColor: STAGE_BG,
       preserveObjectStacking: true,
       selection: true,
       // uniformScaling=true (default): escala proporcional; shift = livre.
@@ -390,7 +397,10 @@ export function CanvasStage() {
         ref={containerRef}
         className="flex flex-1 items-center justify-center overflow-auto p-4"
       >
-        <div className="overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
+        <div
+          className="overflow-hidden rounded-xl shadow-lg ring-1 ring-black/5"
+          style={{ backgroundColor: STAGE_BG }}
+        >
           <canvas ref={canvasElRef} />
         </div>
       </div>
