@@ -10,9 +10,17 @@ import { AiGenerationModal } from './components/AiGenerationModal';
 import { StartFlow } from './components/StartFlow';
 import { SiteLanding } from './components/SiteLanding';
 import { CheckoutPage } from './components/CheckoutPage';
+import { KitLab } from './components/kit/KitLab';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useDesignStore } from './store/useDesignStore';
 import { useFlowStore } from './store/useFlowStore';
+
+/**
+ * Protótipo do simulador por templates, aberto por `?lab=kit`. Fica fora do
+ * fluxo normal de propósito: permite mostrar/validar a nova mecânica sem
+ * tocar no editor que está em produção.
+ */
+const LAB_KIT = new URLSearchParams(window.location.search).get('lab') === 'kit';
 
 export default function App() {
   const screen = useFlowStore((s) => s.screen);
@@ -40,7 +48,9 @@ export default function App() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      {screen === 'site' ? (
+      {LAB_KIT ? (
+        <KitLab />
+      ) : screen === 'site' ? (
         <SiteLanding />
       ) : screen === 'editor' ? (
         <div className="flex h-full flex-col bg-background">
