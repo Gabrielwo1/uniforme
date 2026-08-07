@@ -116,9 +116,9 @@ hist.append(Paragraph(
 
 hist.append(caixa(
     'Comece por um conjunto de teste',
-    'Antes de exportar as 10 estampas, envie <b>a camisola</b> (os dois PNG, frente e verso) e '
-    '<b>1 estampa</b> completa. Validamos o encaixe e, se algo precisar de mudar, muda numa peça '
-    'em vez de dez.'))
+    'Antes de exportar as 10 estampas, envie <b>a camisola de frente</b> (os PNG das suas zonas: '
+    'corpo, gola e punhos) e <b>1 estampa</b>. Validamos o encaixe e, se algo precisar de mudar, '
+    'muda numa peça em vez de dez.'))
 
 hist.append(caixa(
     'A regra que não pode falhar',
@@ -138,34 +138,47 @@ hist.append(passo(2, 'Desligar a cor, manter a luz', [
     'de cor que reste.',
     'Quanto mais neutra (cinzenta) ficar, melhor: esta imagem é multiplicada sobre a cor que o '
     'cliente escolher. Se ficar azulada, <b>todas</b> as camisolas saem azuladas.']))
-hist.append(passo(3, 'Exportar recortado, com transparência', [
-    'O <b>fundo tem de ficar transparente</b>. É do recorte da peça que extraímos '
-    'automaticamente o contorno que recebe a cor base — não precisa de desenhar nada.',
+hist.append(passo(3, 'Separar as zonas que mudam de cor sozinhas', [
+    'A gola, os punhos e o corpo têm cores independentes no simulador, por isso <b>saem em '
+    'ficheiros separados</b> — não dá para os tirar de um PNG único.',
+    'Camisola: <font face="Courier">corpo</font> · <font face="Courier">gola</font> · '
+    '<font face="Courier">punhos</font>. &nbsp;Calção: <font face="Courier">corpo</font> · '
+    '<font face="Courier">barra</font>. &nbsp;Meião: <font face="Courier">corpo</font> · '
+    '<font face="Courier">punho</font>.',
+    'No PSD isto já costuma existir em camadas próprias: basta isolar cada uma (esconder as '
+    'outras) e exportar. As zonas <b>não se sobrepõem</b> — o pixel da gola sai só no PNG da gola.']))
+hist.append(passo(4, 'Exportar cada zona recortada, com transparência', [
+    'O <b>fundo tem de ficar transparente</b>. É do recorte que extraímos automaticamente o '
+    'contorno que recebe a cor — não precisa de desenhar nada.',
     'Ficheiro › Exportar › <b>Exportar como…</b> › <b>PNG</b> com <b>Transparência ligada</b>.',
-    'Tamanho <b>2000 × 2000 px</b>, peça centrada. Frente e verso no <b>mesmo enquadramento</b>: '
-    'a peça não pode mudar de posição nem de tamanho entre os dois.',
-    'Nomes: <font face="Courier">camisola-frente.png</font> e '
-    '<font face="Courier">camisola-verso.png</font>']))
+    'Tamanho <b>2000 × 2000 px</b> para <b>todas</b> as zonas e ambos os lados, sempre no '
+    '<b>mesmo enquadramento</b>: exporte a prancha inteira, nunca «recortar ao conteúdo», senão '
+    'a gola deixa de assentar no corpo.',
+    'Nomes: <font face="Courier">camisola-frente-corpo.png</font>, '
+    '<font face="Courier">camisola-frente-gola.png</font>, '
+    '<font face="Courier">camisola-frente-punhos.png</font>… e o mesmo para o verso.']))
 
 hist.append(PageBreak())
 hist.append(Paragraph('Illustrator — as estampas', st_titulo))
 hist.append(Paragraph(
     'A arte que dá a cor à peça. Cada cor numa camada, para o cliente poder trocá-las uma a uma.',
     st_sub))
-hist.append(passo(4, 'Uma camada por cor', [
+hist.append(passo(5, 'Uma camada por cor', [
     'No painel <i>Camadas</i>, cada cor da estampa numa camada de topo separada. '
     'O <b>nome da camada é o que o cliente vê</b> no painel de cores do simulador.',
     'Use nomes claros e sem acentos nem espaços: <font face="Courier">LISTRAS</font>, '
     '<font face="Courier">OMBROS</font>, <font face="Courier">FAIXA-PEITO</font>.',
     'Não misture duas cores na mesma camada. A cor com que está desenhado é indiferente — '
     'o sistema substitui — pode deixar tudo preto.']))
-hist.append(passo(5, 'Limpar o ficheiro', [
+hist.append(passo(6, 'Limpar o ficheiro', [
     'Traços › <font color="#6b6b6b">Objeto › Expandir</font>. '
     'Texto › <font color="#6b6b6b">Texto › Criar contornos</font>.',
     'Sem efeitos raster (sombras, desfoques, transparências do Illustrator) — refaça em vetor.',
     'A arte tem de estar <b>já na forma da peça</b> (como se vê a camisola de frente) e não '
-    'plana para deformar no Photoshop. O que sair fora do contorno é recortado.']))
-hist.append(passo(6, 'Exportar com estas opções', [
+    'plana para deformar no Photoshop. O que sair fora do contorno é recortado.',
+    'A estampa assenta <b>só no corpo</b>. Gola e punhos ficam de fora e recebem a sua própria '
+    'cor lisa — não desenhe a estampa a passar por cima deles.']))
+hist.append(passo(7, 'Exportar com estas opções', [
     'Ficheiro › Exportar › <b>Exportar como…</b> › <b>SVG</b> › ligar <b>«Usar pranchetas»</b>.',
     '<b>Não precisa de separar as camadas à mão:</b> um único SVG por peça e lado, com as '
     'camadas nomeadas, é suficiente — a separação das cores é feita do nosso lado por código.']))
@@ -188,7 +201,8 @@ hist.append(Paragraph(
 
 hist.append(tabela(
     ['Ficheiro', 'Quantos', 'Onde se faz'],
-    [['Peça .png', '2 por peça — recortada, dessaturada, fundo transparente', 'Photoshop'],
+    [['Zona .png', '1 por zona e por lado — recortada, dessaturada, fundo transparente '
+      '<font color="#6b6b6b">(camisola: 6 · calção: 4 · meião: 4)</font>', 'Photoshop'],
      ['Detalhes .svg <font color="#6b6b6b">(opcional)</font>',
       'costuras ou vivos que não mudam de cor com a estampa', 'Illustrator'],
      ['Estampa .svg', '1 por peça e lado, camadas nomeadas por cor', 'Illustrator']],
@@ -199,9 +213,11 @@ est = Table([[Paragraph(
     '<font face="Courier" size="8.5">'
     'SIMULADOR/<br/>'
     '&nbsp;&nbsp;moldes/<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente.png&nbsp;&nbsp;/&nbsp;&nbsp;camisola-verso.png<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;calcao-frente.png&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;calcao-verso.png<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;meiao-frente.png&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;meiao-verso.png<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente-corpo.png&nbsp;&nbsp;/&nbsp;&nbsp;camisola-verso-corpo.png<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente-gola.png&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;camisola-verso-gola.png<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente-punhos.png&nbsp;/&nbsp;&nbsp;camisola-verso-punhos.png<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;calcao-frente-corpo.png&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;calcao-frente-barra.png&nbsp;&nbsp;&nbsp;&nbsp;(idem verso)<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;meiao-frente-corpo.png&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;meiao-frente-punho.png&nbsp;&nbsp;&nbsp;&nbsp;(idem verso)<br/>'
     '&nbsp;&nbsp;estampas/<br/>'
     '&nbsp;&nbsp;&nbsp;&nbsp;001-nome-da-estampa/<br/>'
     '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente.svg<br/>'
@@ -222,7 +238,9 @@ hist.append(Paragraph(
 
 hist.append(Paragraph('Erros que quebram o encaixe', st_seccao))
 for e in ['Enquadramento diferente entre o PNG da peça e o SVG da estampa',
+          'PNG «recortado ao conteúdo» — cada zona fica com o seu enquadramento e desalinha',
           'Peça movida ou redimensionada entre a frente e o verso',
+          'Gola ou punhos incluídos também no PNG do corpo — a cor fica presa à do corpo',
           'Duas cores na mesma camada',
           'PNG exportado sem transparência — sem recorte não há contorno',
           'Exportar sem «IDs de objeto: Nomes de camada» — perdem-se as cores']:
