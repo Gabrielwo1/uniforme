@@ -116,41 +116,56 @@ hist.append(Paragraph(
 
 hist.append(caixa(
     'Comece por um conjunto de teste',
-    'Antes de exportar as 10 estampas, envie <b>1 molde de camisola</b> (frente + verso + textura) '
-    'e <b>1 estampa</b> completa. Validamos o encaixe e, se algo precisar de mudar, muda numa peça '
+    'Antes de exportar as 10 estampas, envie <b>a camisola</b> (os dois PNG, frente e verso) e '
+    '<b>1 estampa</b> completa. Validamos o encaixe e, se algo precisar de mudar, muda numa peça '
     'em vez de dez.'))
 
 hist.append(caixa(
     'A regra que não pode falhar',
-    'Silhueta e estampas têm de partilhar o <b>mesmo artboard</b>: <b>2000 × 2000 px</b>, '
-    'um artboard por lado (frente/verso), peça centrada. Nunca mover, escalar ou rodar a peça '
-    'entre exportações — é assim que o sistema sabe onde a estampa assenta.',
+    'O PNG da peça (Photoshop) e o SVG da estampa (Illustrator) têm de estar no <b>mesmo '
+    'enquadramento</b>: <b>2000 × 2000 px</b>, peça centrada, mesma escala e posição. É assim '
+    'que o sistema sabe onde a estampa assenta sobre a peça.',
     cor=colors.HexColor('#fdecec'), borda=colors.HexColor('#e8a0a0')))
 
-hist.append(Paragraph('ILLUSTRATOR — silhueta da peça', st_seccao))
-hist.append(passo(1, 'Isolar o contorno', [
-    'Deixe visível apenas o <b>contorno exterior</b> da peça, como uma única forma fechada '
-    'preenchida a branco. Sem sombras, sem costuras, sem gola.',
-    '<font color="#6b6b6b">Objeto › Expandir</font> para converter traços em formas. '
-    'Remova máscaras de recorte.']))
-hist.append(passo(2, 'Exportar', [
-    'Ficheiro › Exportar › <b>Exportar como…</b> › formato <b>SVG</b> › ligar <b>«Usar pranchetas»</b>.',
-    'Nome: <font face="Courier">camisola-frente.svg</font>']))
+hist.append(Paragraph('Photoshop — o modelo da peça', st_seccao))
+hist.append(passo(1, 'Abrir o mockup da peça', [
+    'Use o PSD que já existe — por exemplo <font face="Courier">KYPZL Jersey.psd</font> '
+    'para a camisola, os <font face="Courier">.tif</font> para calção e meião.']))
+hist.append(passo(2, 'Desligar a cor, manter a luz', [
+    'Desligue todas as camadas de <b>cor</b> e de <b>estampa</b>. Ficam visíveis apenas as '
+    'camadas de <b>sombra, luz e dobras</b> do tecido.',
+    '<font color="#6b6b6b">Imagem › Ajustes › Preto e branco</font> para tirar qualquer tom '
+    'de cor que reste.',
+    'Quanto mais neutra (cinzenta) ficar, melhor: esta imagem é multiplicada sobre a cor que o '
+    'cliente escolher. Se ficar azulada, <b>todas</b> as camisolas saem azuladas.']))
+hist.append(passo(3, 'Exportar recortado, com transparência', [
+    'O <b>fundo tem de ficar transparente</b>. É do recorte da peça que extraímos '
+    'automaticamente o contorno que recebe a cor base — não precisa de desenhar nada.',
+    'Ficheiro › Exportar › <b>Exportar como…</b> › <b>PNG</b> com <b>Transparência ligada</b>.',
+    'Tamanho <b>2000 × 2000 px</b>, peça centrada. Frente e verso no <b>mesmo enquadramento</b>: '
+    'a peça não pode mudar de posição nem de tamanho entre os dois.',
+    'Nomes: <font face="Courier">camisola-frente.png</font> e '
+    '<font face="Courier">camisola-verso.png</font>']))
 
-hist.append(Paragraph('ILLUSTRATOR — estampas', st_seccao))
-hist.append(passo(3, 'Uma camada por cor', [
+hist.append(PageBreak())
+hist.append(Paragraph('Illustrator — as estampas', st_titulo))
+hist.append(Paragraph(
+    'A arte que dá a cor à peça. Cada cor numa camada, para o cliente poder trocá-las uma a uma.',
+    st_sub))
+hist.append(passo(4, 'Uma camada por cor', [
     'No painel <i>Camadas</i>, cada cor da estampa numa camada de topo separada. '
     'O <b>nome da camada é o que o cliente vê</b> no painel de cores do simulador.',
     'Use nomes claros e sem acentos nem espaços: <font face="Courier">LISTRAS</font>, '
     '<font face="Courier">OMBROS</font>, <font face="Courier">FAIXA-PEITO</font>.',
     'Não misture duas cores na mesma camada. A cor com que está desenhado é indiferente — '
     'o sistema substitui — pode deixar tudo preto.']))
-hist.append(passo(4, 'Limpar o ficheiro', [
+hist.append(passo(5, 'Limpar o ficheiro', [
     'Traços › <font color="#6b6b6b">Objeto › Expandir</font>. '
     'Texto › <font color="#6b6b6b">Texto › Criar contornos</font>.',
     'Sem efeitos raster (sombras, desfoques, transparências do Illustrator) — refaça em vetor.',
-    'Tudo dentro dos limites da silhueta; o que sair fora é recortado.']))
-hist.append(passo(5, 'Exportar com estas opções', [
+    'A arte tem de estar <b>já na forma da peça</b> (como se vê a camisola de frente) e não '
+    'plana para deformar no Photoshop. O que sair fora do contorno é recortado.']))
+hist.append(passo(6, 'Exportar com estas opções', [
     'Ficheiro › Exportar › <b>Exportar como…</b> › <b>SVG</b> › ligar <b>«Usar pranchetas»</b>.',
     '<b>Não precisa de separar as camadas à mão:</b> um único SVG por peça e lado, com as '
     'camadas nomeadas, é suficiente — a separação das cores é feita do nosso lado por código.']))
@@ -167,32 +182,15 @@ hist.append(tabela(
 hist.append(PageBreak())
 
 # ─────────────────────────────────────────── Photoshop
-hist.append(Paragraph('Photoshop — textura de sombreado', st_titulo))
+hist.append(Paragraph('O que enviar', st_titulo))
 hist.append(Paragraph(
-    'É o que dá o aspeto de tecido real. Sem ela, a peça fica com um ar de desenho chapado.',
-    st_sub))
+    'Do Photoshop sai o modelo da peça; do Illustrator saem as estampas.', st_sub))
 
-hist.append(passo(1, 'Abrir o mockup', [
-    'Use o PSD que já existe da peça — por exemplo <font face="Courier">KYPZL Jersey.psd</font>.']))
-hist.append(passo(2, 'Desligar a cor, manter a luz', [
-    'Desligue todas as camadas de <b>cor</b> e de <b>estampa</b>.',
-    'Mantenha visíveis apenas as camadas de <b>sombra, luz e dobras</b> do tecido.']))
-hist.append(passo(3, 'Dessaturar', [
-    '<font color="#6b6b6b">Imagem › Ajustes › Preto e branco</font>.',
-    'Quanto mais neutra (cinzenta) ficar, melhor: esta textura é multiplicada sobre a cor '
-    'escolhida pelo cliente. Se ficar com tom azulado, <b>todas</b> as camisolas saem azuladas.']))
-hist.append(passo(4, 'Exportar', [
-    'Ficheiro › Exportar › <b>Exportar como…</b> › <b>PNG</b> com <b>Transparência ligada</b>.',
-    'Tamanho <b>2000 × 2000 px</b>, o mesmo enquadramento do artboard do Illustrator.',
-    'Nome: <font face="Courier">camisola-frente-textura.png</font>']))
-
-hist.append(Paragraph('O que enviar no fim', st_seccao))
 hist.append(tabela(
     ['Ficheiro', 'Quantos', 'Onde se faz'],
-    [['Silhueta .svg', '2 por peça (frente e verso)', 'Illustrator'],
-     ['Textura .png', '2 por peça (frente e verso)', 'Photoshop'],
+    [['Peça .png', '2 por peça — recortada, dessaturada, fundo transparente', 'Photoshop'],
      ['Detalhes .svg <font color="#6b6b6b">(opcional)</font>',
-      'costuras, gola, punhos — o que não muda de cor', 'Illustrator'],
+      'costuras ou vivos que não mudam de cor com a estampa', 'Illustrator'],
      ['Estampa .svg', '1 por peça e lado, camadas nomeadas por cor', 'Illustrator']],
     [46 * mm, 78 * mm, 43 * mm]))
 
@@ -201,10 +199,9 @@ est = Table([[Paragraph(
     '<font face="Courier" size="8.5">'
     'SIMULADOR/<br/>'
     '&nbsp;&nbsp;moldes/<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente.svg<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente-textura.png<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-verso.svg&nbsp;&nbsp;+&nbsp;textura<br/>'
-    '&nbsp;&nbsp;&nbsp;&nbsp;calcao-...&nbsp;&nbsp;/&nbsp;&nbsp;meiao-...<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente.png&nbsp;&nbsp;/&nbsp;&nbsp;camisola-verso.png<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;calcao-frente.png&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;calcao-verso.png<br/>'
+    '&nbsp;&nbsp;&nbsp;&nbsp;meiao-frente.png&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;meiao-verso.png<br/>'
     '&nbsp;&nbsp;estampas/<br/>'
     '&nbsp;&nbsp;&nbsp;&nbsp;001-nome-da-estampa/<br/>'
     '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;camisola-frente.svg<br/>'
@@ -224,10 +221,10 @@ hist.append(Paragraph(
     'O número da pasta (001, 002…) é o código do modelo mostrado ao cliente. Se já há numeração interna, use essa.', st_nota))
 
 hist.append(Paragraph('Erros que quebram o encaixe', st_seccao))
-for e in ['Artboard de tamanho diferente entre ficheiros',
-          'Peça movida ou redimensionada entre exportações',
+for e in ['Enquadramento diferente entre o PNG da peça e o SVG da estampa',
+          'Peça movida ou redimensionada entre a frente e o verso',
           'Duas cores na mesma camada',
-          'Exportar sem «Usar pranchetas» — corta ao conteúdo e desalinha',
+          'PNG exportado sem transparência — sem recorte não há contorno',
           'Exportar sem «IDs de objeto: Nomes de camada» — perdem-se as cores']:
     hist.append(Paragraph(f'<font color="#B62126">✕</font>&nbsp;&nbsp;{e}', st_corpo))
     hist.append(Spacer(1, 1))
