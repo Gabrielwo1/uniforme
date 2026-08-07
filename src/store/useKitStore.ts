@@ -14,7 +14,7 @@ import { estampaDemoPorId, estampasDemo } from '@/lib/kitDemo';
 
 function configInicial(peca: PecaKit): PecaConfig {
   const estampa = estampasDemo(peca)[0];
-  return { estampaId: estampa.id, corBase: estampa.corBasePadrao, cores: {} };
+  return { estampaId: estampa.id, coresZonas: {}, cores: {} };
 }
 
 function designInicial(): KitDesign {
@@ -35,7 +35,7 @@ export interface KitStore {
   alvos: (origem: PecaKit) => PecaKit[];
 
   setEstampa: (origem: PecaKit, estampaId: string) => void;
-  setCorBase: (origem: PecaKit, cor: string) => void;
+  setCorZona: (origem: PecaKit, zonaId: string, cor: string) => void;
   setCorCamada: (origem: PecaKit, camadaId: string, cor: string) => void;
   cicloEstampa: (origem: PecaKit, direcao: 1 | -1) => void;
   toggleSincronizar: (peca: PecaKit) => void;
@@ -64,7 +64,8 @@ export const useKitStore = create<KitStore>((set, get) => ({
         pecas[peca] = {
           ...pecas[peca],
           estampaId: equivalente.id,
-          // troca de estampa reinicia as cores das camadas (ids mudam)
+          // troca de estampa reinicia as cores das camadas (ids mudam);
+          // as cores das zonas ficam, porque a gola não depende da estampa
           cores: {},
         };
       }
@@ -72,11 +73,16 @@ export const useKitStore = create<KitStore>((set, get) => ({
     });
   },
 
-  setCorBase: (origem, cor) => {
+  setCorZona: (origem, zonaId, cor) => {
     const alvos = get().alvos(origem);
     set((s) => {
       const pecas = { ...s.design.pecas };
-      for (const peca of alvos) pecas[peca] = { ...pecas[peca], corBase: cor };
+      for (const peca of alvos) {
+        pecas[peca] = {
+          ...pecas[peca],
+          coresZonas: { ...pecas[peca].coresZonas, [zonaId]: cor },
+        };
+      }
       return { design: { ...s.design, pecas } };
     });
   },

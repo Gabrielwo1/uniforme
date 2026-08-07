@@ -132,7 +132,7 @@ export function ControlosPeca({ peca }: { peca: PecaKit }) {
 /** Painel de cores: cor base + uma entrada por camada da estampa. */
 export function PainelCores({ peca }: { peca: PecaKit }) {
   const config = useKitStore((s) => s.design.pecas[peca]);
-  const setCorBase = useKitStore((s) => s.setCorBase);
+  const setCorZona = useKitStore((s) => s.setCorZona);
   const setCorCamada = useKitStore((s) => s.setCorCamada);
   const estampa = estampaDemoPorId(peca, config.estampaId);
 
@@ -143,11 +143,14 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
       </p>
 
       <div className="mt-2.5 flex flex-wrap gap-3">
-        <Swatch
-          label="Cor Base"
-          cor={config.corBase}
-          onChange={(cor) => setCorBase(peca, cor)}
-        />
+        {moldeDemo(peca, 'frente').zonas.map((zona) => (
+          <Swatch
+            key={zona.id}
+            label={zona.nome}
+            cor={config.coresZonas[zona.id] ?? zona.corPadrao}
+            onChange={(cor) => setCorZona(peca, zona.id, cor)}
+          />
+        ))}
         {estampa.camadas.map((camada, i) => (
           <Swatch
             key={camada.id}

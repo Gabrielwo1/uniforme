@@ -1,4 +1,4 @@
-import type { Estampa, LadoKit, MoldePeca, PecaKit } from '@/types/kit';
+import type { Estampa, LadoKit, MoldePeca, PecaKit, ZonaPeca } from '@/types/kit';
 
 /**
  * Catálogo de DEMONSTRAÇÃO do motor de templates.
@@ -36,24 +36,64 @@ const SILHUETAS: Record<PecaKit, string> = {
   meiao: SILHUETA_MEIAO,
 };
 
-/** Gola/costuras — só a camisola tem, nesta demonstração. */
-const DETALHES_CAMISOLA: Record<LadoKit, string> = {
-  frente: `
-    <path d="M 400 215 C 450 270, 550 270, 600 215 L 580 195 C 540 235, 460 235, 420 195 Z"
-          fill="#00000018"/>
-    <path d="M 320 230 L 300 430 M 680 230 L 700 430" stroke="#00000022" stroke-width="3" fill="none"/>`,
-  verso: `
-    <path d="M 400 210 C 460 245, 540 245, 600 210 L 588 188 C 540 212, 460 212, 412 188 Z"
-          fill="#00000018"/>`,
+/* Zonas coloríveis por peça. Nos ficheiros reais cada uma será um PNG
+   recortado do PSD (o mockup já traz gola e punhos em camadas próprias);
+   aqui são paths para a demonstração poder correr sem esses assets. */
+
+const GOLA_FRENTE = `
+  M 400 215 C 450 272, 550 272, 600 215 L 578 190 C 540 232, 460 232, 422 190 Z`;
+const GOLA_VERSO = `
+  M 400 210 C 460 247, 540 247, 600 210 L 588 186 C 540 212, 460 212, 412 186 Z`;
+
+/* Bainhas das mangas: faixas coladas à aresta exterior da silhueta
+   (820 300 → 770 460 do lado direito), deslocadas para dentro. */
+const PUNHOS = `
+  M 820 300 L 770 460 L 718 444 L 768 284 Z
+  M 180 300 L 230 460 L 282 444 L 232 284 Z`;
+
+const BARRA_CALCAO = `M 295 470 C 300 520, 360 540, 440 540 L 460 560 L 510 560
+  L 500 500 L 490 560 L 540 560 L 560 540 C 640 540, 700 520, 705 470
+  L 700 500 C 690 545, 630 562, 556 562 L 540 582 L 460 582 L 444 562
+  C 370 562, 310 545, 300 500 Z`;
+
+const PUNHO_MEIAO = `M 430 200 L 570 200 L 573 268 L 427 268 Z`;
+
+/** Costuras que não mudam de cor. */
+const COSTURAS: Partial<Record<PecaKit, string>> = {
+  camisola: `<path d="M 320 230 L 300 430 M 680 230 L 700 430"
+                   stroke="#00000022" stroke-width="3" fill="none"/>`,
 };
+
+function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
+  const corpo: ZonaPeca = {
+    id: 'corpo',
+    nome: 'Corpo',
+    silhueta: SILHUETAS[peca],
+    corPadrao: '#f5a800',
+    recebeEstampa: true,
+  };
+
+  if (peca === 'camisola') {
+    return [
+      corpo,
+      { id: 'gola', nome: 'Gola', silhueta: lado === 'frente' ? GOLA_FRENTE : GOLA_VERSO,
+        corPadrao: '#151515' },
+      { id: 'punhos', nome: 'Punhos', silhueta: PUNHOS, corPadrao: '#151515' },
+    ];
+  }
+  if (peca === 'calcao') {
+    return [corpo, { id: 'barra', nome: 'Barra', silhueta: BARRA_CALCAO, corPadrao: '#151515' }];
+  }
+  return [corpo, { id: 'punho', nome: 'Punho', silhueta: PUNHO_MEIAO, corPadrao: '#151515' }];
+}
 
 export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {
   return {
     peca,
     lado,
     viewBox: VIEWBOX,
-    silhueta: SILHUETAS[peca],
-    detalhes: peca === 'camisola' ? DETALHES_CAMISOLA[lado] : undefined,
+    zonas: zonasDe(peca, lado),
+    detalhes: COSTURAS[peca],
   };
 }
 

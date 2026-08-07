@@ -34,19 +34,39 @@ export const LADO_LABEL: Record<LadoKit, string> = {
 };
 
 /**
- * Molde de uma peça: a silhueta que recebe a cor base e recorta as estampas.
+ * Uma zona da peça que se pode colorir à parte: corpo, gola, punhos.
  *
- * `silhueta` é o atributo `d` de um path — o mesmo artboard (`viewBox`) tem de
- * ser partilhado com as estampas, senão o desenho não encaixa na peça.
+ * Cada zona é um recorte próprio (`forma`), o que permite dar-lhe uma cor
+ * independente — sem isto a gola e os punhos ficariam presos à cor do corpo.
+ * A `forma` pode vir de duas origens, e é por isso que há dois campos:
+ *
+ *  - `imagem`: PNG recortado e dessaturado da zona (o caminho normal, porque
+ *    os mockups PSD já têm gola e punhos em camadas separadas). Dá a forma
+ *    (canal alfa) **e** o sombreado do tecido de uma só vez.
+ *  - `silhueta`: path SVG, para quando existe arte vetorial da zona.
+ */
+export interface ZonaPeca {
+  id: string;
+  nome: string;
+  imagem?: string;
+  silhueta?: string;
+  corPadrao: string;
+  /** Só a zona do corpo recebe a estampa; gola e punhos ficam de fora. */
+  recebeEstampa?: boolean;
+}
+
+/**
+ * Molde de uma peça — o conjunto das suas zonas coloríveis.
+ *
+ * O `viewBox` tem de ser partilhado com as estampas, senão o desenho não
+ * encaixa na peça.
  */
 export interface MoldePeca {
   peca: PecaKit;
   lado: LadoKit;
   viewBox: string;
-  silhueta: string;
-  /** Sombreado de tecido em multiply (URL). Sem ele a peça fica "chapada". */
-  textura?: string;
-  /** Costuras, gola, punhos — SVG interno desenhado por cima de tudo. */
+  zonas: ZonaPeca[];
+  /** Costuras e vivos que não mudam de cor — SVG interno, por cima de tudo. */
   detalhes?: string;
 }
 
@@ -75,8 +95,9 @@ export interface Estampa {
 /** Escolhas do utilizador para UMA peça. */
 export interface PecaConfig {
   estampaId: string;
-  corBase: string;
-  /** Cor por camada (id da camada → hex). Ausente = usa `corPadrao`. */
+  /** Cor por ZONA do molde (corpo, gola, punhos). Ausente = `corPadrao`. */
+  coresZonas: Record<string, string>;
+  /** Cor por CAMADA da estampa. Ausente = `corPadrao` da camada. */
   cores: Record<string, string>;
 }
 
