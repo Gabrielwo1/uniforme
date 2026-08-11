@@ -44,12 +44,31 @@ def tamanho(caminho):
 
 # ─────────────────────────────────────────────────────────────────── SVG ──
 
-def cor_de(el):
-    """Cor de preenchimento efetiva do elemento, de `fill` ou de `style`."""
+def classes_css(raiz):
+    """fill por classe, do <style> interno — o export por omissão do
+    Illustrator ("CSS interno") põe as cores aqui e não nos elementos."""
+    fills = {}
+    for st in raiz.iter(f'{SVG_NS}style'):
+        for sel, corpo in re.findall(r'([^{}]+)\{([^}]*)\}', st.text or ''):
+            m = re.search(r'(?<!-)fill:\s*([^;]+)', corpo)
+            if not m:
+                continue
+            for cls in re.findall(r'\.([\w-]+)', sel):
+                fills[cls] = m.group(1).strip()
+    return fills
+
+
+def cor_de(el, css=None):
+    """Cor de preenchimento efetiva: `fill`, depois `style`, depois a classe."""
     fill = el.get('fill')
     if fill is None:
         m = re.search(r'fill:\s*([^;]+)', el.get('style', ''))
         fill = m.group(1).strip() if m else None
+    if fill is None and css:
+        for cls in el.get('class', '').split():
+            if cls in css:
+                fill = css[cls]
+                break
     if fill is None or fill.lower() in ('none', 'transparent'):
         return None
     return fill.lower().strip()
@@ -95,6 +114,9 @@ def analisar_svg(caminho):
         print(f'  · {clips} máscaras de recorte (ok, só não podem ter cor própria)')
 
     # cores = camadas recoloríveis em potência
+    css = classes_css(raiz)
+    if css:
+        print(f'  · estilo por CSS interno ({len(css)} classes com fill)')
     dentro_de_defs = {id(e) for d in raiz.iter(f'{SVG_NS}defs') for e in d.iter()}
     cores, referencias, total = Counter(), Counter(), 0
     for el in raiz.iter():
@@ -106,7 +128,7 @@ def analisar_svg(caminho):
                                         'polygon', 'polyline'):
             continue
         total += 1
-        c = cor_de(el)
+        c = cor_de(el, css)
         if c is None:
             continue
         # `fill="url(#x)"` aponta para um padrão ou gradiente: não é uma cor,

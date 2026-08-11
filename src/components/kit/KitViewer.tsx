@@ -20,7 +20,7 @@ import { PecaMockup } from './PecaMockup';
  */
 export function KitViewer({ fundo }: { fundo?: string }) {
   return (
-    <div className="relative flex h-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc]">
+    <div className="relative flex h-full min-h-[560px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc]">
       {fundo && (
         <img
           src={fundo}

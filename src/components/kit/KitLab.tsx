@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useKitStore } from '@/store/useKitStore';
 import { PECAS_KIT } from '@/types/kit';
@@ -9,12 +10,28 @@ import { ControlosPeca, KitViewer, PainelCores } from './KitViewer';
  * pelo cliente (estampas SVG recoloríveis por camada, conjunto completo,
  * sincronização) é testada antes de substituir o editor atual.
  *
- * As formas são de demonstração (ver `kitDemo.ts`); o que está a ser validado
- * aqui é o MOTOR, que não muda quando os assets reais entrarem.
+ * A camisola já usa os assets reais do cliente (PNG das zonas + tema
+ * convertido); calção e meião continuam com formas de demonstração.
  */
 export function KitLab() {
   const reset = useKitStore((s) => s.reset);
   const sincronizadas = useKitStore((s) => s.design.sincronizadas);
+
+  // A estampa real pesa ~3 MB de vetores: entra por import dinâmico para não
+  // carregar com o app. Depois de registada, `reset` torna-a a seleção.
+  const [prontas, setProntas] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    import('@/lib/kitReal').then(({ registarReais }) => {
+      if (!vivo) return;
+      registarReais();
+      reset();
+      setProntas(true);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [reset]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -53,9 +70,9 @@ export function KitLab() {
           </div>
 
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            As formas são provisórias. O que está a ser testado é a mecânica:
-            cada cor é uma camada independente do template, e o cadeado
-            sincroniza as peças entre si.
+            {prontas
+              ? 'A camisola usa os assets reais (zonas do PSD + tema convertido); calção e meião ainda são formas provisórias. Cada cor é uma camada independente, e o cadeado sincroniza as peças.'
+              : 'A carregar o tema convertido…'}
           </p>
         </aside>
       </div>

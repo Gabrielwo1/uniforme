@@ -14,6 +14,21 @@ import type { Estampa, LadoKit, MoldePeca, PecaKit, ZonaPeca } from '@/types/kit
 
 const VIEWBOX = '0 0 1000 1000';
 
+/** A camisola já usa os assets reais (PNG 2000×2000 do PSD do cliente). */
+const VIEWBOX_CAMISOLA = '0 0 2000 2000';
+
+/* --------------------------------------------------- estampas registadas -- */
+
+/** Estampas convertidas de ficheiros reais (ver `kitReal.ts`). Entram à
+    frente das de demonstração para serem a escolha por omissão. */
+const REGISTADAS: Estampa[] = [];
+
+export function registarEstampas(lista: Estampa[]) {
+  for (const e of lista) {
+    if (!REGISTADAS.some((x) => x.id === e.id)) REGISTADAS.push(e);
+  }
+}
+
 /* ------------------------------------------------------------- silhuetas -- */
 
 const SILHUETA_CAMISOLA = `
@@ -36,20 +51,8 @@ const SILHUETAS: Record<PecaKit, string> = {
   meiao: SILHUETA_MEIAO,
 };
 
-/* Zonas coloríveis por peça. Nos ficheiros reais cada uma será um PNG
-   recortado do PSD (o mockup já traz gola e punhos em camadas próprias);
-   aqui são paths para a demonstração poder correr sem esses assets. */
-
-const GOLA_FRENTE = `
-  M 400 215 C 450 272, 550 272, 600 215 L 578 190 C 540 232, 460 232, 422 190 Z`;
-const GOLA_VERSO = `
-  M 400 210 C 460 247, 540 247, 600 210 L 588 186 C 540 212, 460 212, 412 186 Z`;
-
-/* Bainhas das mangas: faixas coladas à aresta exterior da silhueta
-   (820 300 → 770 460 do lado direito), deslocadas para dentro. */
-const PUNHOS = `
-  M 820 300 L 770 460 L 718 444 L 768 284 Z
-  M 180 300 L 230 460 L 282 444 L 232 284 Z`;
+/* Zonas coloríveis do calção e do meião — ainda paths de demonstração,
+   até chegarem os PNG reais dessas peças. */
 
 const BARRA_CALCAO = `M 295 470 C 300 520, 360 540, 440 540 L 460 560 L 510 560
   L 500 500 L 490 560 L 540 560 L 560 540 C 640 540, 700 520, 705 470
@@ -65,35 +68,40 @@ const COSTURAS: Partial<Record<PecaKit, string>> = {
 };
 
 function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
+  // Camisola: zonas reais, recortadas do PSD do cliente. A gola é a de polo
+  // e só existe de frente — no verso o próprio corpo já traz a gola de série.
+  if (peca === 'camisola') {
+    const png = (zona: string) => `/moldes/camisola-${lado}-${zona}.png`;
+    return [
+      { id: 'corpo', nome: 'Corpo', imagem: png('corpo'),
+        corPadrao: '#221f20', recebeEstampa: true },
+      { id: 'mangas', nome: 'Mangas', imagem: png('mangas'), corPadrao: '#c21633' },
+      ...(lado === 'frente'
+        ? [{ id: 'gola', nome: 'Gola', imagem: png('gola'), corPadrao: '#e9e9e9' }]
+        : []),
+    ];
+  }
+
   const corpo: ZonaPeca = {
     id: 'corpo',
     nome: 'Corpo',
     silhueta: SILHUETAS[peca],
-    corPadrao: '#f5a800',
+    corPadrao: '#221f20',
     recebeEstampa: true,
   };
-
-  if (peca === 'camisola') {
-    return [
-      corpo,
-      { id: 'gola', nome: 'Gola', silhueta: lado === 'frente' ? GOLA_FRENTE : GOLA_VERSO,
-        corPadrao: '#151515' },
-      { id: 'punhos', nome: 'Punhos', silhueta: PUNHOS, corPadrao: '#151515' },
-    ];
-  }
   if (peca === 'calcao') {
-    return [corpo, { id: 'barra', nome: 'Barra', silhueta: BARRA_CALCAO, corPadrao: '#151515' }];
+    return [corpo, { id: 'barra', nome: 'Barra', silhueta: BARRA_CALCAO, corPadrao: '#c21633' }];
   }
-  return [corpo, { id: 'punho', nome: 'Punho', silhueta: PUNHO_MEIAO, corPadrao: '#151515' }];
+  return [corpo, { id: 'punho', nome: 'Punho', silhueta: PUNHO_MEIAO, corPadrao: '#c21633' }];
 }
 
 export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {
   return {
     peca,
     lado,
-    viewBox: VIEWBOX,
+    viewBox: peca === 'camisola' ? VIEWBOX_CAMISOLA : VIEWBOX,
     zonas: zonasDe(peca, lado),
-    detalhes: COSTURAS[peca],
+    detalhes: peca === 'camisola' ? undefined : COSTURAS[peca],
   };
 }
 
@@ -112,7 +120,14 @@ const faixaB = `
   <path d="M 320 230 C 360 150, 640 150, 680 230 L 820 300 L 780 360 L 660 300
            C 620 250, 380 250, 340 300 L 220 360 L 180 300 Z" fill="black"/>`;
 
+/** Os desenhos demo estão no espaço 1000; a camisola compõe no 2000. */
+function noEspacoDa(peca: PecaKit, svg: string): string {
+  return peca === 'camisola' ? `<g transform="scale(2)">${svg}</g>` : svg;
+}
+
 function estampaListras(peca: PecaKit): Estampa {
+  const a = noEspacoDa(peca, listrasA);
+  const b = noEspacoDa(peca, listrasB);
   return {
     id: `listras-${peca}`,
     codModelo: '001',
@@ -124,19 +139,21 @@ function estampaListras(peca: PecaKit): Estampa {
         id: 'principal',
         nome: 'Listras largas',
         corPadrao: '#151515',
-        desenho: { frente: listrasA, verso: listrasA },
+        desenho: { frente: a, verso: a },
       },
       {
         id: 'secundaria',
         nome: 'Listras finas',
         corPadrao: '#b62126',
-        desenho: { frente: listrasB, verso: listrasB },
+        desenho: { frente: b, verso: b },
       },
     ],
   };
 }
 
 function estampaFaixa(peca: PecaKit): Estampa {
+  const a = noEspacoDa(peca, faixaA);
+  const b = noEspacoDa(peca, faixaB);
   return {
     id: `faixa-${peca}`,
     codModelo: '002',
@@ -148,21 +165,25 @@ function estampaFaixa(peca: PecaKit): Estampa {
         id: 'faixa',
         nome: 'Faixa peito',
         corPadrao: '#ffffff',
-        desenho: { frente: faixaA, verso: faixaA },
+        desenho: { frente: a, verso: a },
       },
       {
         id: 'ombros',
         nome: 'Ombros',
         corPadrao: '#d4a942',
-        desenho: { frente: faixaB, verso: faixaB },
+        desenho: { frente: b, verso: b },
       },
     ],
   };
 }
 
-/** Estampas disponíveis por peça (todas as peças partilham os templates). */
+/** Estampas disponíveis por peça: primeiro as reais, depois as demo. */
 export function estampasDemo(peca: PecaKit): Estampa[] {
-  return [estampaListras(peca), estampaFaixa(peca)];
+  return [
+    ...REGISTADAS.filter((e) => e.peca === peca),
+    estampaListras(peca),
+    estampaFaixa(peca),
+  ];
 }
 
 export function estampaDemoPorId(peca: PecaKit, id: string): Estampa {
