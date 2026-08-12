@@ -20,7 +20,7 @@ import { PecaMockup } from './PecaMockup';
  */
 export function KitViewer({ fundo }: { fundo?: string }) {
   return (
-    <div className="relative flex h-full min-h-[560px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc]">
+    <div className="relative flex h-full min-h-[660px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc]">
       {fundo && (
         <img
           src={fundo}
@@ -47,10 +47,15 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         {LADO_LABEL[lado]}
       </span>
 
-      {/* sobreposições negativas: o conjunto lê como uma peça só, vestida */}
-      <PecaSlot peca="camisola" lado={lado} className="h-[260px] w-[260px]" />
-      <PecaSlot peca="calcao" lado={lado} className="-mt-[70px] h-[190px] w-[190px]" />
-      <PecaSlot peca="meiao" lado={lado} className="-mt-[40px] h-[150px] w-[150px]" />
+      {/* sobreposições negativas: o conjunto lê como uma peça só, vestida.
+          Os tamanhos calibram a escala real entre os PNG: a bainha da
+          camisola tem de assentar na cintura do calção. */}
+      <PecaSlot peca="camisola" lado={lado} className="z-30 h-[270px] w-[270px]" />
+      <PecaSlot peca="calcao" lado={lado} className="z-20 -mt-[79px] h-[194px] w-[194px]" />
+      <div className="z-10 -mt-[26px] flex gap-7">
+        <PecaSlot peca="meiao" lado={lado} className="h-[207px] w-[100px] -scale-x-100" />
+        <PecaSlot peca="meiao" lado={lado} className="h-[207px] w-[100px]" />
+      </div>
     </div>
   );
 }
