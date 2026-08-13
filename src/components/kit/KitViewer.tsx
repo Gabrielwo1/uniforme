@@ -61,9 +61,9 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         {/* as meias assentam nas canelas do jogador (tornozelos a ±20px do
             centro), por isso os slots sobrepõem-se — o desenho dentro deles
             é estreito e não chega a tocar-se */}
-        <div className="z-10 -mt-[10px] flex -space-x-[71px]">
-          <PecaSlot peca="meiao" lado={lado} className="h-[252px] w-[121px] -scale-x-100" />
-          <PecaSlot peca="meiao" lado={lado} className="h-[252px] w-[121px]" />
+        <div className="z-10 -mt-[14px] flex -space-x-[86px]">
+          <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px] -scale-x-100" />
+          <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px]" />
         </div>
       </div>
     </div>
