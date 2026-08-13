@@ -60,7 +60,7 @@ export function KitLab() {
       </header>
 
       <div className="grid flex-1 gap-5 overflow-y-auto p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <KitViewer />
+        <KitViewer fundo="/moldes/fundo-campo.jpg" />
 
         <aside className="space-y-4">
           <div className="space-y-2">

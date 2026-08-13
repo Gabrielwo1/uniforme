@@ -24,12 +24,16 @@ export function KitViewer({ fundo }: { fundo?: string }) {
   return (
     <div className="relative flex h-full min-h-[660px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc]">
       {fundo && (
-        <img
-          src={fundo}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-60"
-        />
+        <>
+          <img
+            src={fundo}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          />
+          {/* véu suave para o conjunto continuar a mandar sobre o fundo */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-white/15" />
+        </>
       )}
 
       <div className="relative flex items-start justify-center gap-6 p-6">
@@ -60,12 +64,12 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         <PecaSlot peca="calcao" lado={lado} className="z-20 -mt-[71px] h-[168px] w-[168px]" />
         {/* as meias assentam nas canelas do jogador, por isso os slots
             sobrepõem-se — o desenho dentro deles é estreito e não se toca.
-            Centros medidos no alfa do manequim (scripts): pernas da frente
-            a 98/170 → space 58; verso a 103/167 → space 66. */}
+            Centros medidos no alfa do jogador (scripts) — o jogador da
+            OpenAI tem postura mais aberta que o manequim-regra. */}
         <div
           className={cn(
             'z-10 -mt-[14px] flex',
-            lado === 'frente' ? '-space-x-[58px]' : '-space-x-[66px]',
+            '-space-x-[41px]',
           )}
         >
           <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px] -scale-x-100" />
@@ -92,11 +96,13 @@ function Manequim({ lado }: { lado: LadoKit }) {
         alt=""
         aria-hidden
         className={cn(
-          'pointer-events-none absolute -top-[40px] left-1/2 z-0 h-[612px] max-w-none -translate-x-1/2 opacity-90',
-          // o manequim gerado é mais encorpado que as peças; o aperto
-          // horizontal esconde o tronco e alinha os tornozelos às meias
-          // (o de costas saiu mais largo, leva mais)
-          lado === 'frente' ? 'scale-x-[0.93]' : 'scale-x-[0.88]',
+          'pointer-events-none absolute -top-[40px] left-1/2 z-0 h-[612px] max-w-none',
+          // o jogador gerado é mais encorpado que as peças; o aperto
+          // horizontal esconde o tronco e alinha os tornozelos às meias.
+          // Valores medidos no canal alfa do recorte.
+          lado === 'frente'
+            ? '-translate-x-[calc(50%-2px)] scale-x-[0.86]'
+            : '-translate-x-[calc(50%-3px)] scale-x-[0.84]',
         )}
       />
       {/* sombra no chão, já que a do estúdio foi recortada com o fundo */}
