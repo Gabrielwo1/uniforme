@@ -51,12 +51,17 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
           Os tamanhos calibram a escala real entre os PNG: a bainha da
           camisola tem de assentar na cintura do calção. */}
       <div className="relative flex flex-col items-center">
-        <Manequim />
+        <Manequim lado={lado} />
+        {/* calibração medida nos PNG: cintura do calção (1086/2000) tem de
+            caber sob a bainha da camisola (690/2000 no slot de 270px) */}
         <PecaSlot peca="camisola" lado={lado} className="z-30 h-[270px] w-[270px]" />
-        <PecaSlot peca="calcao" lado={lado} className="z-20 -mt-[79px] h-[194px] w-[194px]" />
-        <div className="z-10 -mt-[26px] flex gap-7">
-          <PecaSlot peca="meiao" lado={lado} className="h-[207px] w-[100px] -scale-x-100" />
-          <PecaSlot peca="meiao" lado={lado} className="h-[207px] w-[100px]" />
+        <PecaSlot peca="calcao" lado={lado} className="z-20 -mt-[71px] h-[168px] w-[168px]" />
+        {/* as meias assentam nas canelas do jogador (tornozelos a ±20px do
+            centro), por isso os slots sobrepõem-se — o desenho dentro deles
+            é estreito e não chega a tocar-se */}
+        <div className="z-10 -mt-[10px] flex -space-x-[71px]">
+          <PecaSlot peca="meiao" lado={lado} className="h-[252px] w-[121px] -scale-x-100" />
+          <PecaSlot peca="meiao" lado={lado} className="h-[252px] w-[121px]" />
         </div>
       </div>
     </div>
@@ -64,46 +69,28 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
 }
 
 /**
- * Jogador-modelo neutro por trás do conjunto: cabeça, braços e pernas em
- * cinza suave, no estilo "manequim fantasma". As coordenadas estão coladas
- * à geometria dos slots de `ConjuntoLado` — a gola, as bocas das mangas,
- * as pernas do calção e o topo dos meiões — por isso mudar os tamanhos
- * das peças pede um reajuste aqui.
+ * Jogador-modelo por trás do conjunto: manequim de loja gerado por IA e
+ * recortado (`/moldes/jogador-*.png`), como padrão de encaixe das peças.
+ *
+ * A âncora é a ALTURA: cabeça a espreitar acima da gola e pés sob os
+ * meiões. Mudar os tamanhos dos slots em `ConjuntoLado` pede um reajuste
+ * de `top`/`height` aqui.
  */
-function Manequim() {
+function Manequim({ lado }: { lado: LadoKit }) {
   return (
-    <svg
-      viewBox="0 0 270 610"
-      aria-hidden
-      className="pointer-events-none absolute -top-[44px] left-0 z-0 h-[610px] w-[270px]"
-    >
-      <defs>
-        <linearGradient id="manequim-pele" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#b9bfc7" />
-          <stop offset="1" stopColor="#969ea8" />
-        </linearGradient>
-        <filter id="manequim-suave" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="0.8" />
-        </filter>
-      </defs>
-
-      {/* sombra no chão */}
-      <ellipse cx="135" cy="598" rx="92" ry="9" fill="#000" opacity="0.12" />
-
-      <g fill="url(#manequim-pele)" stroke="url(#manequim-pele)" filter="url(#manequim-suave)">
-        {/* cabeça e pescoço, a assentar na gola */}
-        <ellipse cx="135" cy="52" rx="21" ry="24" stroke="none" />
-        <path d="M 123 68 h 24 v 30 h -24 Z" stroke="none" />
-        {/* braços, das bocas das mangas até às mãos */}
-        <path d="M 73 196 L 59 292" fill="none" strokeWidth="21" strokeLinecap="round" />
-        <path d="M 197 196 L 211 292" fill="none" strokeWidth="21" strokeLinecap="round" />
-        <circle cx="57" cy="304" r="11" stroke="none" />
-        <circle cx="213" cy="304" r="11" stroke="none" />
-        {/* joelhos, entre a bainha do calção e o punho do meião */}
-        <path d="M 101 390 L 81 448" fill="none" strokeWidth="27" strokeLinecap="round" />
-        <path d="M 169 390 L 189 448" fill="none" strokeWidth="27" strokeLinecap="round" />
-      </g>
-    </svg>
+    <>
+      <img
+        src={`/moldes/jogador-${lado}.png`}
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute -top-[46px] left-1/2 z-0 h-[618px] max-w-none -translate-x-1/2 opacity-90"
+      />
+      {/* sombra no chão, já que a do estúdio foi recortada com o fundo */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[576px] z-0 h-[16px] w-[190px] -translate-x-1/2 rounded-[50%] bg-black/15 blur-[6px]"
+      />
+    </>
   );
 }
 
