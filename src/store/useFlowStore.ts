@@ -3,10 +3,13 @@ import { create } from 'zustand';
 /**
  * Navegação de tela cheia do app (briefing KYPZL):
  *
- *   site → modalidade → categoria → modelo → editor → checkout
+ *   site → kit (simulador de conjuntos)
+ *   site → modalidade → categoria → modelo → editor → checkout   (?antigo)
  *
- * - "site" é a landing page institucional (entrada real do app) — o
- *   simulador só começa quando o utilizador clica "Entrar no simulador".
+ * - "site" é a landing page institucional (entrada real do app).
+ * - "kit" é o simulador por templates (o que o cliente pediu depois de
+ *   rejeitar a via de IA); o funil antigo continua no código atrás de
+ *   `?antigo`, para comparação e demos.
  * - "Nova" e o fecho do pedido voltam à modalidade (página 1 do funil).
  * - "Sim, continuar" (mais artigos) volta à categoria (página 2), mantendo a
  *   modalidade escolhida.
@@ -14,7 +17,17 @@ import { create } from 'zustand';
  *   pedido + formulário de dados.
  */
 
-export type FlowScreen = 'site' | 'modalidade' | 'categoria' | 'modelo' | 'editor' | 'checkout';
+export type FlowScreen =
+  | 'site'
+  | 'kit'
+  | 'modalidade'
+  | 'categoria'
+  | 'modelo'
+  | 'editor'
+  | 'checkout';
+
+/** `?antigo` mantém o funil com o editor anterior acessível para demos. */
+const FLUXO_ANTIGO = new URLSearchParams(window.location.search).has('antigo');
 
 export interface FlowStore {
   screen: FlowScreen;
@@ -43,7 +56,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   modality: null,
   category: null,
 
-  enterSimulator: () => set({ screen: 'modalidade' }),
+  enterSimulator: () => set({ screen: FLUXO_ANTIGO ? 'modalidade' : 'kit' }),
   goToSite: () => set({ screen: 'site', modality: null, category: null }),
   chooseModality: (m) => set({ modality: m, screen: 'categoria' }),
   chooseCategory: (c) => set({ category: c, screen: 'modelo' }),
@@ -52,7 +65,8 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
 
   back: () => {
     const { screen } = get();
-    if (screen === 'checkout') set({ screen: 'editor' });
+    if (screen === 'kit') set({ screen: 'site' });
+    else if (screen === 'checkout') set({ screen: 'editor' });
     else if (screen === 'editor') set({ screen: 'modelo' });
     else if (screen === 'modelo') set({ screen: 'categoria' });
     else if (screen === 'categoria') set({ screen: 'modalidade', modality: null });

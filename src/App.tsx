@@ -52,6 +52,8 @@ export default function App() {
         <KitLab />
       ) : screen === 'site' ? (
         <SiteLanding />
+      ) : screen === 'kit' ? (
+        <KitLab />
       ) : screen === 'editor' ? (
         <div className="flex h-full flex-col bg-background">
           <SimulatorHeader />

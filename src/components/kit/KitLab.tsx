@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
 import { PECAS_KIT } from '@/types/kit';
 import { Button } from '../ui/button';
@@ -36,11 +37,19 @@ export function KitLab() {
   return (
     <div className="flex h-full flex-col bg-background">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b px-5">
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Voltar ao site"
+          onClick={() => useFlowStore.getState().goToSite()}
+        >
+          <ArrowLeft />
+        </Button>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Protótipo
+            KYPZL
           </p>
-          <h1 className="text-base font-bold leading-tight">Simulador por templates</h1>
+          <h1 className="text-base font-bold leading-tight">Simulador de conjuntos</h1>
         </div>
         <span className="ml-auto text-xs text-muted-foreground">
           {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
