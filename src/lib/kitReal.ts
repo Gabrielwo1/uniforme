@@ -14,10 +14,12 @@ import { CAMADAS, COR_FUNDO, QUADRO } from './estampas/milanDados';
  * recorta, por isso esticar o quadro à caixa é o encaixe certo.
  */
 
-/** Caixa do conteúdo (canal alfa) do PNG do corpo, por lado. */
+/** Caixa do TRONCO da camisola vestida (tela comum 1080×2460), medida
+    pelo scripts/vestir-conjunto.py — exclui as mangas, senão a estampa
+    estica até às pontas delas. */
 const CAIXA_CORPO: Record<LadoKit, { x: number; y: number; w: number; h: number }> = {
-  frente: { x: 488, y: 343, w: 1022, h: 1346 },
-  verso: { x: 534, y: 344, w: 933, h: 1345 },
+  frente: { x: 327, y: 384, w: 424, h: 1064 },
+  verso: { x: 322, y: 384, w: 440, h: 1064 },
 };
 
 function noLado(svg: string, lado: LadoKit): string {

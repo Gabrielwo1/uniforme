@@ -12,11 +12,13 @@ import type { Estampa, LadoKit, MoldePeca, PecaKit, ZonaPeca } from '@/types/kit
  * o motor (`PecaMockup`) não muda, porque só depende de `MoldePeca`/`Estampa`.
  */
 
-/** Dimensões da tela dos PNG de cada peça (vêm assim do designer). */
+/** Tela COMUM das peças vestidas: a coluna inteira do visualizador
+    (wrapper 270×615 × 4 — ver scripts/vestir-conjunto.py). Todas as peças
+    partilham a tela, por isso todos os slots são idênticos. */
 const TELAS: Record<PecaKit, { w: number; h: number }> = {
-  camisola: { w: 2000, h: 2000 },
-  calcao: { w: 2000, h: 2000 },
-  meiao: { w: 2000, h: 4151 },
+  camisola: { w: 1080, h: 2460 },
+  calcao: { w: 1080, h: 2460 },
+  meiao: { w: 1080, h: 2460 },
 };
 
 /* --------------------------------------------------- estampas registadas -- */
@@ -33,26 +35,15 @@ export function registarEstampas(lista: Estampa[]) {
 
 /* ---------------------------------------------------------------- moldes -- */
 
-/* Todas as peças usam os PNG reais recortados do PSD do cliente.
-   Só a camisola tem zonas separadas (corpo, mangas, gola polo — a gola
-   apenas de frente; no verso o corpo já a traz de série). Calção e meião
-   vieram numa peça única, e só de frente — o verso reutiliza a frente. */
+/* Peças no estilo "vestido" (forma 3D de corpo invisível), geradas por IA
+   na pose do jogador-modelo — é o que faz o conjunto encaixar nele. Uma
+   zona por peça, por agora: quando o designer separar gola/mangas destes
+   mockups em camadas, as zonas extra voltam a entrar aqui. */
 
 function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
-  if (peca === 'camisola') {
-    const png = (zona: string) => `/moldes/camisola-${lado}-${zona}.png`;
-    return [
-      { id: 'corpo', nome: 'Corpo', imagem: png('corpo'),
-        corPadrao: '#221f20', recebeEstampa: true },
-      { id: 'mangas', nome: 'Mangas', imagem: png('mangas'), corPadrao: '#c21633' },
-      ...(lado === 'frente'
-        ? [{ id: 'gola', nome: 'Gola', imagem: png('gola'), corPadrao: '#e9e9e9' }]
-        : []),
-    ];
-  }
   return [
-    { id: 'corpo', nome: 'Corpo', imagem: `/moldes/${peca}-corpo.png`,
-      corPadrao: '#ffffff', recebeEstampa: true },
+    { id: 'corpo', nome: 'Cor base', imagem: `/moldes/vestida-${peca}-${lado}.png`,
+      corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true },
   ];
 }
 

@@ -53,40 +53,26 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         {LADO_LABEL[lado]}
       </span>
 
-      {/* sobreposições negativas: o conjunto lê como uma peça só, vestida.
-          Os tamanhos calibram a escala real entre os PNG: a bainha da
-          camisola tem de assentar na cintura do calção. */}
-      <div className="relative flex flex-col items-center">
+      {/* As peças vestidas partilham uma tela comum que mapeia a coluna
+          inteira (ver scripts/vestir-conjunto.py): o encaixe no jogador é
+          cosido nos próprios PNG, por isso os slots são todos idênticos e
+          não há margens mágicas aqui. */}
+      <div className="relative h-[615px] w-[270px]">
         <Manequim lado={lado} />
-        {/* calibração medida nos PNG: cintura do calção (1086/2000) tem de
-            caber sob a bainha da camisola (690/2000 no slot de 270px) */}
-        <PecaSlot peca="camisola" lado={lado} className="z-30 h-[270px] w-[270px]" />
-        <PecaSlot peca="calcao" lado={lado} className="z-20 -mt-[71px] h-[168px] w-[168px]" />
-        {/* as meias assentam nas canelas do jogador, por isso os slots
-            sobrepõem-se — o desenho dentro deles é estreito e não se toca.
-            Centros medidos no alfa do jogador (scripts) — o jogador da
-            OpenAI tem postura mais aberta que o manequim-regra. */}
-        <div
-          className={cn(
-            'z-10 -mt-[14px] flex',
-            '-space-x-[41px]',
-          )}
-        >
-          <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px] -scale-x-100" />
-          <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px]" />
-        </div>
+        <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
+        <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
+        <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
       </div>
     </div>
   );
 }
 
 /**
- * Jogador-modelo por trás do conjunto: manequim de loja gerado por IA e
- * recortado (`/moldes/jogador-*.png`), como padrão de encaixe das peças.
+ * Jogador-modelo por trás do conjunto (gerado por IA e recortado).
  *
- * A âncora é a ALTURA: cabeça a espreitar acima da gola e pés sob os
- * meiões. Mudar os tamanhos dos slots em `ConjuntoLado` pede um reajuste
- * de `top`/`height` aqui.
+ * O wrapper mapeia a coluna inteira (cabeça a chão); o jogador ocupa-a
+ * de alto a baixo. As peças são cosidas sobre os marcos DELE pelo
+ * scripts/vestir-conjunto.py — se o jogador mudar, correr o script de novo.
  */
 function Manequim({ lado }: { lado: LadoKit }) {
   return (
@@ -96,10 +82,9 @@ function Manequim({ lado }: { lado: LadoKit }) {
         alt=""
         aria-hidden
         className={cn(
-          'pointer-events-none absolute -top-[40px] left-1/2 z-0 h-[612px] max-w-none',
+          'pointer-events-none absolute top-0 left-1/2 z-0 h-[612px] max-w-none',
           // o jogador gerado é mais encorpado que as peças; o aperto
-          // horizontal esconde o tronco e alinha os tornozelos às meias.
-          // Valores medidos no canal alfa do recorte.
+          // horizontal esconde o tronco. Valores medidos no canal alfa.
           lado === 'frente'
             ? '-translate-x-[calc(50%-2px)] scale-x-[0.86]'
             : '-translate-x-[calc(50%-3px)] scale-x-[0.84]',
@@ -108,7 +93,7 @@ function Manequim({ lado }: { lado: LadoKit }) {
       {/* sombra no chão, já que a do estúdio foi recortada com o fundo */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[576px] z-0 h-[16px] w-[190px] -translate-x-1/2 rounded-[50%] bg-black/15 blur-[6px]"
+        className="pointer-events-none absolute left-1/2 top-[600px] z-0 h-[16px] w-[190px] -translate-x-1/2 rounded-[50%] bg-black/15 blur-[6px]"
       />
     </>
   );
