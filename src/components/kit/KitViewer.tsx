@@ -58,10 +58,16 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
             caber sob a bainha da camisola (690/2000 no slot de 270px) */}
         <PecaSlot peca="camisola" lado={lado} className="z-30 h-[270px] w-[270px]" />
         <PecaSlot peca="calcao" lado={lado} className="z-20 -mt-[71px] h-[168px] w-[168px]" />
-        {/* as meias assentam nas canelas do jogador (tornozelos a ±20px do
-            centro), por isso os slots sobrepõem-se — o desenho dentro deles
-            é estreito e não chega a tocar-se */}
-        <div className="z-10 -mt-[14px] flex -space-x-[82px]">
+        {/* as meias assentam nas canelas do jogador, por isso os slots
+            sobrepõem-se — o desenho dentro deles é estreito e não se toca.
+            Centros medidos no alfa do manequim (scripts): pernas da frente
+            a 98/170 → space 58; verso a 103/167 → space 66. */}
+        <div
+          className={cn(
+            'z-10 -mt-[14px] flex',
+            lado === 'frente' ? '-space-x-[58px]' : '-space-x-[66px]',
+          )}
+        >
           <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px] -scale-x-100" />
           <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px]" />
         </div>
