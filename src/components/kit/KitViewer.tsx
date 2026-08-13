@@ -61,7 +61,7 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         {/* as meias assentam nas canelas do jogador (tornozelos a ±20px do
             centro), por isso os slots sobrepõem-se — o desenho dentro deles
             é estreito e não chega a tocar-se */}
-        <div className="z-10 -mt-[14px] flex -space-x-[86px]">
+        <div className="z-10 -mt-[14px] flex -space-x-[82px]">
           <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px] -scale-x-100" />
           <PecaSlot peca="meiao" lado={lado} className="h-[270px] w-[130px]" />
         </div>
@@ -85,7 +85,13 @@ function Manequim({ lado }: { lado: LadoKit }) {
         src={`/moldes/jogador-${lado}.png`}
         alt=""
         aria-hidden
-        className="pointer-events-none absolute -top-[40px] left-1/2 z-0 h-[612px] max-w-none -translate-x-1/2 opacity-90"
+        className={cn(
+          'pointer-events-none absolute -top-[40px] left-1/2 z-0 h-[612px] max-w-none -translate-x-1/2 opacity-90',
+          // o manequim gerado é mais encorpado que as peças; o aperto
+          // horizontal esconde o tronco e alinha os tornozelos às meias
+          // (o de costas saiu mais largo, leva mais)
+          lado === 'frente' ? 'scale-x-[0.93]' : 'scale-x-[0.88]',
+        )}
       />
       {/* sombra no chão, já que a do estúdio foi recortada com o fundo */}
       <div
