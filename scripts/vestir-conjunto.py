@@ -34,10 +34,16 @@ ALVOS = {
     # calção: cós escondido sob a bainha, termina bem acima do joelho;
     # largura na linha mais larga (a bainha evasê)
     'calcao': dict(topo=282, base=398, largura=132, linha_largura=0.60),
-    # meião: topo abaixo do joelho, pé no chão; largura = vão exterior
-    # do par na linha dos pés
+    # meião: topo abaixo do joelho, pé no chão; a escala e posição
+    # horizontais vêm dos CENTROS DOS PÉS do jogador (ver PES)
     'meiao': dict(topo=436, base=571, largura=120, linha_largura=0.95),
 }
+
+# centros dos pés do jogador, medidos no alfa (wrapper coords, por lado)
+PES = {'frente': (87.6, 173.8), 'verso': (83.6, 173.5)}
+
+# desvio horizontal do jogador em relação ao centro 135 (por lado)
+DESVIO = {'frente': -3, 'verso': -5}
 
 
 def instalar(origem, peca, lado):
@@ -64,8 +70,24 @@ def instalar(origem, peca, lado):
     esc_x = alvo['largura'] * M / larg_ref
     im = im.resize((int(im.width * esc_x), int(im.height * esc_y)), Image.LANCZOS)
 
+    if peca == 'meiao':
+        # ancorar pelos pés: medir os centros dos dois pés no PNG já
+        # escalado e casá-los com os pés do jogador
+        arr2 = np.array(im.getchannel('A'))
+        linha = arr2[int(arr2.shape[0] * 0.96)]
+        xs2 = np.where(linha > 60)[0]
+        grupos = np.split(xs2, np.where(np.diff(xs2) > 20)[0] + 1)
+        grupos = sorted(sorted(grupos, key=len, reverse=True)[:2], key=lambda g: g[0])
+        c_esq = (grupos[0][0] + grupos[0][-1]) / 2
+        c_dir = (grupos[1][0] + grupos[1][-1]) / 2
+        alvo_esq, alvo_dir = (p * M for p in PES[lado])
+        fator = (alvo_dir - alvo_esq) / (c_dir - c_esq)
+        im = im.resize((int(im.width * fator), im.height), Image.LANCZOS)
+        x0 = int(alvo_esq - c_esq * fator)
+    else:
+        x0 = int((135 + DESVIO[lado]) * M - im.width / 2)
+
     tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    x0 = int(135 * M - im.width / 2)
     y0 = int((alvo['topo'] + DY) * M)
     tela.alpha_composite(im, (x0, y0))
     tela.save(f'public/moldes/vestida-{peca}-{lado}.png')
