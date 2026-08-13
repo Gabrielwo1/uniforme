@@ -23,15 +23,20 @@ M = 4                       # wrapper px -> canvas px
 W, H = 270 * M, 615 * M     # 1080 × 2460
 DY = 40                     # wrapper y -40 -> canvas y 0
 
-# alvos por peça: onde a peça assenta no jogador (wrapper coords)
+# Alvos por peça: onde a peça assenta no jogador (wrapper coords).
+# As PROPORÇÕES entre peças seguem a régua do simulador de referência
+# (calção ≈ 75% da largura da camisa, meião ≈ 67%, camisa curta a acabar
+# na cintura, calção bem visível) — só as proporções; os assets são nossos.
 ALVOS = {
-    # camisola: gola no pescoço, bainha na anca; largura pelas mangas
-    'camisola': dict(topo=56, base=322, largura=192, linha_largura=0.30),
-    # calção: cós debaixo da bainha da camisola, bainha acima do joelho;
-    # largura medida na linha do cós
-    'calcao': dict(topo=316, base=428, largura=138, linha_largura=0.08),
-    # meião: topo no joelho, pé no chão; largura = vão exterior do par
-    'meiao': dict(topo=436, base=571, largura=132, linha_largura=0.08),
+    # camisola: gola na base do pescoço, bainha na cintura; largura = vão
+    # das mangas, pouco além dos braços do jogador (162)
+    'camisola': dict(topo=48, base=288, largura=188, linha_largura=0.30),
+    # calção: cós escondido sob a bainha, termina bem acima do joelho;
+    # largura na linha mais larga (a bainha evasê)
+    'calcao': dict(topo=282, base=398, largura=132, linha_largura=0.60),
+    # meião: topo abaixo do joelho, pé no chão; largura = vão exterior
+    # do par na linha dos pés
+    'meiao': dict(topo=436, base=571, largura=120, linha_largura=0.95),
 }
 
 
