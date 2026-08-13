@@ -139,10 +139,28 @@ function estampaFaixa(peca: PecaKit): Estampa {
   };
 }
 
-/** Estampas disponíveis por peça: primeiro as reais, depois as demo. */
+/** Peça sem estampa — só as cores das zonas. */
+function estampaLisa(peca: PecaKit): Estampa {
+  return {
+    id: `liso-${peca}`,
+    codModelo: '000',
+    nome: 'Liso',
+    peca,
+    corBasePadrao: '#ffffff',
+    camadas: [],
+  };
+}
+
+/**
+ * Estampas disponíveis por peça: primeiro as reais, depois "Liso", depois as
+ * demo. A primeira é a seleção por omissão — na camisola é o tema real; no
+ * calção e meião (sem arte real ainda) é o liso, para o tema da camisola não
+ * aparecer "esticado" nas outras peças sem ser pedido.
+ */
 export function estampasDemo(peca: PecaKit): Estampa[] {
   return [
     ...REGISTADAS.filter((e) => e.peca === peca),
+    estampaLisa(peca),
     estampaListras(peca),
     estampaFaixa(peca),
   ];
