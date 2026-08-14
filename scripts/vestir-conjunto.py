@@ -84,10 +84,10 @@ def componentes(im):
         for g in grupos]
 
 
-def instalar_botas(origem, lado, altura=64, folga_y=6):
+def instalar_botas(origem, lado, altura=74, folga_y=8):
     """Chuteiras estáticas (não recolorem): cada bota ancorada ao pé da meia
-    correspondente na tela já cozida — como na referência, a meia entra na
-    bota."""
+    correspondente na tela já cozida. Mecânica da referência: a meia é
+    CORTADA no tornozelo e entra na bota — sem pé de meia por baixo."""
     meias = Image.open(f'public/moldes/vestida-meiao-{lado}.png')
     a = np.array(meias.getchannel('A'))
     ys, xs = np.where(a > 60)
@@ -104,14 +104,24 @@ def instalar_botas(origem, lado, altura=64, folga_y=6):
     botas = componentes(par)
 
     tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    topo_botas = []
     for bota, cx in zip(botas, centros):
         esc = altura * M / bota.height
         b = bota.resize((int(bota.width * esc), int(bota.height * esc)), Image.LANCZOS)
         x0 = int(cx - b.width / 2)
         y0 = int(fundo_meia + folga_y * M - b.height)
         tela.alpha_composite(b, (x0, y0))
+        topo_botas.append(y0)
         print(f'botas-{lado}: bota em ({x0},{y0}) {b.width}x{b.height}')
     tela.save(f'public/moldes/botas-{lado}.png')
+
+    # cortar a meia no tornozelo (um pouco abaixo da abertura da bota,
+    # para a transição ficar escondida dentro dela)
+    corte = int(max(topo_botas) + altura * M * 0.42)
+    am = np.array(meias)
+    am[corte:, :, 3] = 0
+    Image.fromarray(am).save(f'public/moldes/vestida-meiao-{lado}.png')
+    print(f'botas-{lado}: meia cortada no tornozelo (y={corte})')
 
 
 if __name__ == '__main__':
