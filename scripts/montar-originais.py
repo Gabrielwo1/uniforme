@@ -73,7 +73,12 @@ def montar(pasta, lado):
         im = escalar(carregar(pasta, peca + sufixo))
         tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         x0 = round(135 * M - im.width / 2)
-        y0 = TOPOS[peca] * M
+        topo = TOPOS[peca]
+        # o par de botas do verso é raso (só calcanhares): as meias do
+        # verso descem um pouco para entrar neles
+        if peca == 'meiao' and lado == 'verso':
+            topo += 15
+        y0 = topo * M
         tela.alpha_composite(im, (x0, y0))
         nome_peca = 'camisola' if peca == 'camisa' else peca
         tela.save(f'public/moldes/vestida-{nome_peca}-{lado}.png')
@@ -90,11 +95,9 @@ def montar(pasta, lado):
             print(f'   caixa estampa {lado}: x={xs.min()}, y={cy}, '
                   f'w={xs.max() - xs.min()}, h={y0 + im.height - cy}')
 
-    # botas (sem detalhe_verso.webp, o par de frente serve os dois lados):
-    # na composição original só a bota DE PÉ recebe uma meia; a inclinada é
-    # um adereço pousado ao lado. O par entra INTEIRO (composição intacta),
-    # ancorado pela abertura da bota de pé ao tornozelo da meia esquerda,
-    # com os fundos na linha de chão.
+    # botas: cada lado usa o SEU par original (detalhe / detalhe_verso),
+    # inteiro — composição intacta — ancorado pela abertura da primeira
+    # bota ao tornozelo da meia esquerda, fundos na linha de chão.
     tela_meiao, im_meiao, mx0, my0 = telas['meiao']
     am = np.array(im_meiao.getchannel('A'))
     b1 = blocos(im_meiao)[0]
@@ -104,7 +107,7 @@ def montar(pasta, lado):
     xs = np.where((col[alto:ys[-1] + 1] > 40).any(axis=0))[0]
     tornozelo = mx0 + b1[0] + (xs[0] + xs[-1]) / 2
 
-    par = escalar(carregar(pasta, 'detalhe'))
+    par = escalar(carregar(pasta, 'detalhe' + sufixo))
     bp = blocos(par)[0]
     ap = np.array(par.getchannel('A'))
     colp = ap[:, bp[0]:bp[-1] + 1]
@@ -114,34 +117,11 @@ def montar(pasta, lado):
     abertura = bp[0] + (xsp[0] + xsp[-1]) / 2
 
     tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    if lado == 'frente':
-        # par inteiro: a composição original já casa com as meias da frente
-        x0 = round(tornozelo - abertura)
-        y0 = 600 * M - par.height
-        tela.alpha_composite(par, (x0, y0))
-        print(f'botas-{lado}: par em ({x0},{y0})')
-    else:
-        # as meias do verso são mais abertas que a composição do par:
-        # divide-se (posições apenas) — bota de pé no tornozelo esquerdo,
-        # bota inclinada com a abertura sob a meia direita, ambas no chão
-        cold = am[:, blocos(im_meiao)[1][0]:blocos(im_meiao)[1][-1] + 1]
-        ysd = np.where((cold > 40).any(axis=1))[0]
-        altod = int(ysd[-1] - (ysd[-1] - ysd[0]) * 0.10)
-        xsd = np.where((cold[altod:ysd[-1] + 1] > 40).any(axis=0))[0]
-        tornozelo_dir = mx0 + blocos(im_meiao)[1][0] + (xsd[0] + xsd[-1]) / 2
-
-        alvos_x = (tornozelo, tornozelo_dir)
-        for b, alvo_x in zip(blocos(par), alvos_x):
-            bota = par.crop((b[0], 0, b[-1] + 1, par.height))
-            bota = bota.crop(bota.getchannel('A').getbbox())
-            ab = np.array(bota.getchannel('A'))
-            topo_b = ab[:max(int(ab.shape[0] * 0.15), 4)]
-            xsb = np.where((topo_b > 40).any(axis=0))[0]
-            x0 = round(alvo_x - (xsb[0] + xsb[-1]) / 2)
-            y0 = 600 * M - bota.height
-            tela.alpha_composite(bota, (x0, y0))
-            print(f'botas-{lado}: bota em ({x0},{y0}) {bota.width}x{bota.height}')
+    x0 = round(tornozelo - abertura)
+    y0 = 600 * M - par.height
+    tela.alpha_composite(par, (x0, y0))
     tela.save(f'public/moldes/botas-{lado}.png')
+    print(f'botas-{lado}: par em ({x0},{y0}) {par.width}x{par.height}')
 
 if __name__ == '__main__':
     pasta = sys.argv[1]
