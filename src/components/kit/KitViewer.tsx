@@ -60,6 +60,14 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
         <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
         <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
+        {/* chuteiras: camada estática (não recolorem), meia entra na bota —
+            ancoradas aos pés das meias pelo scripts/vestir-conjunto.py */}
+        <img
+          src={`/moldes/botas-${lado}.png`}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain drop-shadow-lg"
+        />
       </div>
     </div>
   );

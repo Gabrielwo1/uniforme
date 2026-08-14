@@ -66,6 +66,49 @@ def instalar(origem, peca, lado):
               f'w={xs.max() - xs.min()}, h={y0 + im.height - cy}')
 
 
+def componentes(im):
+    """Divide a imagem nos seus blocos horizontais (bota esquerda/direita)."""
+    a = np.array(im.getchannel('A'))
+    colunas = (a > 60).any(axis=0)
+    xs = np.where(colunas)[0]
+    saltos = np.where(np.diff(xs) > 12)[0]
+    grupos = np.split(xs, saltos + 1)
+    grupos = sorted(sorted(grupos, key=len, reverse=True)[:2], key=lambda g: g[0])
+    return [im.crop((g[0], 0, g[-1] + 1, im.height)).crop(
+        im.crop((g[0], 0, g[-1] + 1, im.height)).getchannel('A').getbbox())
+        for g in grupos]
+
+
+def instalar_botas(origem, lado, altura=64, folga_y=10):
+    """Chuteiras estáticas (não recolorem): cada bota ancorada ao pé da meia
+    correspondente na tela já cozida — como na referência, a meia entra na
+    bota."""
+    meias = Image.open(f'public/moldes/vestida-meiao-{lado}.png')
+    a = np.array(meias.getchannel('A'))
+    ys, xs = np.where(a > 60)
+    fundo_meia = ys.max()
+    # centros dos dois pés: colunas na faixa dos últimos 12% da meia
+    faixa = a[int(fundo_meia - (fundo_meia - ys.min()) * 0.12):fundo_meia + 1]
+    cols = np.where((faixa > 60).any(axis=0))[0]
+    g = np.split(cols, np.where(np.diff(cols) > 20)[0] + 1)
+    g = sorted(sorted(g, key=len, reverse=True)[:2], key=lambda x: x[0])
+    centros = [(x[0] + x[-1]) / 2 for x in g]
+
+    par = Image.open(origem).convert('RGBA')
+    par = par.crop(par.getchannel('A').getbbox())
+    botas = componentes(par)
+
+    tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    for bota, cx in zip(botas, centros):
+        esc = altura * M / bota.height
+        b = bota.resize((int(bota.width * esc), int(bota.height * esc)), Image.LANCZOS)
+        x0 = int(cx - b.width / 2)
+        y0 = int(fundo_meia + folga_y * M - b.height)
+        tela.alpha_composite(b, (x0, y0))
+        print(f'botas-{lado}: bota em ({x0},{y0}) {b.width}x{b.height}')
+    tela.save(f'public/moldes/botas-{lado}.png')
+
+
 if __name__ == '__main__':
     pasta = sys.argv[1]
     os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -73,3 +116,5 @@ if __name__ == '__main__':
         nome = 'camisa' if peca == 'camisola' else peca
         for lado in ('frente', 'verso'):
             instalar(f'{pasta}/c-{nome}-{lado}.png', peca, lado)
+    for lado in ('frente', 'verso'):
+        instalar_botas(f'{pasta}/botas-{lado}-raw.png', lado)
