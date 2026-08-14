@@ -19,8 +19,8 @@ import { CAMADAS, COR_FUNDO, QUADRO } from './estampas/milanDados';
     a GOLA (senão o tema sobe pelo pescoço e parece gola alta; a gola fica
     com a cor base). */
 const CAIXA_CORPO: Record<LadoKit, { x: number; y: number; w: number; h: number }> = {
-  frente: { x: 321, y: 126, w: 437, h: 872 },
-  verso: { x: 317, y: 128, w: 450, h: 896 },
+  frente: { x: 323, y: 108, w: 440, h: 880 },
+  verso: { x: 319, y: 109, w: 441, h: 889 },
 };
 
 function noLado(svg: string, lado: LadoKit): string {
