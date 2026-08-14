@@ -15,10 +15,10 @@ import { PecaMockup } from './PecaMockup';
 
 /**
  * Visualizador do conjunto: frente e verso lado a lado, com as três peças
- * empilhadas como um equipamento vestido, sobre a foto do jogador.
+ * FLUTUANTES empilhadas ao alto — a estética do simulador de referência,
+ * sem corpo por trás.
  *
- * Setas trocam a estampa da peça; o cadeado prende/solta a peça da
- * sincronização (ver `useKitStore.alvos`).
+ * O cadeado prende/solta a peça da sincronização (ver `useKitStore.alvos`).
  */
 export function KitViewer({ fundo }: { fundo?: string }) {
   return (
@@ -53,49 +53,15 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         {LADO_LABEL[lado]}
       </span>
 
-      {/* As peças vestidas partilham uma tela comum que mapeia a coluna
-          inteira (ver scripts/vestir-conjunto.py): o encaixe no jogador é
-          cosido nos próprios PNG, por isso os slots são todos idênticos e
-          não há margens mágicas aqui. */}
+      {/* As peças partilham uma tela comum que mapeia a coluna inteira
+          (ver scripts/vestir-conjunto.py): o layout está cosido nos PNG,
+          por isso os slots são todos idênticos, sem margens mágicas. */}
       <div className="relative h-[615px] w-[270px]">
-        <Manequim lado={lado} />
         <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
         <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
         <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
       </div>
     </div>
-  );
-}
-
-/**
- * Jogador-modelo por trás do conjunto (gerado por IA e recortado).
- *
- * O wrapper mapeia a coluna inteira (cabeça a chão); o jogador ocupa-a
- * de alto a baixo. As peças são cosidas sobre os marcos DELE pelo
- * scripts/vestir-conjunto.py — se o jogador mudar, correr o script de novo.
- */
-function Manequim({ lado }: { lado: LadoKit }) {
-  return (
-    <>
-      <img
-        src={`/moldes/jogador-${lado}.png`}
-        alt=""
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute top-0 left-1/2 z-0 h-[612px] max-w-none',
-          // o jogador gerado é mais encorpado que as peças; o aperto
-          // horizontal esconde o tronco. Valores medidos no canal alfa.
-          lado === 'frente'
-            ? '-translate-x-[calc(50%-2px)] scale-x-[0.86]'
-            : '-translate-x-[calc(50%-3px)] scale-x-[0.84]',
-        )}
-      />
-      {/* sombra no chão, já que a do estúdio foi recortada com o fundo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[600px] z-0 h-[16px] w-[190px] -translate-x-1/2 rounded-[50%] bg-black/15 blur-[6px]"
-      />
-    </>
   );
 }
 
