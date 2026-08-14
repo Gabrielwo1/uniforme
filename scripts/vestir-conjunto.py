@@ -26,7 +26,7 @@ W, H = 270 * M, 615 * M
 ALVOS = {
     'camisola': dict(topo=10, largura=216, base=256),
     'calcao': dict(topo=262, largura=162, base=396),
-    'meiao': dict(topo=404, largura=145, base=600, ancora='base'),
+    'meiao': dict(topo=404, largura=122, base=600, ancora='base'),
 }
 
 
@@ -84,7 +84,7 @@ def componentes(im):
         for g in grupos]
 
 
-def instalar_botas(origem, lado, altura=74, folga_y=8):
+def instalar_botas(origem, lado, altura=62, folga_y=6):
     """Chuteiras estáticas (não recolorem): cada bota ancorada ao pé da meia
     correspondente na tela já cozida. Mecânica da referência: a meia é
     CORTADA no tornozelo e entra na bota — sem pé de meia por baixo."""
@@ -130,6 +130,10 @@ if __name__ == '__main__':
     for peca in ('camisola', 'calcao', 'meiao'):
         nome = 'camisa' if peca == 'camisola' else peca
         for lado in ('frente', 'verso'):
-            instalar(f'{pasta}/c-{nome}-{lado}.png', peca, lado)
+            # meião: o par do verso (alto e esguio) serve os dois lados —
+            # cortada no tornozelo, uma meia sem pé é igual de ambos os
+            # lados; o par da frente era baixo e ficava atarracado
+            origem_lado = 'verso' if peca == 'meiao' else lado
+            instalar(f'{pasta}/c-{nome}-{origem_lado}.png', peca, lado)
     for lado in ('frente', 'verso'):
         instalar_botas(f'{pasta}/botas-{lado}-raw.png', lado)
