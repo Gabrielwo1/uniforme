@@ -26,7 +26,7 @@ W, H = 270 * M, 615 * M
 ALVOS = {
     'camisola': dict(topo=10, largura=216, base=256),
     'calcao': dict(topo=262, largura=162, base=396),
-    'meiao': dict(topo=404, largura=145, base=608),
+    'meiao': dict(topo=404, largura=145, base=600, ancora='base'),
 }
 
 
@@ -49,7 +49,12 @@ def instalar(origem, peca, lado):
 
     tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     x0 = int(135 * M - im.width / 2)
-    y0 = int(alvo['topo'] * M)
+    # âncora 'base': frente e verso terminam na mesma linha de chão,
+    # mesmo quando os recortes têm alturas diferentes
+    if alvo.get('ancora') == 'base':
+        y0 = int(alvo['base'] * M - im.height)
+    else:
+        y0 = int(alvo['topo'] * M)
     tela.alpha_composite(im, (x0, y0))
     tela.save(f'public/moldes/vestida-{peca}-{lado}.png')
     print(f'{peca}-{lado}: canvas ({x0},{y0})..({x0 + im.width},{y0 + im.height})'
@@ -79,7 +84,7 @@ def componentes(im):
         for g in grupos]
 
 
-def instalar_botas(origem, lado, altura=64, folga_y=10):
+def instalar_botas(origem, lado, altura=64, folga_y=6):
     """Chuteiras estáticas (não recolorem): cada bota ancorada ao pé da meia
     correspondente na tela já cozida — como na referência, a meia entra na
     bota."""
