@@ -1,17 +1,18 @@
-import { useMemo } from 'react';
+import { useState } from 'react';
 import { Lock, LockOpen } from 'lucide-react';
 import { useKitStore } from '@/store/useKitStore';
-import { estampaDemoPorId, estampasDemo, moldeDemo } from '@/lib/kitDemo';
+import { VARIANTE_JOGADOR, estampaDemoPorId, estampasDemo, moldeDemo } from '@/lib/kitDemo';
 import {
   LADOS_KIT,
   LADO_LABEL,
+  PECAS_KIT,
   PECA_LABEL,
   type Estampa,
   type LadoKit,
   type PecaKit,
 } from '@/types/kit';
 import { cn } from '@/lib/utils';
-import { PecaMockup } from './PecaMockup';
+import { PecaMockup, forcarCor } from './PecaMockup';
 
 /**
  * Visualizador do conjunto: frente e verso lado a lado, com as três peças
@@ -57,17 +58,28 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
           (ver scripts/vestir-conjunto.py): o layout está cosido nos PNG,
           por isso os slots são todos idênticos, sem margens mágicas. */}
       <div className="relative h-[615px] w-[270px]">
+        {VARIANTE_JOGADOR && (
+          /* ambiente de teste: o jogador recortado por trás das peças;
+             as botas são as dele, por isso a camada de botas não entra */
+          <img
+            src={`/moldes/jog/jogador-${lado}.png`}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-[6px] z-0 h-[600px] max-w-none -translate-x-1/2"
+          />
+        )}
         <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
         <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
         <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
-        {/* chuteiras: camada estática (não recolorem), meia entra na bota —
-            ancoradas aos pés das meias pelo scripts/vestir-conjunto.py */}
-        <img
-          src={`/moldes/botas-${lado}.png`}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain drop-shadow-lg"
-        />
+        {!VARIANTE_JOGADOR && (
+          /* chuteiras: camada estática (não recolorem), meia entra na bota */
+          <img
+            src={`/moldes/botas-${lado}.png`}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain drop-shadow-lg"
+          />
+        )}
       </div>
     </div>
   );
@@ -97,33 +109,41 @@ function PecaSlot({
 }
 
 /**
- * Controlos por peça: galeria de MINIATURAS dos temas (renderizadas pelo
- * próprio motor, para o utilizador ver o tema em vez de adivinhar pelo
- * nome) + cadeado de sincronização.
+ * Galeria de estampas à maneira da referência: separadores por peça no
+ * topo, grelha de QUADRADOS que mostram o desenho do tema flat (não em
+ * forma de peça), com o "Cod. Modelo" por baixo, e o cadeado de
+ * sincronização da peça ativa.
  */
-export function ControlosPeca({ peca }: { peca: PecaKit }) {
+export function GaleriaEstampas() {
+  const [peca, setPeca] = useState<PecaKit>('camisola');
   const config = useKitStore((s) => s.design.pecas[peca]);
   const sincronizadas = useKitStore((s) => s.design.sincronizadas);
   const setEstampa = useKitStore((s) => s.setEstampa);
   const toggleSincronizar = useKitStore((s) => s.toggleSincronizar);
-
-  const estampa = estampaDemoPorId(peca, config.estampaId);
   const presa = sincronizadas.includes(peca);
 
   return (
-    <div className="rounded-lg border bg-card px-2.5 py-2 shadow-sm">
-      <div className="flex items-center gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {PECA_LABEL[peca]}
-        </p>
-        <p className="min-w-0 flex-1 truncate text-right text-xs font-bold">
-          {estampa.nome} · {estampa.codModelo}
-        </p>
+    <div className="rounded-lg border bg-card shadow-sm">
+      <div className="flex items-center gap-1 border-b p-1.5">
+        {PECAS_KIT.map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeca(p)}
+            className={cn(
+              'flex-1 rounded-md px-2 py-1.5 text-xs font-bold transition',
+              p === peca
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-accent',
+            )}
+          >
+            {PECA_LABEL[p]}
+          </button>
+        ))}
         <button
           onClick={() => toggleSincronizar(peca)}
           title={presa ? 'Sincronizada — clique para soltar' : 'Solta — clique para sincronizar'}
           className={cn(
-            'grid h-7 w-7 shrink-0 place-items-center rounded-full border transition',
+            'grid h-8 w-8 shrink-0 place-items-center rounded-md border transition',
             presa ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent',
           )}
         >
@@ -131,11 +151,10 @@ export function ControlosPeca({ peca }: { peca: PecaKit }) {
         </button>
       </div>
 
-      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
+      <div className="grid grid-cols-3 gap-2 p-3">
         {estampasDemo(peca).map((e) => (
-          <MiniaturaEstampa
+          <QuadradoEstampa
             key={e.id}
-            peca={peca}
             estampa={e}
             ativa={e.id === config.estampaId}
             onEscolher={() => setEstampa(peca, e.id)}
@@ -146,37 +165,49 @@ export function ControlosPeca({ peca }: { peca: PecaKit }) {
   );
 }
 
-/** Miniatura clicável de um tema — a peça de frente, nas cores por omissão. */
-function MiniaturaEstampa({
-  peca,
+/** Quadrado da galeria: o desenho do tema nas cores por omissão. */
+function QuadradoEstampa({
   estampa,
   ativa,
   onEscolher,
 }: {
-  peca: PecaKit;
   estampa: Estampa;
   ativa: boolean;
   onEscolher: () => void;
 }) {
-  const molde = useMemo(() => moldeDemo(peca, 'frente'), [peca]);
-  const config = useMemo(
-    () => ({ estampaId: estampa.id, coresZonas: {}, cores: {} }),
-    [estampa.id],
-  );
-
   return (
-    <button
-      onClick={onEscolher}
-      title={`${estampa.nome} · ${estampa.codModelo}`}
-      className={cn(
-        'flex shrink-0 flex-col items-center gap-0.5 rounded-md border p-1 transition',
-        ativa ? 'border-primary ring-1 ring-primary' : 'hover:bg-accent',
-      )}
-    >
-      <div className="grid h-14 w-12 place-items-center rounded bg-gradient-to-b from-[#e6eaef] to-[#cdd4dc]">
-        <PecaMockup molde={molde} estampa={estampa} config={config} className="h-12 w-10" />
+    <button onClick={onEscolher} title={estampa.nome} className="group flex flex-col items-center gap-1">
+      <div
+        className={cn(
+          'aspect-square w-full overflow-hidden rounded-md border-2 transition',
+          ativa ? 'border-primary ring-2 ring-primary/40' : 'border-border group-hover:border-foreground/40',
+        )}
+        style={{ backgroundColor: estampa.corBasePadrao }}
+      >
+        {estampa.camadas.length > 0 && (
+          <svg
+            viewBox={estampa.amostraViewBox ?? '0 0 1080 2460'}
+            preserveAspectRatio="xMidYMid slice"
+            className="h-full w-full"
+          >
+            {estampa.camadas.map((c) => (
+              <g
+                key={c.id}
+                dangerouslySetInnerHTML={{
+                  __html: forcarCor(c.desenho.frente ?? '', c.corPadrao),
+                }}
+              />
+            ))}
+          </svg>
+        )}
       </div>
-      <span className="max-w-[52px] truncate text-[9px] leading-tight text-muted-foreground">
+      <span
+        className={cn(
+          'w-full truncate rounded-md px-1.5 py-0.5 text-center text-xs font-bold leading-tight',
+          ativa ? 'bg-foreground text-background' : 'bg-muted text-foreground',
+        )}
+        title={`Cod. ${estampa.codModelo}`}
+      >
         {estampa.nome}
       </span>
     </button>

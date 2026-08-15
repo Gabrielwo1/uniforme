@@ -26,11 +26,30 @@ from PIL import Image
 M = 4
 W, H = 270 * M, 615 * M
 
-# um único fator para TODAS as peças (wrapper px por px do ficheiro)
+# Perfis de montagem. O "padrao" é o layout flutuante da versão principal
+# (um único fator para todas as peças). O "jogador" é o AMBIENTE DE TESTE
+# (?lab=jogador): as peças vestem o jogador recortado — fator e topo por
+# peça (escala sempre uniforme; nada é distorcido), sem camada de botas
+# porque o jogador traz as dele.
+PERFIS = {
+    'padrao': dict(
+        saida='public/moldes',
+        fatores={'camisa': 0.81, 'calcao': 0.81, 'meiao': 0.81},
+        topos={'camisa': 8, 'calcao': 244, 'meiao': 405},
+        botas=True,
+    ),
+    'jogador': dict(
+        saida='public/moldes/jog',
+        fatores={'camisa': 0.62, 'calcao': 0.66, 'meiao': 0.66},
+        topos={'camisa': 94, 'calcao': 300, 'meiao': 434},
+        botas=False,
+        # pernas do jogador recortado (wrapper x, medidas no alfa): cada
+        # meia do par ancora à sua perna — divisão só de posicionamento
+        pernas={'frente': (84.6, 182.3), 'verso': (79.8, 185.3)},
+    ),
+}
+PERFIL = PERFIS['padrao']
 FATOR = 0.81
-
-# topo de cada peça (wrapper coords); larguras decorrem do fator
-TOPOS = {'camisa': 8, 'calcao': 244, 'meiao': 405}
 
 
 def carregar(pasta, nome):
@@ -41,18 +60,23 @@ def carregar(pasta, nome):
     temos. Achatar a sombra sobre branco dá exatamente a textura multiply
     que o motor deles produz, e o alfa passa a forma sólida — é o mesmo
     pipeline, refatorado; nenhum detalhe é redesenhado."""
-    im = Image.open(f'{pasta}/futebol_masculino_2_{nome}.webp').convert('RGBA')
-    im = im.crop(im.getchannel('A').getbbox())
+    base = f'{pasta}/futebol_masculino_2_{nome}'
+    caminho = base + ('.webp' if os.path.exists(base + '.webp') else '.png')
+    im = Image.open(caminho).convert('RGBA')
+    caixa = im.getchannel('A').getbbox()
+    im = im.crop(caixa)
     a = np.array(im).astype(np.float32)
     alfa = a[..., 3:4] / 255.0
     rgb = a[..., :3] * alfa + 255.0 * (1.0 - alfa)
     forma = np.clip(a[..., 3] * 42.0, 0, 255)
     out = np.dstack([rgb, forma]).astype(np.uint8)
-    return Image.fromarray(out)
+    # a caixa devolve-se junto: peças que partilham a prancheta (camisa e
+    # gola) alinham-se pelo desvio entre os seus recortes
+    return Image.fromarray(out), caixa
 
 
-def escalar(im):
-    f = FATOR * M
+def escalar(im, f=None):
+    f = (f if f is not None else FATOR) * M
     return im.resize((round(im.width * f), round(im.height * f)), Image.LANCZOS)
 
 
@@ -69,11 +93,26 @@ def montar(pasta, lado):
     sufixo = '' if lado == 'frente' else '_verso'
     telas = {}
 
+    saida = PERFIL['saida']
     for peca in ('camisa', 'calcao', 'meiao'):
-        im = escalar(carregar(pasta, peca + sufixo))
+        fator = PERFIL['fatores'][peca]
+        im, caixa = carregar(pasta, peca + sufixo)
+        im = escalar(im, fator)
         tela = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         x0 = round(135 * M - im.width / 2)
-        topo = TOPOS[peca]
+        topo = PERFIL['topos'][peca]
+        if peca == 'meiao' and 'pernas' in PERFIL:
+            # par dividido: cada meia centrada na sua perna do jogador
+            y0m = topo * M
+            for b, cx in zip(blocos(im), PERFIL['pernas'][lado]):
+                meia = im.crop((b[0], 0, b[-1] + 1, im.height))
+                meia = meia.crop(meia.getchannel('A').getbbox())
+                tela.alpha_composite(meia, (round(cx * M - meia.width / 2), y0m))
+            nome_peca = 'meiao'
+            tela.save(f'{saida}/vestida-meiao-{lado}.png')
+            telas[peca] = (tela, im, x0, y0m)
+            print(f'meiao-{lado}: par dividido nas pernas {PERFIL["pernas"][lado]}')
+            continue
         # o par de botas do verso é raso (só calcanhares): as meias do
         # verso descem um pouco para entrar neles
         if peca == 'meiao' and lado == 'verso':
@@ -81,12 +120,21 @@ def montar(pasta, lado):
         y0 = topo * M
         tela.alpha_composite(im, (x0, y0))
         nome_peca = 'camisola' if peca == 'camisa' else peca
-        tela.save(f'public/moldes/vestida-{nome_peca}-{lado}.png')
+        tela.save(f'{saida}/vestida-{nome_peca}-{lado}.png')
         telas[peca] = (tela, im, x0, y0)
         print(f'{nome_peca}-{lado}: ({x0},{y0}) {im.width}x{im.height} '
               f'[{im.width / M:.0f}×{im.height / M:.0f} wrapper]')
 
         if peca == 'camisa':
+            gola, caixa_g = carregar(pasta, 'gola' + sufixo)
+            gola = escalar(gola, fator)
+            tg = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+            gx = round(x0 + (caixa_g[0] - caixa[0]) * fator * M)
+            gy = round(y0 + (caixa_g[1] - caixa[1]) * fator * M)
+            tg.alpha_composite(gola, (gx, gy))
+            tg.save(f'{saida}/vestida-gola-{lado}.png')
+            print(f'gola-{lado}: ({gx},{gy}) {gola.width}x{gola.height}')
+
             # caixa do tronco p/ a estampa: linha a 55% sem mangas; gola
             # excluída pelos primeiros 8% da altura
             arr = np.array(tela.getchannel('A'))
@@ -94,6 +142,9 @@ def montar(pasta, lado):
             cy = y0 + int(im.height * 0.08)
             print(f'   caixa estampa {lado}: x={xs.min()}, y={cy}, '
                   f'w={xs.max() - xs.min()}, h={y0 + im.height - cy}')
+
+    if not PERFIL['botas']:
+        return
 
     # botas: cada lado usa o SEU par original (detalhe / detalhe_verso),
     # inteiro — composição intacta — ancorado pela abertura da primeira
@@ -107,7 +158,8 @@ def montar(pasta, lado):
     xs = np.where((col[alto:ys[-1] + 1] > 40).any(axis=0))[0]
     tornozelo = mx0 + b1[0] + (xs[0] + xs[-1]) / 2
 
-    par = escalar(carregar(pasta, 'detalhe' + sufixo))
+    par, _ = carregar(pasta, 'detalhe' + sufixo)
+    par = escalar(par, PERFIL['fatores']['meiao'])
     bp = blocos(par)[0]
     ap = np.array(par.getchannel('A'))
     colp = ap[:, bp[0]:bp[-1] + 1]
@@ -120,11 +172,13 @@ def montar(pasta, lado):
     x0 = round(tornozelo - abertura)
     y0 = 600 * M - par.height
     tela.alpha_composite(par, (x0, y0))
-    tela.save(f'public/moldes/botas-{lado}.png')
+    tela.save(f"{PERFIL['saida']}/botas-{lado}.png")
     print(f'botas-{lado}: par em ({x0},{y0}) {par.width}x{par.height}')
 
 if __name__ == '__main__':
     pasta = sys.argv[1]
+    PERFIL = PERFIS[sys.argv[2] if len(sys.argv) > 2 else 'padrao']
     os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.makedirs(PERFIL['saida'], exist_ok=True)
     for lado in ('frente', 'verso'):
         montar(pasta, lado)

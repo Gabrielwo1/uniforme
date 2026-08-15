@@ -90,6 +90,9 @@ export interface Estampa {
   peca: PecaKit;
   corBasePadrao: string;
   camadas: CamadaEstampa[];
+  /** Janela (viewBox) do desenho para a miniatura quadrada da galeria —
+      mostra o padrão flat, como na referência, e não a peça vestida. */
+  amostraViewBox?: string;
 }
 
 /** Escolhas do utilizador para UMA peça. */

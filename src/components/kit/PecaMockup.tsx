@@ -159,7 +159,7 @@ function Zona({
  * cada path; sem esta troca, herdar a cor do grupo não teria efeito.
  * `fill="none"` é preservado — é o que mantém os vazados do desenho.
  */
-function forcarCor(svgInterno: string, cor: string): string {
+export function forcarCor(svgInterno: string, cor: string): string {
   return svgInterno
     .replace(/fill="(?!none")[^"]*"/g, `fill="${cor}"`)
     .replace(/fill:\s*(?!none)[^;"']+/g, `fill:${cor}`);

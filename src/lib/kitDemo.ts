@@ -40,11 +40,24 @@ export function registarEstampas(lista: Estampa[]) {
    zona por peça, por agora: quando o designer separar gola/mangas destes
    mockups em camadas, as zonas extra voltam a entrar aqui. */
 
+/** Ambiente de teste `?lab=jogador`: peças cozidas para vestir o jogador
+    recortado, numa pasta própria — a versão principal não muda. */
+export const VARIANTE_JOGADOR =
+  new URLSearchParams(window.location.search).get('lab') === 'jogador';
+const RAIZ_MOLDES = VARIANTE_JOGADOR ? '/moldes/jog' : '/moldes';
+
 function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
-  return [
-    { id: 'corpo', nome: 'Cor base', imagem: `/moldes/vestida-${peca}-${lado}.png`,
-      corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true },
-  ];
+  const corpo: ZonaPeca = {
+    id: 'corpo', nome: 'Cor base', imagem: `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
+    corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true,
+  };
+  // a gola vem numa camada própria do molde original (partilha a prancheta
+  // da camisa) e recolore à parte, como no simulador de referência
+  if (peca === 'camisola') {
+    return [corpo, { id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
+      corPadrao: '#e9e9e9' }];
+  }
+  return [corpo];
 }
 
 export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {
@@ -59,77 +72,6 @@ export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {
 
 /* -------------------------------------------------------------- estampas -- */
 
-/** Faixas verticais — camada 1 do template "listras". */
-const listrasA = `
-  <path d="M 340 150 h 70 v 780 h -70 Z M 480 150 h 70 v 780 h -70 Z M 620 150 h 70 v 780 h -70 Z" fill="black"/>`;
-/** Faixas finas intercaladas — camada 2, para provar duas cores independentes. */
-const listrasB = `
-  <path d="M 420 150 h 24 v 780 h -24 Z M 560 150 h 24 v 780 h -24 Z" fill="black"/>`;
-
-/** Faixa horizontal no peito + ombros — template "faixa". */
-const faixaA = `<path d="M 150 380 h 700 v 120 h -700 Z" fill="black"/>`;
-const faixaB = `
-  <path d="M 320 230 C 360 150, 640 150, 680 230 L 820 300 L 780 360 L 660 300
-           C 620 250, 380 250, 340 300 L 220 360 L 180 300 Z" fill="black"/>`;
-
-/** Os desenhos demo estão no espaço 1000; cada peça compõe na sua tela. */
-function noEspacoDa(peca: PecaKit, svg: string): string {
-  const tela = TELAS[peca];
-  return `<g transform="scale(${tela.w / 1000} ${tela.h / 1000})">${svg}</g>`;
-}
-
-function estampaListras(peca: PecaKit): Estampa {
-  const a = noEspacoDa(peca, listrasA);
-  const b = noEspacoDa(peca, listrasB);
-  return {
-    id: `listras-${peca}`,
-    codModelo: '001',
-    nome: 'Listras',
-    peca,
-    corBasePadrao: '#f5a800',
-    camadas: [
-      {
-        id: 'principal',
-        nome: 'Listras largas',
-        corPadrao: '#151515',
-        desenho: { frente: a, verso: a },
-      },
-      {
-        id: 'secundaria',
-        nome: 'Listras finas',
-        corPadrao: '#b62126',
-        desenho: { frente: b, verso: b },
-      },
-    ],
-  };
-}
-
-function estampaFaixa(peca: PecaKit): Estampa {
-  const a = noEspacoDa(peca, faixaA);
-  const b = noEspacoDa(peca, faixaB);
-  return {
-    id: `faixa-${peca}`,
-    codModelo: '002',
-    nome: 'Faixa',
-    peca,
-    corBasePadrao: '#123c7a',
-    camadas: [
-      {
-        id: 'faixa',
-        nome: 'Faixa peito',
-        corPadrao: '#ffffff',
-        desenho: { frente: a, verso: a },
-      },
-      {
-        id: 'ombros',
-        nome: 'Ombros',
-        corPadrao: '#d4a942',
-        desenho: { frente: b, verso: b },
-      },
-    ],
-  };
-}
-
 /** Peça sem estampa — só as cores das zonas. */
 function estampaLisa(peca: PecaKit): Estampa {
   return {
@@ -143,18 +85,11 @@ function estampaLisa(peca: PecaKit): Estampa {
 }
 
 /**
- * Estampas disponíveis por peça: primeiro as reais, depois "Liso", depois as
- * demo. A primeira é a seleção por omissão — na camisola é o tema real; no
- * calção e meião (sem arte real ainda) é o liso, para o tema da camisola não
- * aparecer "esticado" nas outras peças sem ser pedido.
+ * Estampas disponíveis por peça: os temas REAIS registados (ver kitReal),
+ * mais o "Liso" (sem estampa). A primeira é a seleção por omissão.
  */
 export function estampasDemo(peca: PecaKit): Estampa[] {
-  return [
-    ...REGISTADAS.filter((e) => e.peca === peca),
-    estampaLisa(peca),
-    estampaListras(peca),
-    estampaFaixa(peca),
-  ];
+  return [...REGISTADAS.filter((e) => e.peca === peca), estampaLisa(peca)];
 }
 
 export function estampaDemoPorId(peca: PecaKit, id: string): Estampa {

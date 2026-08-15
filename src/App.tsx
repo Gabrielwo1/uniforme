@@ -16,11 +16,12 @@ import { useDesignStore } from './store/useDesignStore';
 import { useFlowStore } from './store/useFlowStore';
 
 /**
- * Protótipo do simulador por templates, aberto por `?lab=kit`. Fica fora do
- * fluxo normal de propósito: permite mostrar/validar a nova mecânica sem
- * tocar no editor que está em produção.
+ * Laboratórios fora do fluxo normal: `?lab=kit` abre o simulador tal como
+ * está; `?lab=jogador` abre o AMBIENTE DE TESTE com o jogador recortado
+ * por trás (peças cozidas em `moldes/jog/`), sem tocar na versão principal.
  */
-const LAB_KIT = new URLSearchParams(window.location.search).get('lab') === 'kit';
+const LAB = new URLSearchParams(window.location.search).get('lab');
+const LAB_KIT = LAB === 'kit' || LAB === 'jogador';
 
 export default function App() {
   const screen = useFlowStore((s) => s.screen);
