@@ -73,16 +73,16 @@ const CAIXAS_PADRAO: Record<PecaKit, Record<LadoKit, Caixa>> = {
     (cozedura de moldes/jog — perfil "jogador" do montar-originais.py). */
 const CAIXAS_JOGADOR: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 372, y: 434, w: 341, h: 674 },
-    verso: { x: 368, y: 435, w: 343, h: 680 },
+    frente: { x: 347, y: 475, w: 392, h: 771 },
+    verso: { x: 343, y: 475, w: 393, h: 779 },
   },
   calcao: {
-    frente: { x: 301, y: 1200, w: 478, h: 393 },
-    verso: { x: 292, y: 1200, w: 496, h: 388 },
+    frente: { x: 254, y: 1200, w: 572, h: 471 },
+    verso: { x: 243, y: 1200, w: 594, h: 465 },
   },
   meiao: {
-    frente: { x: 329, y: 1736, w: 422, h: 496 },
-    verso: { x: 258, y: 1796, w: 565, h: 480 },
+    frente: { x: 268, y: 1748, w: 545, h: 481 },
+    verso: { x: 290, y: 1748, w: 520, h: 465 },
   },
 };
 
@@ -90,7 +90,7 @@ const CAIXAS = VARIANTE_JOGADOR ? CAIXAS_JOGADOR : CAIXAS_PADRAO;
 
 /** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
 const AMOSTRAS: Record<PecaKit, string> = VARIANTE_JOGADOR
-  ? { camisola: '395 460 290 500', calcao: '330 1240 340 350', meiao: '345 1750 320 400' }
+  ? { camisola: '360 500 360 620', calcao: '270 1220 520 420', meiao: '280 1760 500 420' }
   : { camisola: '340 200 400 700', calcao: '260 990 400 450', meiao: '300 1650 400 550' };
 
 function naCaixa(tema: Tema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit): string {

@@ -38,14 +38,18 @@ PERFIS = {
         topos={'camisa': 8, 'calcao': 244, 'meiao': 405},
         botas=True,
     ),
+    # Escalas e topos resolvidos a partir das FRONTEIRAS DE PELE do jogador
+    # recortado (scripts/recortar-jogador.py): gola no pescoço (y104), bainha
+    # das mangas na cava (y193), bainha do calção no topo do joelho (y418),
+    # cano da meia sob o joelho (y437) e pé dentro da bota (y557).
     'jogador': dict(
         saida='public/moldes/jog',
-        fatores={'camisa': 0.62, 'calcao': 0.66, 'meiao': 0.66},
-        topos={'camisa': 94, 'calcao': 300, 'meiao': 434},
+        fatores={'camisa': 0.71, 'calcao': 0.79, 'meiao': 0.64},
+        topos={'camisa': 102, 'calcao': 300, 'meiao': 437},
         botas=False,
-        # pernas do jogador recortado (wrapper x, medidas no alfa): cada
-        # meia do par ancora à sua perna — divisão só de posicionamento
-        pernas={'frente': (84.6, 182.3), 'verso': (79.8, 185.3)},
+        # joelhos do jogador (wrapper x): cada meia do par ancora à sua
+        # perna — divisão só de posicionamento, pixels intactos
+        pernas={'frente': (83.9, 173.2), 'verso': (90.9, 177.3)},
     ),
 }
 PERFIL = PERFIS['padrao']
