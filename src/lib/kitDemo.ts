@@ -51,9 +51,10 @@ function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
     id: 'corpo', nome: 'Cor base', imagem: `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
     corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true,
   };
-  // a gola vem numa camada própria do molde original (partilha a prancheta
-  // da camisa) e recolore à parte, como no simulador de referência
-  if (peca === 'camisola') {
+  // a gola é zona própria só na versão original (molde da referência, que
+  // a traz em camada separada); o mockup do designer tem a gola integrada
+  // na camiseta, por isso no ambiente do jogador a camisola é zona única
+  if (peca === 'camisola' && !VARIANTE_JOGADOR) {
     return [corpo, { id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
       corPadrao: '#e9e9e9' }];
   }

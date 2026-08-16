@@ -69,20 +69,21 @@ const CAIXAS_PADRAO: Record<PecaKit, Record<LadoKit, Caixa>> = {
   },
 };
 
-/** Ambiente de teste com o jogador: as peças vivem noutras caixas
-    (cozedura de moldes/jog — perfil "jogador" do montar-originais.py). */
+/** Ambiente do JOGADOR: mockup do designer ("UNIFORME DINO"). As caixas
+    são a posição real de cada peça no avatar, encontrada por correspondência
+    de padrão — ver scripts/montar-dino.py. */
 const CAIXAS_JOGADOR: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 337, y: 486, w: 413, h: 815 },
-    verso: { x: 332, y: 487, w: 415, h: 823 },
+    frente: { x: 191, y: 386, w: 705, h: 872 },
+    verso: { x: 178, y: 365, w: 719, h: 905 },
   },
   calcao: {
-    frente: { x: 228, y: 1168, w: 623, h: 513 },
-    verso: { x: 216, y: 1168, w: 647, h: 506 },
+    frente: { x: 251, y: 1245, w: 581, h: 439 },
+    verso: { x: 244, y: 1236, w: 592, h: 435 },
   },
   meiao: {
-    frente: { x: 272, y: 1696, w: 576, h: 545 },
-    verso: { x: 264, y: 1696, w: 584, h: 530 },
+    frente: { x: 256, y: 1744, w: 581, h: 510 },
+    verso: { x: 246, y: 1757, w: 582, h: 540 },
   },
 };
 
@@ -90,7 +91,7 @@ const CAIXAS = VARIANTE_JOGADOR ? CAIXAS_JOGADOR : CAIXAS_PADRAO;
 
 /** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
 const AMOSTRAS: Record<PecaKit, string> = VARIANTE_JOGADOR
-  ? { camisola: '360 500 360 620', calcao: '270 1220 520 420', meiao: '280 1760 500 420' }
+  ? { camisola: '260 450 560 740', calcao: '260 1250 560 420', meiao: '260 1750 560 490' }
   : { camisola: '340 200 400 700', calcao: '260 990 400 450', meiao: '300 1650 400 550' };
 
 function naCaixa(tema: Tema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit): string {

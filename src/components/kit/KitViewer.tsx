@@ -59,27 +59,26 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
           por isso os slots são todos idênticos, sem margens mágicas. */}
       <div className="relative h-[615px] w-[270px]">
         {VARIANTE_JOGADOR && (
-          /* ambiente de teste: o jogador recortado por trás das peças;
-             as botas são as dele, por isso a camada de botas não entra */
+          /* mockup do designer: o avatar já vestido é o fundo. As peças
+             recoloridas assentam-lhe por cima ao pixel (mesma prancheta),
+             por isso não há folgas onde o kit do avatar espreite. */
           <img
             src={`/moldes/jog/jogador-${lado}.png`}
             alt=""
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[6px] z-0 h-[600px] max-w-none -translate-x-1/2"
+            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
           />
         )}
         <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
         <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
         <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
-        {!VARIANTE_JOGADOR && (
-          /* chuteiras: camada estática (não recolorem), meia entra na bota */
-          <img
-            src={`/moldes/botas-${lado}.png`}
-            alt=""
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain drop-shadow-lg"
-          />
-        )}
+        {/* chuteiras: camada estática, não recolorem */}
+        <img
+          src={VARIANTE_JOGADOR ? `/moldes/jog/botas-${lado}.png` : `/moldes/botas-${lado}.png`}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain"
+        />
       </div>
     </div>
   );
