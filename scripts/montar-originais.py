@@ -38,19 +38,18 @@ PERFIS = {
         topos={'camisa': 8, 'calcao': 244, 'meiao': 405},
         botas=True,
     ),
-    # Ambiente de teste: o jogador tem KIT CINZA LISO e fica INTACTO (nada
-    # é apagado — o cinza neutro que sobra nas folgas lê-se como sombra e
-    # não briga com a cor escolhida). Escalas e topos medidos nas bandas do
-    # kit dele: gola y105, cava/braços y196, bainha do calção y408, cano da
-    # meia y436, tornozelo/bota y560.
+    # Ambiente de teste: o jogador está RECORTADO às partes visíveis
+    # (scripts/recortar-jogador.py) — cabeça, braços, joelhos e chuteiras.
+    # As peças têm de fechar as fronteiras desse recorte, medidas no alfa:
+    # pescoço y117, cava/braços y191, joelho y406..438, bota y548.
     'jogador': dict(
         saida='public/moldes/jog',
-        fatores={'camisa': 0.72, 'calcao': 0.82, 'meiao': 0.70},
-        topos={'camisa': 104, 'calcao': 296, 'meiao': 430},
+        fatores={'camisa': 0.75, 'calcao': 0.86, 'meiao': 0.74},
+        topos={'camisa': 104, 'calcao': 292, 'meiao': 424},
         botas=False,
-        # pernas do jogador (wrapper x, na zona da meia): cada meia do par
-        # ancora à sua perna — divisão só de posicionamento
-        pernas={'frente': (92.0, 176.0), 'verso': (89.0, 177.0)},
+        # joelhos do jogador (wrapper x): cada meia do par ancora à sua
+        # perna — divisão só de posicionamento
+        pernas={'frente': (95.1, 174.1), 'verso': (91.7, 175.5)},
     ),
 }
 PERFIL = PERFIS['padrao']

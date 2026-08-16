@@ -73,16 +73,16 @@ const CAIXAS_PADRAO: Record<PecaKit, Record<LadoKit, Caixa>> = {
     (cozedura de moldes/jog — perfil "jogador" do montar-originais.py). */
 const CAIXAS_JOGADOR: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 345, y: 484, w: 396, h: 782 },
-    verso: { x: 341, y: 484, w: 398, h: 790 },
+    frente: { x: 337, y: 486, w: 413, h: 815 },
+    verso: { x: 332, y: 487, w: 415, h: 823 },
   },
   calcao: {
-    frente: { x: 243, y: 1184, w: 594, h: 489 },
-    verso: { x: 232, y: 1184, w: 617, h: 482 },
+    frente: { x: 228, y: 1168, w: 623, h: 513 },
+    verso: { x: 216, y: 1168, w: 647, h: 506 },
   },
   meiao: {
-    frente: { x: 280, y: 1720, w: 560, h: 520 },
-    verso: { x: 272, y: 1720, w: 568, h: 505 },
+    frente: { x: 272, y: 1696, w: 576, h: 545 },
+    verso: { x: 264, y: 1696, w: 584, h: 530 },
   },
 };
 
