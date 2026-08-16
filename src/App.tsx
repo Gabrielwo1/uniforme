@@ -11,6 +11,7 @@ import { StartFlow } from './components/StartFlow';
 import { SiteLanding } from './components/SiteLanding';
 import { CheckoutPage } from './components/CheckoutPage';
 import { KitLab } from './components/kit/KitLab';
+import { KitCheckout } from './components/kit/KitCheckout';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useDesignStore } from './store/useDesignStore';
 import { useFlowStore } from './store/useFlowStore';
@@ -49,7 +50,11 @@ export default function App() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      {LAB_KIT ? (
+      {/* o checkout do simulador tem precedência sobre o modo `?lab`,
+          senão o laboratório prendia o utilizador no simulador */}
+      {screen === 'kitCheckout' ? (
+        <KitCheckout />
+      ) : LAB_KIT ? (
         <KitLab />
       ) : screen === 'site' ? (
         <SiteLanding />

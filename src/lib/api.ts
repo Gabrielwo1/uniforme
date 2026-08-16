@@ -137,6 +137,20 @@ export async function submitOrder(
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Pedido do SIMULADOR DE CONJUNTOS. Vai para a mesma tabela `orders`: a
+ * coluna `items` é JSON, por isso aceita as duas formas de artigo (design
+ * do editor antigo ou conjunto do simulador).
+ */
+export async function submitKitOrder(
+  customer: OrderCustomer,
+  items: unknown[],
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { error } = await supabase.from('orders').insert({ customer, items });
+  if (error) throw new Error(error.message);
+}
+
 /* -------------------------------------------------------------- STORAGE -- */
 
 const BUCKET = 'logos';

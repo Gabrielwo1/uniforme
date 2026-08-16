@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgePlus, PersonStanding, RotateCcw, Shirt, Type } from 'lucide-react';
+import { ArrowLeft, BadgePlus, PersonStanding, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
-import { VARIANTE_JOGADOR } from '@/lib/kitDemo';
+import { VARIANTE_JOGADOR, estampaDemoPorId } from '@/lib/kitDemo';
+import { useKitOrderStore } from '@/store/useKitOrderStore';
 import { PECAS_KIT } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
+import { KitCartDrawer } from './KitCartDrawer';
 
 /**
  * Simulador de conjuntos, na arquitetura da referência:
@@ -33,8 +35,20 @@ const VARIANTES: { id: 'kit' | 'jogador'; rotulo: string; Icone: typeof Shirt }[
 
 export function KitLab() {
   const reset = useKitStore((s) => s.reset);
+  const design = useKitStore((s) => s.design);
   const sincronizadas = useKitStore((s) => s.design.sincronizadas);
+  const adicionar = useKitOrderStore((s) => s.adicionar);
+  const abrirPainel = useKitOrderStore((s) => s.abrirPainel);
+  const noCarrinho = useKitOrderStore((s) =>
+    s.itens.reduce((n, i) => n + i.quantidade, 0),
+  );
   const [menu, setMenu] = useState<MenuTopo>('estampas');
+
+  /** Nome do conjunto = tema da camisola, que é quem manda no visual. */
+  const adicionarAoCarrinho = () => {
+    const estampa = estampaDemoPorId('camisola', design.pecas.camisola.estampaId);
+    adicionar(design, `${estampa.nome} · ${estampa.codModelo}`);
+  };
 
   // A estampa real pesa ~3 MB de vetores: entra por import dinâmico para não
   // carregar com o app. Depois de registada, `reset` torna-a a seleção.
@@ -117,8 +131,25 @@ export function KitLab() {
         <span className="hidden text-xs text-muted-foreground lg:inline">
           {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
         </span>
-        <Button variant="outline" size="sm" onClick={reset}>
-          <RotateCcw /> Repor
+        <Button variant="outline" size="sm" onClick={reset} title="Repor cores e temas">
+          <RotateCcw />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={abrirPainel}
+          title="Ver pedido"
+          className="relative"
+        >
+          <ShoppingBag />
+          {noCarrinho > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              {noCarrinho}
+            </span>
+          )}
+        </Button>
+        <Button size="sm" onClick={adicionarAoCarrinho}>
+          Adicionar ao carrinho
         </Button>
       </header>
 
@@ -152,6 +183,8 @@ export function KitLab() {
           )}
         </aside>
       </div>
+
+      <KitCartDrawer />
     </div>
   );
 }

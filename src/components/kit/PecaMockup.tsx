@@ -28,17 +28,19 @@ export function PecaMockup({
   estampa,
   config,
   className,
+  style,
   children,
 }: {
   molde: MoldePeca;
   estampa: Estampa;
   config: PecaConfig;
   className?: string;
+  style?: React.CSSProperties;
   /** Camada de personalização (nome/número/logos) sobreposta à peça. */
   children?: React.ReactNode;
 }) {
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative', className)} style={style}>
       {molde.zonas.map((zona) => (
         <Zona
           key={zona.id}

@@ -20,6 +20,7 @@ import { create } from 'zustand';
 export type FlowScreen =
   | 'site'
   | 'kit'
+  | 'kitCheckout'
   | 'modalidade'
   | 'categoria'
   | 'modelo'
@@ -43,6 +44,8 @@ export interface FlowStore {
   openEditor: () => void;
   /** Abre a página de checkout (resumo do pedido + formulário). */
   goToCheckout: () => void;
+  /** Checkout do simulador de conjuntos (sem IA). */
+  goToKitCheckout: () => void;
   /** Volta uma etapa no funil (ou do checkout para o editor). */
   back: () => void;
   /** Recomeça do zero (página 1). */
@@ -62,10 +65,12 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   chooseCategory: (c) => set({ category: c, screen: 'modelo' }),
   openEditor: () => set({ screen: 'editor' }),
   goToCheckout: () => set({ screen: 'checkout' }),
+  goToKitCheckout: () => set({ screen: 'kitCheckout' }),
 
   back: () => {
     const { screen } = get();
-    if (screen === 'kit') set({ screen: 'site' });
+    if (screen === 'kitCheckout') set({ screen: 'kit' });
+    else if (screen === 'kit') set({ screen: 'site' });
     else if (screen === 'checkout') set({ screen: 'editor' });
     else if (screen === 'editor') set({ screen: 'modelo' });
     else if (screen === 'modelo') set({ screen: 'categoria' });
