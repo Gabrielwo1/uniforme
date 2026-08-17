@@ -51,14 +51,21 @@ function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
     id: 'corpo', nome: 'Cor base', imagem: `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
     corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true,
   };
-  // a gola é zona própria só na versão original (molde da referência, que
-  // a traz em camada separada); o mockup do designer tem a gola integrada
-  // na camiseta, por isso no ambiente do jogador a camisola é zona única
-  if (peca === 'camisola' && !VARIANTE_JOGADOR) {
-    return [corpo, { id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
-      corPadrao: '#e9e9e9' }];
-  }
-  return [corpo];
+  if (peca !== 'camisola') return [corpo];
+
+  // Gola e punhos são zonas próprias, desenhadas DEPOIS do corpo: é o que
+  // impede a estampa de lhes passar por cima (só o corpo a recebe).
+  const gola: ZonaPeca = {
+    id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
+    corPadrao: '#151515',
+  };
+  // os punhos só vieram no mockup do designer (ambiente do jogador)
+  // a camada MANGA do designer cobre a manga inteira (não só o punho):
+  // é o que tira a estampa das mangas e as torna coloríveis à parte
+  return VARIANTE_JOGADOR
+    ? [corpo, gola, { id: 'mangas', nome: 'Mangas',
+        imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`, corPadrao: '#151515' }]
+    : [corpo, { ...gola, corPadrao: '#e9e9e9' }];
 }
 
 export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {

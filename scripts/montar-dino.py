@@ -31,6 +31,32 @@ TOPO_AVATAR = 6
 LADOS = {'frente': ('PARTE FRENTE', 'FRENTE'), 'verso': ('PARTE COSTA', 'COSTA')}
 PECAS = {'camisola': 'CAMISETA', 'calcao': 'BERMUDA', 'meiao': 'MEIAO'}
 
+# Golas e punhos: entregues DEPOIS, já na prancheta completa do avatar
+# (1912×5125), por isso dispensam a procura — a caixa do alfa dá a posição.
+# São zonas próprias da camisola, para a estampa não lhes passar por cima
+# (a camada MANGA cobre a manga inteira, não apenas o punho).
+BASE_EXTRAS = '/Users/syntax/Downloads/MANGAS E GOLAS'
+EXTRAS = {'gola': 'GOLA', 'mangas': 'MANGA'}
+LADOS_EXTRAS = {'frente': ('MANGAS E GOLAS FRENTE', 'FRENTE'),
+                'verso': ('MANGAS E GOLAS COSTAS', 'COSTAS')}
+
+# Luminância alvo da mediana: estas camadas vieram muito escuras (a gola do
+# verso é preto puro) e em multiply matariam a cor escolhida. Normalizar
+# mantém o sombreado relativo e devolve-lhes a gama das outras peças.
+LUM_ALVO = 205
+
+
+def normalizar(im):
+    a = np.array(im).astype(np.float32)
+    op = a[..., 3] > 60
+    if not op.any():
+        return im
+    med = float(np.median(a[..., :3][op]))
+    if med >= LUM_ALVO - 5:
+        return im
+    a[..., :3] = np.clip(a[..., :3] + (LUM_ALVO - med), 0, 255)
+    return Image.fromarray(a.astype(np.uint8))
+
 
 def carregar(base, pasta, nome, sufixo):
     return Image.open(f'{base}/{pasta}/{nome} {sufixo}.webp').convert('RGBA')
@@ -78,6 +104,15 @@ def montar(base, lado):
         tela.save(f'{SAIDA}/vestida-{chave}-{lado}.png')
         print(f'  {chave:9s} match {score:.3f} em {canto} → caixa '
               f'x={x}, y={y}, w={larg}, h={alt}')
+
+    # golas e punhos: mesma prancheta do avatar, posição pela caixa do alfa
+    pasta_e, sufixo_e = LADOS_EXTRAS[lado]
+    for chave, nome in EXTRAS.items():
+        extra = Image.open(f'{BASE_EXTRAS}/{pasta_e}/{nome} {sufixo_e}.webp').convert('RGBA')
+        cx = extra.getchannel('A').getbbox()
+        tela, x, y, larg, alt = para_tela(normalizar(extra.crop(cx)), (cx[0], cx[1]))
+        tela.save(f'{SAIDA}/vestida-{chave}-{lado}.png')
+        print(f'  {chave:9s} caixa alfa {cx} → x={x}, y={y}, w={larg}, h={alt}')
 
     # chuteiras: camada estática, dessaturada para não brigar com as cores
     bota = carregar(base, pasta, 'CHUTEIRA', sufixo)
