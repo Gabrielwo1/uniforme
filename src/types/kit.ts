@@ -95,6 +95,47 @@ export interface Estampa {
   amostraViewBox?: string;
 }
 
+/* ---------------------------------------------------------- aplicações -- */
+
+/** O que se aplica sobre a peça, já depois da estampa. */
+export type TipoAplicacao = 'texto' | 'numero' | 'logo';
+
+export const TIPO_APLICACAO_LABEL: Record<TipoAplicacao, string> = {
+  texto: 'Nome / texto',
+  numero: 'Número',
+  logo: 'Escudo / logo',
+};
+
+/**
+ * Um nome, número ou logo colocado num LOCAL do catálogo (`kitLocais`).
+ *
+ * A aplicação guarda a ESCOLHA, não a geometria: a caixa vem do local, e a
+ * aplicação só lhe mexe dentro de limites (escala e um deslocamento fino em
+ * fração da caixa). É o que impede o escudo de acabar fora da peça e o que
+ * faz a mesma escolha servir os dois ambientes, cujas peças estão em sítios
+ * diferentes da tela.
+ */
+export interface Aplicacao {
+  id: string;
+  tipo: TipoAplicacao;
+  localId: string;
+  /** Conteúdo dos tipos `texto` e `numero`. */
+  texto?: string;
+  /** Imagem dos logos — data URL (o ficheiro nunca sai do browser). */
+  imagem?: string;
+  /** Nome do ficheiro do logo, para a ficha de produção. */
+  nomeFicheiro?: string;
+  cor: string;
+  /** Contorno do texto; vazio = sem contorno. */
+  corContorno: string;
+  fonteId: string;
+  /** 0.5 a 1.5 da caixa do local. */
+  escala: number;
+  /** Deslocamento fino, em fração da caixa do local (−0.5 a 0.5). */
+  dx: number;
+  dy: number;
+}
+
 /** Escolhas do utilizador para UMA peça. */
 export interface PecaConfig {
   estampaId: string;
@@ -107,6 +148,9 @@ export interface PecaConfig {
 /** O conjunto completo em edição. */
 export interface KitDesign {
   pecas: Record<PecaKit, PecaConfig>;
+  /** Nomes, números e logos aplicados — ver `Aplicacao`. Pode faltar em
+      conjuntos guardados antes desta funcionalidade. */
+  aplicacoes?: Aplicacao[];
   /**
    * Peças "presas" ao cadeado: mudar a estampa/cor de uma delas propaga às
    * outras presas (o "Sincronizar Jersey e Calção" da referência).

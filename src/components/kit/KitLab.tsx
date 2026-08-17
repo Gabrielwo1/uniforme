@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
 import { KitCartDrawer } from './KitCartDrawer';
+import { PainelAplicacoes } from './PainelAplicacoes';
 
 /**
  * Simulador de conjuntos, na arquitetura da referência:
@@ -43,6 +44,15 @@ export function KitLab() {
     s.itens.reduce((n, i) => n + i.quantidade, 0),
   );
   const [menu, setMenu] = useState<MenuTopo>('estampas');
+  const setLocalEmFoco = useKitStore((s) => s.setLocalEmFoco);
+  const aplicacoes = useKitStore((s) => s.design.aplicacoes);
+
+  /** Contador por separador — mostra de relance o que já foi aplicado. */
+  const contagem: Record<MenuTopo, number> = {
+    estampas: 0,
+    nome: (aplicacoes ?? []).filter((a) => a.tipo !== 'logo').length,
+    escudo: (aplicacoes ?? []).filter((a) => a.tipo === 'logo').length,
+  };
 
   /** Nome do conjunto = tema da camisola, que é quem manda no visual. */
   const adicionarAoCarrinho = () => {
@@ -89,7 +99,10 @@ export function KitLab() {
           {MENU.map(({ id, rotulo, Icone }) => (
             <button
               key={id}
-              onClick={() => setMenu(id)}
+              onClick={() => {
+                setMenu(id);
+                setLocalEmFoco(null);
+              }}
               className={cn(
                 'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold transition',
                 menu === id
@@ -99,6 +112,16 @@ export function KitLab() {
             >
               <Icone className="h-3.5 w-3.5" />
               {rotulo}
+              {contagem[id] > 0 && (
+                <span
+                  className={cn(
+                    'grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
+                    menu === id ? 'bg-background text-foreground' : 'bg-foreground text-background',
+                  )}
+                >
+                  {contagem[id]}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -172,15 +195,9 @@ export function KitLab() {
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {MENU.find((m) => m.id === menu)?.rotulo}
           </p>
-          {menu === 'estampas' ? (
-            <GaleriaEstampas />
-          ) : (
-            <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-              {menu === 'nome'
-                ? 'Nome e número no conjunto — em desenvolvimento. O motor de texto já existe no editor anterior e será ligado aqui.'
-                : 'Escudo e logos no conjunto — em desenvolvimento. A biblioteca de logos do editor anterior será ligada aqui.'}
-            </div>
-          )}
+          {menu === 'estampas' && <GaleriaEstampas />}
+          {menu === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
+          {menu === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
         </aside>
       </div>
 

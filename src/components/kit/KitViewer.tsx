@@ -13,6 +13,7 @@ import {
 } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { PecaMockup, forcarCor } from './PecaMockup';
+import { CamadaAplicacoes } from './CamadaAplicacoes';
 
 /**
  * Visualizador do conjunto: frente e verso lado a lado, com as três peças
@@ -94,6 +95,8 @@ function PecaSlot({
   className?: string;
 }) {
   const config = useKitStore((s) => s.design.pecas[peca]);
+  const aplicacoes = useKitStore((s) => s.design.aplicacoes);
+  const localEmFoco = useKitStore((s) => s.localEmFoco);
   const estampa = estampaDemoPorId(peca, config.estampaId);
   const molde = moldeDemo(peca, lado);
 
@@ -103,7 +106,16 @@ function PecaSlot({
       estampa={estampa}
       config={config}
       className={cn('drop-shadow-lg', className)}
-    />
+    >
+      <CamadaAplicacoes
+        aplicacoes={aplicacoes ?? []}
+        peca={peca}
+        lado={lado}
+        viewBox={molde.viewBox}
+        mascara={molde.zonas.find((z) => z.recebeEstampa)?.imagem}
+        destaque={localEmFoco}
+      />
+    </PecaMockup>
   );
 }
 

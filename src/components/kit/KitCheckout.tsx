@@ -7,6 +7,7 @@ import { submitKitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
 import { estampaDemoPorId, moldeDemo } from '@/lib/kitDemo';
+import { fontePorId, localPorId } from '@/lib/kitLocais';
 import { PECAS_KIT, PECA_LABEL } from '@/types/kit';
 import type { KitOrderItem } from '@/types/kitOrder';
 import { CustomerForm, isCustomerValid } from '../CustomerForm';
@@ -237,9 +238,67 @@ function FichaConjunto({ item }: { item: KitOrderItem }) {
               </div>
             );
           })}
+
+          <Aplicacoes item={item} />
         </div>
       </div>
     </section>
+  );
+}
+
+/** Nomes, números e logos — a lista que a produção precisa de ver escrita,
+    porque na imagem o nome é pequeno e o hex do contorno não se lê. */
+function Aplicacoes({ item }: { item: KitOrderItem }) {
+  const lista = item.design.aplicacoes ?? [];
+  if (lista.length === 0) return null;
+
+  return (
+    <div className="rounded-md border p-2.5">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+        Personalização
+      </p>
+      <ul className="mt-1.5 space-y-1.5">
+        {lista.map((a) => {
+          const local = localPorId(a.localId);
+          return (
+            <li key={a.id} className="flex items-center gap-2">
+              {a.tipo === 'logo' ? (
+                <img
+                  src={a.imagem}
+                  alt=""
+                  className="h-7 w-7 shrink-0 rounded border object-contain"
+                />
+              ) : (
+                <span
+                  className="grid h-7 shrink-0 place-items-center rounded border px-1.5 text-xs font-bold"
+                  style={{
+                    fontFamily: fontePorId(a.fonteId).css,
+                    color: a.cor,
+                    backgroundColor: '#3a3a3a',
+                  }}
+                >
+                  {a.texto}
+                </span>
+              )}
+              <span className="min-w-0 text-[10px] leading-tight">
+                <span className="font-semibold">
+                  {local ? `${PECA_LABEL[local.peca]} · ${local.nome}` : 'Posição desconhecida'}
+                </span>
+                <br />
+                <span className="text-muted-foreground">
+                  {a.tipo === 'logo'
+                    ? (a.nomeFicheiro ?? 'imagem')
+                    : `${fontePorId(a.fonteId).nome} · ${a.cor.toUpperCase()}${
+                        a.corContorno ? ` / contorno ${a.corContorno.toUpperCase()}` : ''
+                      }`}{' '}
+                  · {Math.round(a.escala * 100)}%
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

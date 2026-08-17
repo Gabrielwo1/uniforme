@@ -1,5 +1,6 @@
 import type { LadoKit, PecaKit } from '@/types/kit';
-import { registarEstampas, VARIANTE_JOGADOR } from './kitDemo';
+import { registarEstampas } from './kitDemo';
+import { AMOSTRAS, CAIXAS, type Caixa } from './kitCaixas';
 import * as milan from './estampas/milanDados';
 import * as dinoCamisola from './estampas/dinoCamisolaDados';
 import * as dinoCalcao from './estampas/dinoCalcaoDados';
@@ -56,58 +57,6 @@ const TEMAS: Tema[] = [
     nomes: { '#cb9863': 'Faixa' },
   },
 ];
-
-interface Caixa {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-/** Caixas da estampa por peça e lado (tela comum 1080×2460).
-    Na camisola é o TRONCO: exclui as mangas (senão a estampa estica até às
-    pontas delas) e a gola (que fica com a cor base). No calção e meião é o
-    conteúdo inteiro da peça. Medidas pelo scripts/montar-originais.py. */
-const CAIXAS_PADRAO: Record<PecaKit, Record<LadoKit, Caixa>> = {
-  camisola: {
-    frente: { x: 323, y: 108, w: 440, h: 880 },
-    verso: { x: 319, y: 109, w: 441, h: 889 },
-  },
-  calcao: {
-    frente: { x: 247, y: 976, w: 586, h: 483 },
-    verso: { x: 236, y: 976, w: 609, h: 476 },
-  },
-  meiao: {
-    frente: { x: 281, y: 1620, w: 518, h: 609 },
-    verso: { x: 194, y: 1680, w: 693, h: 590 },
-  },
-};
-
-/** Ambiente do JOGADOR: mockup do designer ("UNIFORME DINO"). As caixas
-    são a posição real de cada peça no avatar, encontrada por correspondência
-    de padrão — ver scripts/montar-dino.py. */
-const CAIXAS_JOGADOR: Record<PecaKit, Record<LadoKit, Caixa>> = {
-  camisola: {
-    // só o TRONCO: as mangas são camada à parte no mockup do designer
-    frente: { x: 283, y: 386, w: 517, h: 873 },
-    verso: { x: 280, y: 365, w: 519, h: 905 },
-  },
-  calcao: {
-    frente: { x: 251, y: 1245, w: 581, h: 440 },
-    verso: { x: 244, y: 1236, w: 593, h: 435 },
-  },
-  meiao: {
-    frente: { x: 173, y: 1744, w: 753, h: 665 },
-    verso: { x: 205, y: 1756, w: 669, h: 652 },
-  },
-};
-
-const CAIXAS = VARIANTE_JOGADOR ? CAIXAS_JOGADOR : CAIXAS_PADRAO;
-
-/** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
-const AMOSTRAS: Record<PecaKit, string> = VARIANTE_JOGADOR
-  ? { camisola: '290 430 500 660', calcao: '255 1250 570 425', meiao: '180 1750 740 640' }
-  : { camisola: '340 200 400 700', calcao: '260 990 400 450', meiao: '300 1650 400 550' };
 
 function naCaixa(dados: DadosTema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit): string {
   const q = dados.QUADRO;

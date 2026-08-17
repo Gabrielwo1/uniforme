@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import type { KitDesign, PecaConfig, PecaKit } from '@/types/kit';
+import type { Aplicacao, KitDesign, PecaConfig, PecaKit, TipoAplicacao } from '@/types/kit';
 import { PECAS_KIT } from '@/types/kit';
 import { estampaDemoPorId, estampasDemo } from '@/lib/kitDemo';
+import { locaisPara } from '@/lib/kitLocais';
 
 /**
  * Estado do conjunto (camisola + calção + meião) no simulador por template.
@@ -25,6 +26,34 @@ function designInicial(): KitDesign {
       meiao: configInicial('meiao'),
     },
     sincronizadas: ['camisola', 'calcao', 'meiao'],
+    aplicacoes: [],
+  };
+}
+
+/** Sítio por omissão de cada tipo — o que a produção espera se ninguém
+    mexer: o nome em arco nas costas, o número por baixo, o escudo ao peito. */
+const LOCAL_PADRAO: Record<TipoAplicacao, string> = {
+  texto: 'nome-costas',
+  numero: 'numero-costas',
+  logo: 'peito-esq',
+};
+
+function aplicacaoInicial(tipo: TipoAplicacao, localId?: string): Aplicacao {
+  const local = localId ?? LOCAL_PADRAO[tipo];
+  return {
+    id: `ap-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo,
+    // se o local pedido não aceitar o tipo, cai no primeiro que aceite
+    localId: locaisPara(tipo).some((l) => l.id === local)
+      ? local
+      : (locaisPara(tipo)[0]?.id ?? local),
+    texto: tipo === 'numero' ? '10' : tipo === 'texto' ? 'JOGADOR' : undefined,
+    cor: '#ffffff',
+    corContorno: '#111111',
+    fonteId: 'anton',
+    escala: 1,
+    dx: 0,
+    dy: 0,
   };
 }
 
@@ -37,6 +66,10 @@ export interface KitStore {
    * onde a faixa da camisola e a do calção são a mesma faixa.
    */
   camadasSoltas: string[];
+  /** Local assinalado com a guia tracejada no visualizador enquanto o
+      utilizador mexe nele no painel. Não faz parte do design. */
+  localEmFoco: string | null;
+  setLocalEmFoco: (localId: string | null) => void;
 
   /** Peças que recebem a alteração feita em `origem` (ela própria incluída). */
   alvos: (origem: PecaKit) => PecaKit[];
@@ -48,11 +81,20 @@ export interface KitStore {
   cicloEstampa: (origem: PecaKit, direcao: 1 | -1) => void;
   toggleSincronizar: (peca: PecaKit) => void;
   reset: () => void;
+
+  /** Acrescenta um nome/número/logo e devolve-o, para o painel lhe acender
+      a guia no visualizador. */
+  addAplicacao: (tipo: TipoAplicacao, localId?: string) => Aplicacao;
+  setAplicacao: (id: string, mudanca: Partial<Aplicacao>) => void;
+  removerAplicacao: (id: string) => void;
 }
 
 export const useKitStore = create<KitStore>((set, get) => ({
   design: designInicial(),
   camadasSoltas: [],
+  localEmFoco: null,
+
+  setLocalEmFoco: (localId) => set({ localEmFoco: localId }),
 
   alvos: (origem) => {
     const { sincronizadas } = get().design;
@@ -146,5 +188,36 @@ export const useKitStore = create<KitStore>((set, get) => ({
       };
     }),
 
-  reset: () => set({ design: designInicial(), camadasSoltas: [] }),
+  reset: () => set({ design: designInicial(), camadasSoltas: [], localEmFoco: null }),
+
+  /* ------------------------------------------------------- aplicações -- */
+  /* Ao contrário das cores, as aplicações NÃO seguem o cadeado: um número
+     nas costas não tem equivalente no meião, e repetir um escudo por todas
+     as peças nunca é o que se quer. Cada uma vive no seu local. */
+
+  addAplicacao: (tipo, localId) => {
+    const nova = aplicacaoInicial(tipo, localId);
+    set((s) => ({
+      design: { ...s.design, aplicacoes: [...(s.design.aplicacoes ?? []), nova] },
+    }));
+    return nova;
+  },
+
+  setAplicacao: (id, mudanca) =>
+    set((s) => ({
+      design: {
+        ...s.design,
+        aplicacoes: (s.design.aplicacoes ?? []).map((a) =>
+          a.id === id ? { ...a, ...mudanca } : a,
+        ),
+      },
+    })),
+
+  removerAplicacao: (id) =>
+    set((s) => ({
+      design: {
+        ...s.design,
+        aplicacoes: (s.design.aplicacoes ?? []).filter((a) => a.id !== id),
+      },
+    })),
 }));

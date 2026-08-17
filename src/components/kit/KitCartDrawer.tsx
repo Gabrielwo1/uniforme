@@ -92,6 +92,8 @@ export function KitCartDrawer() {
                     <p className="truncate text-sm font-bold">{item.nome}</p>
                     <p className="text-[11px] text-muted-foreground">
                       Camisola + calção + meião
+                      {(item.design.aplicacoes?.length ?? 0) > 0 &&
+                        ` · ${item.design.aplicacoes!.length} personalizações`}
                     </p>
 
                     <div className="mt-auto flex items-center gap-1.5 pt-2">

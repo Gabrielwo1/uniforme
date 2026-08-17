@@ -2,6 +2,7 @@ import { estampaDemoPorId, moldeDemo } from '@/lib/kitDemo';
 import { PECAS_KIT, type KitDesign, type LadoKit } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { PecaMockup } from './PecaMockup';
+import { CamadaAplicacoes } from './CamadaAplicacoes';
 
 /**
  * Pré-visualização de um conjunto GUARDADO (carrinho e checkout).
@@ -27,15 +28,24 @@ export function KitPreview({
       {PECAS_KIT.map((peca, i) => {
         const config = design.pecas[peca];
         if (!config) return null;
+        const molde = moldeDemo(peca, lado);
         return (
           <PecaMockup
             key={peca}
-            molde={moldeDemo(peca, lado)}
+            molde={molde}
             estampa={estampaDemoPorId(peca, config.estampaId)}
             config={config}
             className="absolute inset-0"
             style={{ zIndex: 30 - i * 10 }}
-          />
+          >
+            <CamadaAplicacoes
+              aplicacoes={design.aplicacoes ?? []}
+              peca={peca}
+              lado={lado}
+              viewBox={molde.viewBox}
+              mascara={molde.zonas.find((z) => z.recebeEstampa)?.imagem}
+            />
+          </PecaMockup>
         );
       })}
     </div>
