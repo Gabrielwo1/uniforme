@@ -88,16 +88,17 @@ const CAIXAS_PADRAO: Record<PecaKit, Record<LadoKit, Caixa>> = {
     de padrão — ver scripts/montar-dino.py. */
 const CAIXAS_JOGADOR: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 191, y: 386, w: 705, h: 872 },
-    verso: { x: 178, y: 365, w: 719, h: 905 },
+    // só o TRONCO: as mangas são camada à parte no mockup do designer
+    frente: { x: 283, y: 386, w: 517, h: 873 },
+    verso: { x: 280, y: 365, w: 519, h: 905 },
   },
   calcao: {
-    frente: { x: 251, y: 1245, w: 581, h: 439 },
-    verso: { x: 244, y: 1236, w: 592, h: 435 },
+    frente: { x: 251, y: 1245, w: 581, h: 440 },
+    verso: { x: 244, y: 1236, w: 593, h: 435 },
   },
   meiao: {
-    frente: { x: 256, y: 1744, w: 581, h: 510 },
-    verso: { x: 246, y: 1757, w: 582, h: 540 },
+    frente: { x: 173, y: 1744, w: 753, h: 665 },
+    verso: { x: 205, y: 1756, w: 669, h: 652 },
   },
 };
 
@@ -105,7 +106,7 @@ const CAIXAS = VARIANTE_JOGADOR ? CAIXAS_JOGADOR : CAIXAS_PADRAO;
 
 /** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
 const AMOSTRAS: Record<PecaKit, string> = VARIANTE_JOGADOR
-  ? { camisola: '260 450 560 740', calcao: '260 1250 560 420', meiao: '260 1750 560 490' }
+  ? { camisola: '290 430 500 660', calcao: '255 1250 570 425', meiao: '180 1750 740 640' }
   : { camisola: '340 200 400 700', calcao: '260 990 400 450', meiao: '300 1650 400 550' };
 
 function naCaixa(dados: DadosTema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit): string {
