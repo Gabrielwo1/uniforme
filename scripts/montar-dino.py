@@ -40,21 +40,26 @@ EXTRAS = {'gola': 'GOLA', 'mangas': 'MANGA'}
 LADOS_EXTRAS = {'frente': ('MANGAS E GOLAS FRENTE', 'FRENTE'),
                 'verso': ('MANGAS E GOLAS COSTAS', 'COSTAS')}
 
-# Luminância alvo da mediana: estas camadas vieram muito escuras (a gola do
-# verso é preto puro) e em multiply matariam a cor escolhida. Normalizar
-# mantém o sombreado relativo e devolve-lhes a gama das outras peças.
-LUM_ALVO = 205
+# As peças recoloríveis entram em MULTIPLY sobre a cor escolhida, por isso
+# a sua luminância é um fator: um tecido a 170 devolve 67% da cor, e um
+# branco escolhido sai cinzento. Realçar leva o topo da gama a ~245, para
+# o branco sair branco, mantendo as dobras (que são relativas).
+LUM_TOPO = 245
 
 
-def normalizar(im):
+def realcar(im):
+    """Leva o p98 da luminância a LUM_TOPO, preservando o sombreado."""
     a = np.array(im).astype(np.float32)
     op = a[..., 3] > 60
     if not op.any():
         return im
-    med = float(np.median(a[..., :3][op]))
-    if med >= LUM_ALVO - 5:
-        return im
-    a[..., :3] = np.clip(a[..., :3] + (LUM_ALVO - med), 0, 255)
+    p98 = float(np.percentile(a[..., :3][op], 98))
+    # camadas quase pretas (a gola do verso) não se salvam por ganho:
+    # levanta-se primeiro o patamar e só depois se aplica o ganho
+    if p98 < 60:
+        a[..., :3] += 150 - p98
+        p98 = 150
+    a[..., :3] = np.clip(a[..., :3] * (LUM_TOPO / p98), 0, 255)
     return Image.fromarray(a.astype(np.uint8))
 
 
@@ -99,8 +104,8 @@ def montar(base, lado):
 
     for chave, nome in PECAS.items():
         peca = carregar(base, pasta, nome, sufixo)
-        canto, score = localizar(avatar, peca)
-        tela, x, y, larg, alt = para_tela(peca, canto)
+        canto, score = localizar(avatar, peca)   # localizar ANTES de realçar
+        tela, x, y, larg, alt = para_tela(realcar(peca), canto)
         tela.save(f'{SAIDA}/vestida-{chave}-{lado}.png')
         print(f'  {chave:9s} match {score:.3f} em {canto} → caixa '
               f'x={x}, y={y}, w={larg}, h={alt}')
@@ -110,7 +115,7 @@ def montar(base, lado):
     for chave, nome in EXTRAS.items():
         extra = Image.open(f'{BASE_EXTRAS}/{pasta_e}/{nome} {sufixo_e}.webp').convert('RGBA')
         cx = extra.getchannel('A').getbbox()
-        tela, x, y, larg, alt = para_tela(normalizar(extra.crop(cx)), (cx[0], cx[1]))
+        tela, x, y, larg, alt = para_tela(realcar(extra.crop(cx)), (cx[0], cx[1]))
         tela.save(f'{SAIDA}/vestida-{chave}-{lado}.png')
         print(f'  {chave:9s} caixa alfa {cx} → x={x}, y={y}, w={larg}, h={alt}')
 
