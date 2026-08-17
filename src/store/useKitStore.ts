@@ -64,9 +64,15 @@ export const useKitStore = create<KitStore>((set, get) => ({
         pecas[peca] = {
           ...pecas[peca],
           estampaId: equivalente.id,
-          // troca de estampa reinicia as cores das camadas (ids mudam);
-          // as cores das zonas ficam, porque a gola não depende da estampa
+          // troca de estampa reinicia as cores das camadas (os ids mudam) e
+          // adota a cor de fundo do tema no corpo — senão a peça não fica
+          // como a miniatura da galeria promete. Gola, mangas e restantes
+          // zonas ficam como estavam: não dependem do tema.
           cores: {},
+          coresZonas: {
+            ...pecas[peca].coresZonas,
+            corpo: equivalente.corBasePadrao,
+          },
         };
       }
       return { design: { ...s.design, pecas } };

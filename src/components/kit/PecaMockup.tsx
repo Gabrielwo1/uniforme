@@ -155,14 +155,17 @@ function Zona({
 }
 
 /**
- * Reescreve os `fill` do desenho para a cor da camada.
+ * Reescreve as cores do desenho para a cor da camada.
  *
- * Os exports do Illustrator trazem o desenho a preto com `fill` explícito em
- * cada path; sem esta troca, herdar a cor do grupo não teria efeito.
- * `fill="none"` é preservado — é o que mantém os vazados do desenho.
+ * Os exports trazem o desenho com a cor explícita em cada elemento; sem
+ * esta troca, herdar a cor do grupo não teria efeito. `none` é preservado
+ * — é o que mantém os vazados e o que distingue arte de traço de arte de
+ * preenchimento (os moldes do cliente usam ambas, ver converter-molde.py).
  */
 export function forcarCor(svgInterno: string, cor: string): string {
   return svgInterno
     .replace(/fill="(?!none")[^"]*"/g, `fill="${cor}"`)
-    .replace(/fill:\s*(?!none)[^;"']+/g, `fill:${cor}`);
+    .replace(/stroke="(?!none")[^"]*"/g, `stroke="${cor}"`)
+    .replace(/fill:\s*(?!none)[^;"']+/g, `fill:${cor}`)
+    .replace(/stroke:\s*(?!none)[^;"']+/g, `stroke:${cor}`);
 }

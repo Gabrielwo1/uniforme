@@ -1,6 +1,8 @@
 import type { LadoKit, PecaKit } from '@/types/kit';
 import { registarEstampas, VARIANTE_JOGADOR } from './kitDemo';
 import * as milan from './estampas/milanDados';
+import * as dinoCamisola from './estampas/dinoCamisolaDados';
+import * as dinoCalcao from './estampas/dinoCalcaoDados';
 
 /**
  * Regista os TEMAS REAIS convertidos dos ficheiros do cliente.
@@ -28,7 +30,12 @@ interface Tema {
   id: string;
   nome: string;
   codModelo: string;
-  dados: DadosTema;
+  /** Arte única, esticada às três peças (temas planos, tipo riscas). */
+  dados?: DadosTema;
+  /** Arte DESENHADA POR PEÇA, dentro do molde de cada uma — o formato que
+      o cliente usa (ver scripts/converter-molde.py). Uma peça sem arte
+      própria fica com a cor base. */
+  porPeca?: Partial<Record<PecaKit, DadosTema>>;
   /** Nomes das camadas no painel de cores, por cor de origem (opcional). */
   nomes?: Record<string, string>;
 }
@@ -40,6 +47,13 @@ const TEMAS: Tema[] = [
     codModelo: '003',
     dados: milan,
     nomes: { '#808081': 'Textura', '#c21633': 'Listras', '#c83a3e': 'Vivos' },
+  },
+  {
+    id: 'dino',
+    nome: 'Dino',
+    codModelo: '004',
+    porPeca: { camisola: dinoCamisola, calcao: dinoCalcao },
+    nomes: { '#cb9863': 'Faixa' },
   },
 ];
 
@@ -94,8 +108,8 @@ const AMOSTRAS: Record<PecaKit, string> = VARIANTE_JOGADOR
   ? { camisola: '260 450 560 740', calcao: '260 1250 560 420', meiao: '260 1750 560 490' }
   : { camisola: '340 200 400 700', calcao: '260 990 400 450', meiao: '300 1650 400 550' };
 
-function naCaixa(tema: Tema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit): string {
-  const q = tema.dados.QUADRO;
+function naCaixa(dados: DadosTema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit): string {
+  const q = dados.QUADRO;
   const sx = c.w / q.w;
   const sy = c.h / q.h;
   const t = `translate(${(c.x - q.x * sx).toFixed(2)} ${(c.y - q.y * sy).toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)})`;
@@ -107,23 +121,27 @@ function naCaixa(tema: Tema, svg: string, c: Caixa, lado: LadoKit, peca: PecaKit
 export function registarReais() {
   for (const tema of TEMAS) {
     registarEstampas(
-      (['camisola', 'calcao', 'meiao'] as PecaKit[]).map((peca) => ({
-        id: `${tema.id}-${peca}`,
-        codModelo: tema.codModelo,
-        nome: tema.nome,
-        peca,
-        corBasePadrao: tema.dados.COR_FUNDO ?? '#221f20',
-        amostraViewBox: AMOSTRAS[peca],
-        camadas: tema.dados.CAMADAS.map((c, i) => ({
-          id: c.id,
-          nome: tema.nomes?.[c.cor] ?? `Cor ${i + 1}`,
-          corPadrao: c.cor,
-          desenho: {
-            frente: naCaixa(tema, c.svg, CAIXAS[peca].frente, 'frente', peca),
-            verso: naCaixa(tema, c.svg, CAIXAS[peca].verso, 'verso', peca),
-          },
-        })),
-      })),
+      (['camisola', 'calcao', 'meiao'] as PecaKit[]).map((peca) => {
+        // arte por peça quando o tema a tem; senão a arte única do tema
+        const dados = tema.porPeca ? tema.porPeca[peca] : tema.dados;
+        return {
+          id: `${tema.id}-${peca}`,
+          codModelo: tema.codModelo,
+          nome: tema.nome,
+          peca,
+          corBasePadrao: (dados ?? tema.dados)?.COR_FUNDO ?? '#221f20',
+          amostraViewBox: AMOSTRAS[peca],
+          camadas: (dados?.CAMADAS ?? []).map((c, i) => ({
+            id: c.id,
+            nome: tema.nomes?.[c.cor] ?? `Cor ${i + 1}`,
+            corPadrao: c.cor,
+            desenho: {
+              frente: naCaixa(dados!, c.svg, CAIXAS[peca].frente, 'frente', peca),
+              verso: naCaixa(dados!, c.svg, CAIXAS[peca].verso, 'verso', peca),
+            },
+          })),
+        };
+      }),
     );
   }
 }
