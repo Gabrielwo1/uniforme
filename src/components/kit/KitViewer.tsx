@@ -213,11 +213,13 @@ function QuadradoEstampa({
   );
 }
 
-/** Painel de cores: cor base + uma entrada por camada da estampa. */
+/** Painel de cores: zonas da peça + uma entrada por camada da estampa. */
 export function PainelCores({ peca }: { peca: PecaKit }) {
   const config = useKitStore((s) => s.design.pecas[peca]);
   const setCorZona = useKitStore((s) => s.setCorZona);
   const setCorCamada = useKitStore((s) => s.setCorCamada);
+  const camadasSoltas = useKitStore((s) => s.camadasSoltas);
+  const toggleCamadaPresa = useKitStore((s) => s.toggleCamadaPresa);
   const estampa = estampaDemoPorId(peca, config.estampaId);
 
   return (
@@ -242,6 +244,8 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
             numero={i + 1}
             cor={config.cores[camada.id] ?? camada.corPadrao}
             onChange={(cor) => setCorCamada(peca, camada.id, cor)}
+            presa={!camadasSoltas.includes(camada.id)}
+            onTogglePresa={() => toggleCamadaPresa(camada.id)}
           />
         ))}
       </div>
@@ -254,14 +258,19 @@ function Swatch({
   cor,
   numero,
   onChange,
+  presa,
+  onTogglePresa,
 }: {
   label: string;
   cor: string;
   numero?: number;
   onChange: (cor: string) => void;
+  /** Só nas camadas da estampa: repete a cor nas outras peças. */
+  presa?: boolean;
+  onTogglePresa?: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1">
       <span className="relative">
         <input
           type="color"
@@ -275,8 +284,26 @@ function Swatch({
             {numero}
           </span>
         )}
+        {onTogglePresa && (
+          <button
+            onClick={onTogglePresa}
+            title={
+              presa
+                ? 'A cor repete-se nas outras peças — clique para soltar'
+                : 'Cor só desta peça — clique para repetir nas outras'
+            }
+            className={cn(
+              'absolute -bottom-1 -left-1 grid h-4 w-4 place-items-center rounded-full border transition',
+              presa
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background text-muted-foreground hover:bg-accent',
+            )}
+          >
+            {presa ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
+          </button>
+        )}
       </span>
       <span className="max-w-[72px] truncate text-[10px] text-muted-foreground">{label}</span>
-    </label>
+    </div>
   );
 }

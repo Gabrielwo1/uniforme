@@ -10,7 +10,7 @@ export const COR_FUNDO = '#1f2a44';
 
 export const CAMADAS = [
   {
-    id: 'dk1',
+    id: 'cor1',
     cor: '#cb9863',
     svg: `<path d="M-109.3 693.6C584.3 1292.7 1026 584.9 1148.7 1183.5" stroke-width="14" stroke="#cb9863" fill="none"/>`,
   },

@@ -30,9 +30,17 @@ function designInicial(): KitDesign {
 
 export interface KitStore {
   design: KitDesign;
+  /**
+   * Camadas da estampa SOLTAS do cadeado (por id). Por omissão todas estão
+   * presas: mudar a cor de uma camada repete-a nas outras peças que tenham
+   * a mesma camada — é o comportamento esperado numa estampa de conjunto,
+   * onde a faixa da camisola e a do calção são a mesma faixa.
+   */
+  camadasSoltas: string[];
 
   /** Peças que recebem a alteração feita em `origem` (ela própria incluída). */
   alvos: (origem: PecaKit) => PecaKit[];
+  toggleCamadaPresa: (camadaId: string) => void;
 
   setEstampa: (origem: PecaKit, estampaId: string) => void;
   setCorZona: (origem: PecaKit, zonaId: string, cor: string) => void;
@@ -44,6 +52,7 @@ export interface KitStore {
 
 export const useKitStore = create<KitStore>((set, get) => ({
   design: designInicial(),
+  camadasSoltas: [],
 
   alvos: (origem) => {
     const { sincronizadas } = get().design;
@@ -94,7 +103,10 @@ export const useKitStore = create<KitStore>((set, get) => ({
   },
 
   setCorCamada: (origem, camadaId, cor) => {
-    const alvos = get().alvos(origem);
+    // A camada presa repete a cor em TODAS as peças que a tenham (o id da
+    // camada vem da cor de origem, por isso é comum às peças do mesmo
+    // tema); solta, só muda a peça onde se mexeu.
+    const alvos = get().camadasSoltas.includes(camadaId) ? [origem] : PECAS_KIT;
     set((s) => {
       const pecas = { ...s.design.pecas };
       for (const peca of alvos) {
@@ -106,6 +118,13 @@ export const useKitStore = create<KitStore>((set, get) => ({
       return { design: { ...s.design, pecas } };
     });
   },
+
+  toggleCamadaPresa: (camadaId) =>
+    set((s) => ({
+      camadasSoltas: s.camadasSoltas.includes(camadaId)
+        ? s.camadasSoltas.filter((c) => c !== camadaId)
+        : [...s.camadasSoltas, camadaId],
+    })),
 
   cicloEstampa: (origem, direcao) => {
     const lista = estampasDemo(origem);
@@ -127,5 +146,5 @@ export const useKitStore = create<KitStore>((set, get) => ({
       };
     }),
 
-  reset: () => set({ design: designInicial() }),
+  reset: () => set({ design: designInicial(), camadasSoltas: [] }),
 }));

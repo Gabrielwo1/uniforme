@@ -20,6 +20,9 @@ recolorível. O retângulo que cobre o molde inteiro não vira camada: passa
 a ser a cor de fundo da peça.
 
     python3 scripts/converter-molde.py <svg> <saida.ts> <prefixo>
+
+O `prefixo` é só informativo: as camadas são numeradas por posição
+(cor1, cor2, ...), que é o que as liga entre peças.
 """
 import os
 import re
@@ -148,9 +151,13 @@ def main(entrada, saida, prefixo):
         'export const CAMADAS = [',
     ]
     for i, (cor, trechos) in enumerate(camadas.items()):
+        # O id é POSICIONAL (cor1, cor2, ...), não a cor: as cores mudam de
+        # peça para peça e de tema para tema, a posição não. É o que faz a
+        # "cor 1" da camisola ser a mesma slot que a "cor 1" do calção — a
+        # numeração que a referência mostra e que o cadeado usa para repetir.
         linhas += [
             '  {',
-            f'    id: {f"{prefixo}{i + 1}"!r},',
+            f'    id: {f"cor{i + 1}"!r},',
             f'    cor: {cor!r},',
             f'    svg: `{"".join(trechos)}`,',
             '  },',
