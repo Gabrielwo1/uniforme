@@ -10,7 +10,7 @@ import { useKitOrderStore } from '@/store/useKitOrderStore';
 import { PECAS_KIT } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
+import { CadeadoConjunto, GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
 import { KitCartDrawer } from './KitCartDrawer';
 import { PainelAplicacoes } from './PainelAplicacoes';
 import { Animacao } from '../ui/animacao';
@@ -35,7 +35,6 @@ const MENU: { id: MenuTopo; rotulo: string; curto: string; Icone: typeof Shirt }
 export function KitLab() {
   const reset = useKitStore((s) => s.reset);
   const design = useKitStore((s) => s.design);
-  const sincronizadas = useKitStore((s) => s.design.sincronizadas);
   const adicionar = useKitOrderStore((s) => s.adicionar);
   const abrirPainel = useKitOrderStore((s) => s.abrirPainel);
   const noCarrinho = useKitOrderStore((s) =>
@@ -114,9 +113,7 @@ export function KitLab() {
           className="h-8 w-auto shrink-0 dark:brightness-0 dark:invert"
         />
 
-        <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">
-          {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
-        </span>
+        <span className="ml-auto" />
         <Button
           variant="outline"
           size="sm"
@@ -153,6 +150,7 @@ export function KitLab() {
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             Cores
           </p>
+          <CadeadoConjunto />
           {PECAS_KIT.map((peca) => (
             <PainelCores key={peca} peca={peca} />
           ))}

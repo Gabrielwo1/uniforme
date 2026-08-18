@@ -18,8 +18,6 @@ import { CamadaAplicacoes } from './CamadaAplicacoes';
 /**
  * Visualizador do conjunto: frente e verso lado a lado, vestidos no
  * jogador do mockup do designer.
- *
- * O cadeado prende/solta a peça da sincronização (ver `useKitStore.alvos`).
  */
 export function KitViewer({ fundo }: { fundo?: string }) {
   return (
@@ -123,17 +121,13 @@ function PecaSlot({
 
 /**
  * Galeria de estampas à maneira da referência: separadores por peça no
- * topo, grelha de QUADRADOS que mostram o desenho do tema flat (não em
- * forma de peça), com o "Cod. Modelo" por baixo, e o cadeado de
- * sincronização da peça ativa.
+ * topo e grelha de QUADRADOS com o desenho do tema flat (não em forma de
+ * peça). Com o cadeado fechado, escolher aqui muda as três peças.
  */
 export function GaleriaEstampas() {
   const [peca, setPeca] = useState<PecaKit>('camisola');
   const config = useKitStore((s) => s.design.pecas[peca]);
-  const sincronizadas = useKitStore((s) => s.design.sincronizadas);
   const setEstampa = useKitStore((s) => s.setEstampa);
-  const toggleSincronizar = useKitStore((s) => s.toggleSincronizar);
-  const presa = sincronizadas.includes(peca);
 
   return (
     <div className="rounded-lg border bg-card shadow-sm">
@@ -152,16 +146,6 @@ export function GaleriaEstampas() {
             {PECA_LABEL[p]}
           </button>
         ))}
-        <button
-          onClick={() => toggleSincronizar(peca)}
-          title={presa ? 'Sincronizada — clique para soltar' : 'Solta — clique para sincronizar'}
-          className={cn(
-            'grid h-8 w-8 shrink-0 place-items-center rounded-md border transition',
-            presa ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent',
-          )}
-        >
-          {presa ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
-        </button>
       </div>
 
       <div className="grid grid-cols-3 gap-2 p-3">
@@ -227,13 +211,56 @@ function QuadradoEstampa({
   );
 }
 
+/**
+ * O CADEADO — um só, no topo das cores.
+ *
+ * Fechado, tudo o que se mexe numa peça mexe nas três: cor base, cor de
+ * camada e escolha de estampa. Aberto, cada peça anda por si. Havia antes
+ * dois cadeados a decidir isto (um por peça, escondido na galeria, e um por
+ * camada em cada quadrado) — e as cores base seguiam o primeiro sem que
+ * nada no painel o mostrasse.
+ */
+export function CadeadoConjunto() {
+  const sincronizado = useKitStore((s) => s.design.sincronizado);
+  const toggle = useKitStore((s) => s.toggleSincronizar);
+
+  return (
+    <button
+      onClick={toggle}
+      className={cn(
+        'flex w-full items-center gap-2.5 rounded-lg border p-2.5 text-left transition',
+        sincronizado
+          ? 'border-primary bg-primary/10 text-primary'
+          : 'bg-card text-muted-foreground hover:bg-accent',
+      )}
+    >
+      <span
+        className={cn(
+          'grid h-8 w-8 shrink-0 place-items-center rounded-md',
+          sincronizado ? 'bg-primary text-primary-foreground' : 'border bg-background',
+        )}
+      >
+        {sincronizado ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs font-bold leading-tight">
+          {sincronizado ? 'Peças sincronizadas' : 'Peças independentes'}
+        </span>
+        <span className="block text-[11px] leading-tight opacity-80">
+          {sincronizado
+            ? 'Cores e estampa acompanham nas três'
+            : 'Cada peça muda sozinha'}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 /** Painel de cores: zonas da peça + uma entrada por camada da estampa. */
 export function PainelCores({ peca }: { peca: PecaKit }) {
   const config = useKitStore((s) => s.design.pecas[peca]);
   const setCorZona = useKitStore((s) => s.setCorZona);
   const setCorCamada = useKitStore((s) => s.setCorCamada);
-  const camadasSoltas = useKitStore((s) => s.camadasSoltas);
-  const toggleCamadaPresa = useKitStore((s) => s.toggleCamadaPresa);
   const estampa = estampaDemoPorId(peca, config.estampaId);
 
   return (
@@ -260,8 +287,6 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
             marca={camada.nome.replace('Camada ', '')}
             cor={config.cores[camada.id] ?? camada.corPadrao}
             onChange={(cor) => setCorCamada(peca, camada.id, cor)}
-            presa={!camadasSoltas.includes(camada.id)}
-            onTogglePresa={() => toggleCamadaPresa(camada.id)}
           />
         ))}
       </div>
@@ -274,17 +299,12 @@ function Swatch({
   cor,
   marca,
   onChange,
-  presa,
-  onTogglePresa,
 }: {
   label: string;
   cor: string;
   /** Letra da camada. As zonas da peça não a têm — é o que as separa. */
   marca?: string;
   onChange: (cor: string) => void;
-  /** Só nas camadas da estampa: repete a cor nas outras peças. */
-  presa?: boolean;
-  onTogglePresa?: () => void;
 }) {
   return (
     <div className="flex flex-col items-center gap-1">
@@ -300,24 +320,6 @@ function Swatch({
           <span className="pointer-events-none absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[9px] font-bold text-background">
             {marca}
           </span>
-        )}
-        {onTogglePresa && (
-          <button
-            onClick={onTogglePresa}
-            title={
-              presa
-                ? 'A cor repete-se nas outras peças — clique para soltar'
-                : 'Cor só desta peça — clique para repetir nas outras'
-            }
-            className={cn(
-              'absolute -bottom-1 -left-1 grid h-4 w-4 place-items-center rounded-full border transition',
-              presa
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-border bg-background text-muted-foreground hover:bg-accent',
-            )}
-          >
-            {presa ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
-          </button>
         )}
       </span>
       <span className="max-w-[72px] truncate text-[10px] text-muted-foreground">{label}</span>

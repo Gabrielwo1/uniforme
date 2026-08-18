@@ -152,8 +152,13 @@ export interface KitDesign {
       conjuntos guardados antes desta funcionalidade. */
   aplicacoes?: Aplicacao[];
   /**
-   * Peças "presas" ao cadeado: mudar a estampa/cor de uma delas propaga às
-   * outras presas (o "Sincronizar Jersey e Calção" da referência).
+   * O CADEADO, um só para todo o conjunto: com ele fechado, mexer numa cor
+   * ou numa estampa mexe nas três peças; aberto, cada peça é independente.
+   *
+   * Era antes uma lista de peças presas mais um cadeado por camada — dois
+   * sistemas a decidir a mesma coisa, e as cores base seguiam o primeiro,
+   * que nem sequer aparecia no painel de cores. Um conjunto de futebol é
+   * quase sempre um conjunto: a escolha certa é uma só, e visível.
    */
-  sincronizadas: PecaKit[];
+  sincronizado: boolean;
 }

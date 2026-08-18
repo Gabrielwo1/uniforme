@@ -7,10 +7,9 @@ import { locaisPara } from '@/lib/kitLocais';
 /**
  * Estado do conjunto (camisola + calção + meião) no simulador por template.
  *
- * O "sincronizar" da referência: peças presas ao cadeado acompanham as
- * mudanças de estampa e de cor umas das outras. É por isso que as ações
- * recebem a peça de origem e depois propagam — a peça que o utilizador
- * mexeu manda nas restantes presas, e as soltas ficam como estão.
+ * O CADEADO é um só e manda em tudo: fechado, o que se mexe numa peça
+ * mexe nas três; aberto, cada peça anda por si. É por isso que as ações
+ * recebem a peça de ORIGEM e depois propagam — quem mexeu manda.
  */
 
 function configInicial(peca: PecaKit): PecaConfig {
@@ -25,7 +24,7 @@ function designInicial(): KitDesign {
       calcao: configInicial('calcao'),
       meiao: configInicial('meiao'),
     },
-    sincronizadas: ['camisola', 'calcao', 'meiao'],
+    sincronizado: true,
     aplicacoes: [],
   };
 }
@@ -59,13 +58,6 @@ function aplicacaoInicial(tipo: TipoAplicacao, localId?: string): Aplicacao {
 
 export interface KitStore {
   design: KitDesign;
-  /**
-   * Camadas da estampa SOLTAS do cadeado (por id). Por omissão todas estão
-   * presas: mudar a cor de uma camada repete-a nas outras peças que tenham
-   * a mesma camada — é o comportamento esperado numa estampa de conjunto,
-   * onde a faixa da camisola e a do calção são a mesma faixa.
-   */
-  camadasSoltas: string[];
   /** Local assinalado com a guia tracejada no visualizador enquanto o
       utilizador mexe nele no painel. Não faz parte do design. */
   localEmFoco: string | null;
@@ -73,13 +65,12 @@ export interface KitStore {
 
   /** Peças que recebem a alteração feita em `origem` (ela própria incluída). */
   alvos: (origem: PecaKit) => PecaKit[];
-  toggleCamadaPresa: (camadaId: string) => void;
 
   setEstampa: (origem: PecaKit, estampaId: string) => void;
   setCorZona: (origem: PecaKit, zonaId: string, cor: string) => void;
   setCorCamada: (origem: PecaKit, camadaId: string, cor: string) => void;
   cicloEstampa: (origem: PecaKit, direcao: 1 | -1) => void;
-  toggleSincronizar: (peca: PecaKit) => void;
+  toggleSincronizar: () => void;
   reset: () => void;
 
   /** Acrescenta um nome/número/logo e devolve-o, para o painel lhe acender
@@ -91,17 +82,14 @@ export interface KitStore {
 
 export const useKitStore = create<KitStore>((set, get) => ({
   design: designInicial(),
-  camadasSoltas: [],
   localEmFoco: null,
 
   setLocalEmFoco: (localId) => set({ localEmFoco: localId }),
 
-  alvos: (origem) => {
-    const { sincronizadas } = get().design;
-    // peça solta só muda a si própria, mesmo que as outras estejam presas
-    if (!sincronizadas.includes(origem)) return [origem];
-    return PECAS_KIT.filter((p) => sincronizadas.includes(p));
-  },
+  /* Um único cadeado manda em TUDO — cores das zonas, cores das camadas e
+     escolha de estampa. Ter regras diferentes por tipo de alteração era o
+     que fazia a cor base seguir sem ninguém perceber porquê. */
+  alvos: (origem) => (get().design.sincronizado ? PECAS_KIT : [origem]),
 
   setEstampa: (origem, estampaId) => {
     const alvos = get().alvos(origem);
@@ -145,10 +133,7 @@ export const useKitStore = create<KitStore>((set, get) => ({
   },
 
   setCorCamada: (origem, camadaId, cor) => {
-    // A camada presa repete a cor em TODAS as peças que a tenham (o id da
-    // camada vem da cor de origem, por isso é comum às peças do mesmo
-    // tema); solta, só muda a peça onde se mexeu.
-    const alvos = get().camadasSoltas.includes(camadaId) ? [origem] : PECAS_KIT;
+    const alvos = get().alvos(origem);
     set((s) => {
       const pecas = { ...s.design.pecas };
       for (const peca of alvos) {
@@ -161,13 +146,6 @@ export const useKitStore = create<KitStore>((set, get) => ({
     });
   },
 
-  toggleCamadaPresa: (camadaId) =>
-    set((s) => ({
-      camadasSoltas: s.camadasSoltas.includes(camadaId)
-        ? s.camadasSoltas.filter((c) => c !== camadaId)
-        : [...s.camadasSoltas, camadaId],
-    })),
-
   cicloEstampa: (origem, direcao) => {
     const lista = estampasDemo(origem);
     const atual = lista.findIndex((e) => e.id === get().design.pecas[origem].estampaId);
@@ -175,20 +153,10 @@ export const useKitStore = create<KitStore>((set, get) => ({
     get().setEstampa(origem, proxima.id);
   },
 
-  toggleSincronizar: (peca) =>
-    set((s) => {
-      const presas = s.design.sincronizadas;
-      return {
-        design: {
-          ...s.design,
-          sincronizadas: presas.includes(peca)
-            ? presas.filter((p) => p !== peca)
-            : [...presas, peca],
-        },
-      };
-    }),
+  toggleSincronizar: () =>
+    set((s) => ({ design: { ...s.design, sincronizado: !s.design.sincronizado } })),
 
-  reset: () => set({ design: designInicial(), camadasSoltas: [], localEmFoco: null }),
+  reset: () => set({ design: designInicial(), localEmFoco: null }),
 
   /* ------------------------------------------------------- aplicações -- */
   /* Ao contrário das cores, as aplicações NÃO seguem o cadeado: um número
