@@ -202,7 +202,7 @@ function ZonaDaPeca({
       return;
     }
     try {
-      const molde = converterMolde(await f.text());
+      const molde = await converterMolde(await f.text());
       onEstado({ fase: 'pronto', molde, ficheiro: f.name });
     } catch (e) {
       onEstado({

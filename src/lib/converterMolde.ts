@@ -78,6 +78,84 @@ export interface MoldeConvertido {
 /** O ficheiro não é um molde: nada a converter, e a razão explicada. */
 export class ErroDeMolde extends Error {}
 
+/** Reescreve as cores de um trecho (mesmas regras do motor `forcarCor`). */
+function recolorir(svg: string, cor: string): string {
+  return svg
+    .replace(/fill="(?!none")[^"]*"/g, `fill="${cor}"`)
+    .replace(/stroke="(?!none")[^"]*"/g, `stroke="${cor}"`);
+}
+
+/**
+ * Retira as camadas que NÃO SE VEEM no resultado final.
+ *
+ * O caso real que obrigou a isto: o designer duplica um molde antigo e
+ * desenha por cima — a faixa dourada do Dino ficou DEBAIXO do peitilho
+ * branco do Aska, integralmente coberta. Entrava no painel como um swatch
+ * que não muda nada no ecrã.
+ *
+ * A verificação é por PÍXEIS, não por geometria: cada camada é pintada de
+ * vermelho com as camadas SEGUINTES por cima a preto, num canvas pequeno.
+ * Se não sobra vermelho, a camada está coberta. É a única forma honesta de
+ * o saber — por caixas geométricas, um "O" cobriria o que está no buraco.
+ */
+async function retirarCamadasEscondidas(
+  quadro: Quadro,
+  camadas: { cor: string; svg: string }[],
+): Promise<{ visiveis: { cor: string; svg: string }[]; avisos: string[] }> {
+  const LARG = 220;
+  const alt = Math.max(8, Math.round((quadro.h / quadro.w) * LARG));
+  const canvas = document.createElement('canvas');
+  canvas.width = LARG;
+  canvas.height = alt;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return { visiveis: camadas, avisos: [] };
+
+  const pintar = async (corpo: string) => {
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${quadro.x} ${quadro.y} ` +
+      `${quadro.w} ${quadro.h}" width="${LARG}" height="${alt}">${corpo}</svg>`;
+    const img = new Image();
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    await img.decode();
+    ctx.clearRect(0, 0, LARG, alt);
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, LARG, alt).data;
+    let vermelhos = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i] > 180 && px[i + 1] < 90 && px[i + 3] > 120) vermelhos++;
+    }
+    return vermelhos;
+  };
+
+  const visiveis: { cor: string; svg: string }[] = [];
+  const avisos: string[] = [];
+  for (let k = 0; k < camadas.length; k++) {
+    try {
+      const sozinha = await pintar(recolorir(camadas[k].svg, '#ff0000'));
+      const tapada = await pintar(
+        recolorir(camadas[k].svg, '#ff0000') +
+          camadas.slice(k + 1).map((c) => recolorir(c.svg, '#000000')).join(''),
+      );
+      if (sozinha < 4) {
+        avisos.push(`A camada ${camadas[k].cor} não desenha nada visível e foi retirada.`);
+        continue;
+      }
+      if (tapada < Math.max(4, sozinha * 0.02)) {
+        avisos.push(
+          `A camada ${camadas[k].cor} fica totalmente coberta pelas camadas ` +
+            'seguintes e foi retirada — mudar-lhe a cor não mudava nada no ecrã.',
+        );
+        continue;
+      }
+      visiveis.push(camadas[k]);
+    } catch {
+      // não conseguir medir não é razão para deitar arte fora
+      visiveis.push(camadas[k]);
+    }
+  }
+  return { visiveis, avisos };
+}
+
 function normalizarCor(v: string): string {
   const c = v.trim().toLowerCase();
   if (NOMEADAS[c]) return NOMEADAS[c];
@@ -85,8 +163,38 @@ function normalizarCor(v: string): string {
   return c;
 }
 
+const NUMERO = /-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/y;
+
+/**
+ * Números com 1 decimal — por TOKENS, não por substituição solta: nos paths
+ * comprimidos um número pode começar onde o anterior acaba ("-.94.03"), e
+ * uma regex que exija dígitos antes do ponto salta o primeiro e casa
+ * "94.03" A MEIO dele — dois números fundidos num, um token a menos, e o
+ * browser rejeita o path a partir daí (foi o que partiu o Milan).
+ */
 function arredondar(texto: string): string {
-  return texto.replace(/-?\d+\.\d+(?:e-?\d+)?/g, (n) => String(Math.round(Number(n) * 10) / 10));
+  const saida: string[] = [];
+  let aposNumero = false;
+  let i = 0;
+  while (i < texto.length) {
+    NUMERO.lastIndex = i;
+    const m = NUMERO.exec(texto);
+    if (m) {
+      const v = String(Math.round(Number(m[0]) * 10) / 10);
+      if (aposNumero && !v.startsWith('-')) saida.push(',');
+      saida.push(v);
+      aposNumero = true;
+      i = NUMERO.lastIndex;
+      continue;
+    }
+    const ch = texto[i];
+    if (ch !== ' ' && ch !== ',' && ch !== '\t' && ch !== '\n') {
+      saida.push(ch);
+      aposNumero = false;
+    }
+    i++;
+  }
+  return saida.join('');
 }
 
 /** Cor efetiva do elemento: preenchimento ou, se não houver, traço. */
@@ -150,7 +258,7 @@ function emitir(el: Element, cor: string, atr: 'fill' | 'stroke'): string {
   return partes.join('') + '/>';
 }
 
-export function converterMolde(textoSvg: string): MoldeConvertido {
+export async function converterMolde(textoSvg: string): Promise<MoldeConvertido> {
   const doc = new DOMParser().parseFromString(textoSvg, 'image/svg+xml');
   if (doc.querySelector('parsererror')) {
     throw new ErroDeMolde('O ficheiro não é um SVG válido.');
@@ -194,6 +302,7 @@ export function converterMolde(textoSvg: string): MoldeConvertido {
   let corFundo: string | null = null;
   let semCor = 0;
   let naoRecoloriveis = 0;
+  let guias = 0;
 
   for (const el of desenhaveis(grupo)) {
     if (!FORMAS.includes(el.localName as Forma)) continue;
@@ -201,6 +310,16 @@ export function converterMolde(textoSvg: string): MoldeConvertido {
     if (!c) {
       semCor++;
       continue;
+    }
+    // traço fino demais para se ver não é arte, é uma GUIA do molde (o
+    // contorno da silhueta vem muitas vezes com stroke de 0,16 px) — e se
+    // entrasse dava um swatch que não muda nada no ecrã
+    if (c.atr === 'stroke') {
+      const largura = Number(el.getAttribute('stroke-width') ?? 1);
+      if (largura < quadro.w * 0.004) {
+        guias++;
+        continue;
+      }
     }
     // gradientes e padrões não se recolorem: entram como estão e ficam
     // fora do painel de cores
@@ -217,10 +336,17 @@ export function converterMolde(textoSvg: string): MoldeConvertido {
     porCor.set(c.cor, lista);
   }
 
-  const camadas: CamadaConvertida[] = [...porCor.entries()].map(([cor, trechos], i) => ({
-    id: `cor${i + 1}`,
+  const brutas = [...porCor.entries()].map(([cor, trechos]) => ({
     cor,
     svg: trechos.join(''),
+  }));
+  // a numeração (cor1, cor2…) acontece DEPOIS do filtro: uma camada
+  // retirada não pode deixar um buraco na sequência das letras
+  const filtro = await retirarCamadasEscondidas(quadro, brutas);
+  avisos.push(...filtro.avisos);
+  const camadas: CamadaConvertida[] = filtro.visiveis.map((c, i) => ({
+    id: `cor${i + 1}`,
+    ...c,
   }));
 
   if (camadas.length === 0) {
@@ -243,6 +369,11 @@ export function converterMolde(textoSvg: string): MoldeConvertido {
   }
   if (semCor > 0) {
     avisos.push(`${semCor} forma(s) sem cor foram ignoradas.`);
+  }
+  if (guias > 0) {
+    avisos.push(
+      `${guias} traço(s) finos demais para se verem (guias do molde) foram ignorados.`,
+    );
   }
   if (camadas.length > 8) {
     avisos.push(

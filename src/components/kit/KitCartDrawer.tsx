@@ -33,35 +33,31 @@ export function KitCartDrawer() {
   const podeConfirmar = isCustomerValid(cliente);
   const total = itens.reduce((n, i) => n + i.quantidade, 0);
 
-  /** Interlúdio do "Finalizar pedido": a animação de sucesso do designer
-      toca por cima da lista e só depois entra o passo dos dados. Avança
-      quando ela termina (~1,7 s) OU ao fim de 2,5 s — o Lottie anda em
-      requestAnimationFrame, que congela com o separador em segundo plano,
-      e sem o teto quem trocasse de separador ficava preso na animação. */
-  const [aFinalizar, setAFinalizar] = useState(false);
+  /** Interlúdio do "Confirmar pedido" — o clique que fecha esta fase: a
+      animação de sucesso do designer toca por cima do painel e só quando
+      acaba é que o checkout abre. Avança quando ela termina (~1,7 s) OU ao
+      fim de 2,5 s — o Lottie anda em requestAnimationFrame, que congela com
+      o separador em segundo plano, e sem o teto quem trocasse de separador
+      naquele instante ficava preso na animação. */
+  const [aConfirmar, setAConfirmar] = useState(false);
   const avancou = useRef(false);
   const avancar = () => {
     if (avancou.current) return;
     avancou.current = true;
-    setAFinalizar(false);
-    setPasso('dados');
-  };
-  const finalizarComAnimacao = () => {
-    if (itens.length === 0) return;
-    avancou.current = false;
-    setAFinalizar(true);
-  };
-  useEffect(() => {
-    if (!aFinalizar) return;
-    const t = setTimeout(avancar, 2500);
-    return () => clearTimeout(t);
-  });
-
-  const confirmar = () => {
-    if (!podeConfirmar) return;
+    setAConfirmar(false);
     fechar();
     useFlowStore.getState().goToKitCheckout();
   };
+  const confirmar = () => {
+    if (!podeConfirmar) return;
+    avancou.current = false;
+    setAConfirmar(true);
+  };
+  useEffect(() => {
+    if (!aConfirmar) return;
+    const t = setTimeout(avancar, 2500);
+    return () => clearTimeout(t);
+  });
 
   return (
     <Sheet open={aberto} onOpenChange={(o) => !o && fechar()}>
@@ -157,12 +153,13 @@ export function KitCartDrawer() {
           )}
         </div>
 
-        {aFinalizar && (
+        {aConfirmar && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-background/85 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2">
               <Animacao dados={sucesso} className="h-32 w-32" aoTerminar={avancar} />
-              <p className="text-sm font-bold">
-                {total} {total === 1 ? 'conjunto confirmado' : 'conjuntos confirmados'}
+              <p className="text-sm font-bold">Pedido confirmado</p>
+              <p className="text-xs text-muted-foreground">
+                {total} {total === 1 ? 'conjunto' : 'conjuntos'} — a abrir o resumo…
               </p>
             </div>
           </div>
@@ -171,7 +168,7 @@ export function KitCartDrawer() {
         <SheetFooter className="gap-2">
           {nosDados ? (
             <>
-              <Button className="w-full" disabled={!podeConfirmar} onClick={confirmar}>
+              <Button className="w-full" disabled={!podeConfirmar || aConfirmar} onClick={confirmar}>
                 Confirmar pedido
               </Button>
               {!podeConfirmar && (
@@ -187,8 +184,8 @@ export function KitCartDrawer() {
             <>
               <Button
                 className="w-full"
-                disabled={itens.length === 0 || aFinalizar}
-                onClick={finalizarComAnimacao}
+                disabled={itens.length === 0}
+                onClick={() => setPasso('dados')}
               >
                 Finalizar pedido
               </Button>

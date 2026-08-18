@@ -27,6 +27,12 @@ a ser a cor de fundo da peça.
 
     python3 scripts/converter-molde.py <svg> <saida.ts> <prefixo>
 
+DIVERGE do conversor do browser (src/lib/converterMolde.ts) num ponto: o
+browser também retira camadas totalmente COBERTAS pelas seguintes, por
+verificação de píxeis em canvas — coisa que aqui não há como fazer sem
+puxar um rasterizador. Para semear temas no repositório, preferir o
+painel /admin, que usa o conversor completo.
+
 O `prefixo` é só informativo: as camadas são numeradas por posição
 (cor1, cor2, ...), que é o que as liga entre peças.
 """
@@ -52,9 +58,39 @@ TRACO = ('stroke-width', 'stroke-linecap', 'stroke-linejoin',
          'stroke-dasharray', 'stroke-miterlimit', 'opacity', 'fill-rule')
 
 
+NUMERO = re.compile(r'-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?')
+
+
 def arredondar(texto):
-    return re.sub(r'-?\d+\.\d+(?:e-?\d+)?',
-                  lambda m: f'{round(float(m.group(0)), 1):g}', texto)
+    """Números com 1 decimal, sem zeros à direita.
+
+    Percorre o texto por TOKENS em vez de substituir por regex solta: nos
+    paths comprimidos do Illustrator um número pode começar onde o anterior
+    acaba ("-.94.03"), e uma regex que exija dígitos antes do ponto salta o
+    primeiro e casa "94.03" A MEIO dele — dois números arredondados como um,
+    um token a menos, e o browser rejeita o path a partir daí. Os separadores
+    são reescritos (vírgula só onde faz falta), porque arredondar muda a
+    forma textual e os separadores implícitos do original deixam de servir.
+    """
+    saida = []
+    apos_numero = False
+    i = 0
+    while i < len(texto):
+        m = NUMERO.match(texto, i)
+        if m:
+            v = f'{round(float(m.group(0)), 1):g}'
+            if apos_numero and not v.startswith('-'):
+                saida.append(',')
+            saida.append(v)
+            apos_numero = True
+            i = m.end()
+            continue
+        ch = texto[i]
+        if ch not in ' ,\t\n':
+            saida.append(ch)
+            apos_numero = False
+        i += 1
+    return ''.join(saida)
 
 
 # O Figma exporta algumas cores pelo NOME. O painel de cores usa um
