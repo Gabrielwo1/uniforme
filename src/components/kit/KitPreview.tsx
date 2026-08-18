@@ -25,6 +25,16 @@ export function KitPreview({
 }) {
   return (
     <div className={cn('relative aspect-[270/615]', className)}>
+      {/* o mesmo empilhamento do simulador: o avatar do designer por baixo,
+          as peças recoloridas por cima ao pixel, as chuteiras entre o meião
+          e o calção. Sem ele a miniatura eram peças a flutuar, que não é o
+          que o cliente aprovou no ecrã anterior. */}
+      <img
+        src={`/moldes/jog/jogador-${lado}.png`}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 z-0 h-full w-full object-contain"
+      />
       {PECAS_KIT.map((peca, i) => {
         const config = design.pecas[peca];
         if (!config) return null;
@@ -48,6 +58,12 @@ export function KitPreview({
           </PecaMockup>
         );
       })}
+      <img
+        src={`/moldes/jog/botas-${lado}.png`}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 z-[15] h-full w-full object-contain"
+      />
     </div>
   );
 }

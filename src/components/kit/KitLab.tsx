@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgePlus, Plus, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
+import { ArrowLeft, BadgePlus, Moon, Plus, RotateCcw, Shirt, ShoppingBag, Sun, Type } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
+import { useTemaStore } from '@/store/useTemaStore';
 import { estampaDemoPorId } from '@/lib/kitDemo';
 import { useKitOrderStore } from '@/store/useKitOrderStore';
 import { PECAS_KIT } from '@/types/kit';
@@ -40,6 +41,8 @@ export function KitLab() {
   const [menu, setMenu] = useState<MenuTopo>('estampas');
   const setLocalEmFoco = useKitStore((s) => s.setLocalEmFoco);
   const aplicacoes = useKitStore((s) => s.design.aplicacoes);
+  const escuro = useTemaStore((s) => s.tema === 'escuro');
+  const alternarTema = useTemaStore((s) => s.alternar);
 
   /** Contador por separador — mostra de relance o que já foi aplicado. */
   const contagem: Record<MenuTopo, number> = {
@@ -91,11 +94,24 @@ export function KitLab() {
         </Button>
         {/* só a marca: o que o ecrã é vê-se pelo próprio ecrã, e o
             cabeçalho ganha o espaço para os controlos */}
-        <img src={logoUrl} alt="KYPZL" className="h-8 w-auto shrink-0" />
+        <img
+          src={logoUrl}
+          alt="KYPZL"
+          /* a palavra é preta no ficheiro: no escuro tem de virar branca */
+          className="h-8 w-auto shrink-0 dark:brightness-0 dark:invert"
+        />
 
         <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">
           {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
         </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={alternarTema}
+          title={escuro ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+        >
+          {escuro ? <Sun /> : <Moon />}
+        </Button>
         <Button variant="outline" size="sm" onClick={reset} title="Repor cores e temas">
           <RotateCcw />
         </Button>

@@ -23,7 +23,7 @@ import { CamadaAplicacoes } from './CamadaAplicacoes';
  */
 export function KitViewer({ fundo }: { fundo?: string }) {
   return (
-    <div className="relative flex h-full min-h-[660px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc]">
+    <div className="relative flex h-full min-h-[660px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc] dark:from-[#1b1a19] dark:to-[#100f0f]">
       {fundo && (
         <>
           <img
@@ -32,9 +32,13 @@ export function KitViewer({ fundo }: { fundo?: string }) {
             aria-hidden
             className="pointer-events-none absolute inset-0 h-full w-full object-cover"
           />
-          {/* véu mínimo: separa o conjunto do fundo sem lavar a foto —
-              a 15% o céu noturno do estádio ficava cinzento */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-white/5" />
+          {/* véu mínimo: separa o conjunto do fundo sem lavar a foto — a
+              15% o céu noturno do estádio ficava cinzento. No tema escuro
+              inverte-se: em vez de clarear, escurece. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-white/5 dark:bg-black/25"
+          />
         </>
       )}
 

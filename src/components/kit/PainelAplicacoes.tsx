@@ -109,7 +109,7 @@ function CartaoAplicacao({ aplicacao: a }: { aplicacao: Aplicacao }) {
       {/* ---------------------------------------------------- conteúdo -- */}
       {a.tipo === 'logo' ? (
         <div className="flex items-center gap-2">
-          <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-md border bg-[linear-gradient(45deg,#eee_25%,transparent_25%,transparent_75%,#eee_75%),linear-gradient(45deg,#eee_25%,transparent_25%,transparent_75%,#eee_75%)] bg-[length:10px_10px] bg-[position:0_0,5px_5px]">
+          <div className="xadrez grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-md border">
             {a.imagem ? (
               <img src={a.imagem} alt="" className="h-full w-full object-contain" />
             ) : (

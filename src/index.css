@@ -35,6 +35,46 @@
 
     --radius: 0.65rem;
   }
+
+  /*
+   * Tema ESCURO.
+   *
+   * Os neutros são um carvão QUENTE (matiz 30, saturação baixíssima), não o
+   * cinzento-azulado que costuma vir por omissão: o preto da marca é o
+   * #2B2A29, e um fundo azulado põe o vermelho KYPZL a brigar com ele.
+   *
+   * O vermelho sobe de 42% para 52% de luminosidade — o mesmo vermelho que
+   * lê bem sobre branco fica abafado sobre carvão.
+   */
+  .dark {
+    --background: 30 3% 7%;
+    --foreground: 30 6% 96%;
+
+    --card: 30 3% 11%;
+    --card-foreground: 30 6% 96%;
+
+    --popover: 30 3% 11%;
+    --popover-foreground: 30 6% 96%;
+
+    --primary: 358 72% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 3% 16%;
+    --secondary-foreground: 30 6% 96%;
+
+    --muted: 30 3% 16%;
+    --muted-foreground: 30 4% 63%;
+
+    --accent: 30 3% 19%;
+    --accent-foreground: 30 6% 96%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 3% 20%;
+    --input: 30 3% 24%;
+    --ring: 358 72% 52%;
+  }
 }
 
 @layer base {
@@ -54,7 +94,23 @@
   }
 }
 
-/* Scrollbars discretas e claras. */
+/* Xadrez de transparência, atrás dos logos carregados: o padrão tem de
+   contrastar POUCO com o fundo do tema, senão rouba a atenção à imagem. */
+@layer components {
+  .xadrez {
+    --xadrez: #ededed;
+    background-image:
+      linear-gradient(45deg, var(--xadrez) 25%, transparent 25%, transparent 75%, var(--xadrez) 75%),
+      linear-gradient(45deg, var(--xadrez) 25%, transparent 25%, transparent 75%, var(--xadrez) 75%);
+    background-size: 10px 10px;
+    background-position: 0 0, 5px 5px;
+  }
+  .dark .xadrez {
+    --xadrez: hsl(30 3% 22%);
+  }
+}
+
+/* Scrollbars discretas, na cor do tema. */
 @layer utilities {
   .scrollbar-clean {
     scrollbar-width: thin;

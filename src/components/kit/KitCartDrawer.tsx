@@ -70,8 +70,8 @@ export function KitCartDrawer() {
           {nosDados ? (
             <div className="py-2">
               <p className="mb-3 text-xs text-muted-foreground">
-                Sem compromisso — o orçamento é enviado por e-mail depois de
-                revermos o conjunto.
+                Sem compromisso — o resumo abre no WhatsApp e o orçamento
+                chega depois de revermos o conjunto.
               </p>
               <CustomerForm value={cliente} onChange={setCliente} />
             </div>
@@ -83,7 +83,7 @@ export function KitCartDrawer() {
             <ul className="space-y-2 py-2">
               {itens.map((item) => (
                 <li key={item.id} className="flex gap-3 rounded-lg border bg-card p-2">
-                  <div className="flex shrink-0 gap-1 rounded-md bg-gradient-to-b from-[#e6eaef] to-[#cdd4dc] p-1">
+                  <div className="flex shrink-0 gap-1 overflow-hidden rounded-md bg-[url(/moldes/fundo-campo.jpg)] bg-cover bg-center p-1">
                     <KitPreview design={item.design} lado="frente" className="h-24" />
                     <KitPreview design={item.design} lado="verso" className="h-24" />
                   </div>

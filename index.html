@@ -15,6 +15,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      /* Tema antes do React montar: decidido aqui para a página não piscar
+         a branco antes de o escuro ser aplicado. Ver src/store/useTemaStore. */
+      (function () {
+        var v = localStorage.getItem('kypzl:tema');
+        var escuro = v ? v === 'escuro'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (escuro) document.documentElement.classList.add('dark');
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
