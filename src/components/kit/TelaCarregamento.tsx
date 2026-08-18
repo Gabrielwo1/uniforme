@@ -1,8 +1,9 @@
 import logoUrl from '@/assets/kypzl-logo.png';
 
 /**
- * Tela de carregamento do simulador: a logo da KYPZL a respirar sobre o
- * fundo do estádio, com uma barra a varrer no vermelho da marca.
+ * Tela de carregamento do simulador: a logo da KYPZL ESTÁTICA sobre o
+ * fundo do estádio, com uma fila de chevrons — a seta da própria marca —
+ * a acender em sequência, à maneira dos ecrãs desportivos.
  *
  * Não é decoração pura — o simulador tem mesmo trabalho a fazer no arranque
  * (os temas convertidos pesam ~3 MB de vetores e os da base de dados vêm
@@ -11,9 +12,11 @@ import logoUrl from '@/assets/kypzl-logo.png';
  * a marca; o mínimo também evita o flash nos carregamentos instantâneos de
  * cache.
  *
- * A animação é CSS (ver index.css): dois keyframes não justificam Lottie,
- * e ficam prontos no primeiro frame — antes de qualquer JS carregar.
+ * A animação é CSS (ver index.css): um keyframe não justifica Lottie, e
+ * fica pronto no primeiro frame — antes de qualquer JS carregar.
  */
+const SETAS = 5;
+
 export function TelaCarregamento() {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-background">
@@ -34,11 +37,18 @@ export function TelaCarregamento() {
         <img
           src={logoUrl}
           alt="KYPZL"
-          className="logo-a-carregar h-12 w-auto dark:brightness-0 dark:invert"
+          className="h-12 w-auto dark:brightness-0 dark:invert"
         />
 
-        <div className="h-1 w-44 overflow-hidden rounded-full bg-foreground/10">
-          <div className="barra-a-carregar h-full w-2/5 rounded-full bg-primary" />
+        {/* o desfasamento entre setas dá a onda a correr para a direita */}
+        <div className="flex items-center gap-1.5" aria-hidden>
+          {Array.from({ length: SETAS }, (_, i) => (
+            <span
+              key={i}
+              className="seta-a-carregar"
+              style={{ animationDelay: `${i * 0.14}s` }}
+            />
+          ))}
         </div>
 
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
