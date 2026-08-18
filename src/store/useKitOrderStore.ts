@@ -69,7 +69,10 @@ export const useKitOrderStore = create<KitOrderStore>((set, get) => ({
       createdAt: new Date().toISOString(),
     };
     const itens = [...get().itens, item];
-    set({ itens, painelAberto: true, passo: 'carrinho' });
+    // NÃO abre o painel: quem carrega em "Adicionar outro" quer continuar a
+    // personalizar, e ver o carrinho saltar à frente a cada conjunto é uma
+    // interrupção. A confirmação é a notificação que o simulador mostra.
+    set({ itens, passo: 'carrinho' });
     gravar(KEY, itens);
   },
 

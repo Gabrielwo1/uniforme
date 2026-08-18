@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BadgePlus, Moon, Plus, RotateCcw, Shirt, ShoppingBag, Sun, Type } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
+import { toast } from 'sonner';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
 import { useTemaStore } from '@/store/useTemaStore';
@@ -12,6 +13,8 @@ import { Button } from '../ui/button';
 import { GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
 import { KitCartDrawer } from './KitCartDrawer';
 import { PainelAplicacoes } from './PainelAplicacoes';
+import { Animacao } from '../ui/animacao';
+import sucesso from '@/assets/animacoes/sucesso.json';
 
 /**
  * Simulador de conjuntos, na arquitetura da referência:
@@ -54,7 +57,13 @@ export function KitLab() {
   /** Nome do conjunto = tema da camisola, que é quem manda no visual. */
   const adicionarAoCarrinho = () => {
     const estampa = estampaDemoPorId('camisola', design.pecas.camisola.estampaId);
-    adicionar(design, `${estampa.nome} · ${estampa.codModelo}`);
+    const nome = `${estampa.nome} · ${estampa.codModelo}`;
+    adicionar(design, nome);
+    toast.success(`${nome} adicionado ao carrinho`, {
+      description: 'Camisola, calção e meião. Continue a personalizar ou finalize o pedido.',
+      icon: <Animacao dados={sucesso} className="h-6 w-6" />,
+      action: { label: 'Ver pedido', onClick: abrirPainel },
+    });
   };
 
   /** Com o carrinho vazio, o conjunto que está no ecrã conta como o pedido:
@@ -62,7 +71,7 @@ export function KitLab() {
       frente seria um beco sem saída. */
   const finalizar = () => {
     if (noCarrinho === 0) adicionarAoCarrinho();
-    else abrirPainel();
+    abrirPainel();
   };
 
   // A estampa real pesa ~3 MB de vetores: entra por import dinâmico para não
