@@ -39,11 +39,32 @@ interface Tema {
       o cliente usa (ver scripts/converter-molde.py). Uma peça sem arte
       própria fica com a cor base. */
   porPeca?: Partial<Record<PecaKit, DadosTema>>;
-  /** Nomes das camadas no painel de cores, por cor de origem (opcional). */
-  nomes?: Record<string, string>;
   /** Cor da peça por baixo da arte, quando o molde não traz fundo próprio
       (o Aston Vila desenha o corpo em vez de o preencher). */
   corBase?: string;
+}
+
+/**
+ * Rótulo de uma camada da estampa: "Camada A", "Camada B", ...
+ *
+ * De propósito SEM significado. Tentei nomes descritivos ("Faixa",
+ * "Mangas") e chocaram com as ZONAS da peça, que já se chamam Gola e
+ * Mangas: o painel mostrava dois "Mangas" e não se percebia qual era o
+ * tecido e qual era o desenho. As letras separam os dois mundos de vez —
+ * zonas têm nome de peça, camadas têm letra — e servem qualquer tema que
+ * o cliente mande, sem tabela para manter.
+ *
+ * A letra é POSICIONAL, como o id (`cor1`): é o que faz a camada A da
+ * camisola ser a mesma do calção e o cadeado repetir-lhe a cor.
+ */
+function letraDaCamada(i: number): string {
+  let n = i;
+  let letra = '';
+  do {
+    letra = String.fromCharCode(65 + (n % 26)) + letra;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return letra;
 }
 
 /** Cor de fundo de uma peça: a do seu molde; senão a de outra peça do mesmo
@@ -61,27 +82,18 @@ const TEMAS: Tema[] = [
     nome: 'Milan',
     codModelo: '003',
     dados: milan,
-    nomes: { '#808081': 'Textura', '#c21633': 'Listras', '#c83a3e': 'Vivos' },
   },
   {
     id: 'dino',
     nome: 'Dino',
     codModelo: '004',
     porPeca: { camisola: dinoCamisola, calcao: dinoCalcao },
-    nomes: { '#cb9863': 'Faixa' },
   },
   {
     id: 'aska',
     nome: 'Aska',
     codModelo: '005',
     porPeca: { camisola: askaCamisola },
-    nomes: {
-      '#cb9863': 'Faixa',
-      '#ffffff': 'Peitilho',
-      '#222128': 'Ombros',
-      '#e52424': 'Vivos',
-      '#221f20': 'Costura',
-    },
   },
   {
     id: 'aston',
@@ -89,7 +101,6 @@ const TEMAS: Tema[] = [
     codModelo: '006',
     porPeca: { camisola: astonCamisola },
     corBase: '#8d1f38',
-    nomes: { '#ffffff': 'Peitilho', '#8d1f38': 'Corpo', '#bfd1ed': 'Mangas' },
   },
 ];
 
@@ -118,7 +129,7 @@ export function registarReais() {
           amostraViewBox: AMOSTRAS[peca],
           camadas: (dados?.CAMADAS ?? []).map((c, i) => ({
             id: c.id,
-            nome: tema.nomes?.[c.cor] ?? `Cor ${i + 1}`,
+            nome: `Camada ${letraDaCamada(i)}`,
             corPadrao: c.cor,
             desenho: {
               frente: naCaixa(dados!, c.svg, CAIXAS[peca].frente, 'frente', peca),

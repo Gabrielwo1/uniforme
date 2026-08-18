@@ -246,11 +246,13 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
             onChange={(cor) => setCorZona(peca, zona.id, cor)}
           />
         ))}
-        {estampa.camadas.map((camada, i) => (
+        {estampa.camadas.map((camada) => (
           <Swatch
             key={camada.id}
             label={camada.nome}
-            numero={i + 1}
+            /* o crachá repete a letra do rótulo: é o que distingue, de
+               relance, uma camada da estampa de uma zona da peça */
+            marca={camada.nome.replace('Camada ', '')}
             cor={config.cores[camada.id] ?? camada.corPadrao}
             onChange={(cor) => setCorCamada(peca, camada.id, cor)}
             presa={!camadasSoltas.includes(camada.id)}
@@ -265,14 +267,15 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
 function Swatch({
   label,
   cor,
-  numero,
+  marca,
   onChange,
   presa,
   onTogglePresa,
 }: {
   label: string;
   cor: string;
-  numero?: number;
+  /** Letra da camada. As zonas da peça não a têm — é o que as separa. */
+  marca?: string;
   onChange: (cor: string) => void;
   /** Só nas camadas da estampa: repete a cor nas outras peças. */
   presa?: boolean;
@@ -288,9 +291,9 @@ function Swatch({
           className="h-10 w-10 cursor-pointer rounded-md border-2 border-border bg-transparent p-0"
           title={label}
         />
-        {numero !== undefined && (
-          <span className="pointer-events-none absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
-            {numero}
+        {marca && (
+          <span className="pointer-events-none absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[9px] font-bold text-background">
+            {marca}
           </span>
         )}
         {onTogglePresa && (
