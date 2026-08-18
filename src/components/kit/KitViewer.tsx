@@ -32,8 +32,9 @@ export function KitViewer({ fundo }: { fundo?: string }) {
             aria-hidden
             className="pointer-events-none absolute inset-0 h-full w-full object-cover"
           />
-          {/* véu suave para o conjunto continuar a mandar sobre o fundo */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-white/15" />
+          {/* véu mínimo: separa o conjunto do fundo sem lavar a foto —
+              a 15% o céu noturno do estádio ficava cinzento */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-white/5" />
         </>
       )}
 
