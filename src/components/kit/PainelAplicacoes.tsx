@@ -1,17 +1,18 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   ImagePlus,
+  Pencil,
   Plus,
   RotateCcw,
   Trash2,
   Upload,
 } from 'lucide-react';
 import { useKitStore } from '@/store/useKitStore';
-import { FONTES, locaisPara, localPorId } from '@/lib/kitLocais';
+import { FONTES, fontePorId, locaisPara, localPorId } from '@/lib/kitLocais';
 import {
   LADO_LABEL,
   PECA_LABEL,
@@ -73,6 +74,11 @@ function CartaoAplicacao({ aplicacao: a }: { aplicacao: Aplicacao }) {
   const removerAplicacao = useKitStore((s) => s.removerAplicacao);
   const setLocalEmFoco = useKitStore((s) => s.setLocalEmFoco);
   const ficheiro = useRef<HTMLInputElement>(null);
+  /** Encolhido, o cartão é uma linha-resumo. Vive no próprio cartão (a
+      `key` é o id da aplicação), por isso um cartão novo nasce aberto e o
+      estado dos outros não mexe. Com três nomes e dois escudos, a coluna
+      sem isto era um rolo de deslize infinito. */
+  const [aberto, setAberto] = useState(true);
 
   const local = localPorId(a.localId);
   const opcoes = locaisPara(a.tipo);
@@ -98,13 +104,50 @@ function CartaoAplicacao({ aplicacao: a }: { aplicacao: Aplicacao }) {
           {TIPO_APLICACAO_LABEL[a.tipo]}
         </span>
         <button
+          onClick={() => setAberto((v) => !v)}
+          title={aberto ? 'Encolher' : 'Expandir'}
+          className="ml-auto grid h-6 w-6 place-items-center rounded text-muted-foreground transition hover:bg-accent"
+        >
+          {aberto ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </button>
+        <button
           onClick={() => removerAplicacao(a.id)}
           title="Remover"
-          className="ml-auto grid h-6 w-6 place-items-center rounded text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+          className="grid h-6 w-6 place-items-center rounded text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {/* encolhido: o que é e onde está, num relance — clicar edita */}
+      {!aberto && (
+        <button
+          onClick={() => setAberto(true)}
+          className="flex w-full items-center gap-2 rounded-md border bg-background px-2 py-1.5 text-left transition hover:bg-accent"
+        >
+          {a.tipo === 'logo' ? (
+            a.imagem ? (
+              <img src={a.imagem} alt="" className="h-6 w-6 shrink-0 rounded border object-contain" />
+            ) : (
+              <ImagePlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )
+          ) : (
+            <span
+              className="shrink-0 text-base font-bold leading-none"
+              style={{ fontFamily: fontePorId(a.fonteId).css }}
+            >
+              {a.texto || '—'}
+            </span>
+          )}
+          <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+            {local ? `${PECA_LABEL[local.peca]} · ${LADO_LABEL[local.lado]} · ${local.nome}` : ''}
+          </span>
+          <Pencil className="h-3 w-3 shrink-0 text-muted-foreground" />
+        </button>
+      )}
+
+      {aberto && (
+        <>
 
       {/* ---------------------------------------------------- conteúdo -- */}
       {a.tipo === 'logo' ? (
@@ -250,10 +293,12 @@ function CartaoAplicacao({ aplicacao: a }: { aplicacao: Aplicacao }) {
         </div>
       </Campo>
 
-      {local && (
-        <p className="text-[10px] text-muted-foreground">
-          {PECA_LABEL[local.peca]} · {LADO_LABEL[local.lado]} · {local.nome}
-        </p>
+          {local && (
+            <p className="text-[10px] text-muted-foreground">
+              {PECA_LABEL[local.peca]} · {LADO_LABEL[local.lado]} · {local.nome}
+            </p>
+          )}
+        </>
       )}
     </div>
   );
