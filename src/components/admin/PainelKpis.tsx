@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { fetchLeads, type LeadRow } from '@/lib/api';
+import { admin } from '@/lib/adminApi';
+import type { LeadRow } from '@/lib/api';
+import { useAdminStore } from '@/store/useAdminStore';
 import { calcularKpis, type Kpis } from './adminDados';
 
 /**
@@ -36,20 +38,23 @@ export function PainelKpis() {
 }
 
 export function useLeads() {
+  const codigo = useAdminStore((s) => s.codigo);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [aCarregar, setACarregar] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!codigo) return;
     let vivo = true;
-    fetchLeads()
+    admin
+      .leads(codigo)
       .then((l) => vivo && setLeads(l))
       .catch((e: Error) => vivo && setErro(e.message))
       .finally(() => vivo && setACarregar(false));
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [codigo]);
 
   return { leads, aCarregar, erro };
 }

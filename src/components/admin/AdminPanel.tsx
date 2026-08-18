@@ -29,15 +29,17 @@ const SEPARADORES: { id: Separador; rotulo: string; Icone: typeof Users }[] = [
 ];
 
 export function AdminPanel() {
-  const email = useAdminStore((s) => s.email);
+  const codigo = useAdminStore((s) => s.codigo);
   const aVerificar = useAdminStore((s) => s.aVerificar);
-  const iniciar = useAdminStore((s) => s.iniciar);
+  const retomar = useAdminStore((s) => s.retomar);
   const sair = useAdminStore((s) => s.sair);
   const escuro = useTemaStore((s) => s.tema === 'escuro');
   const alternarTema = useTemaStore((s) => s.alternar);
   const [separador, setSeparador] = useState<Separador>('resumo');
 
-  useEffect(() => iniciar(), [iniciar]);
+  useEffect(() => {
+    retomar();
+  }, [retomar]);
 
   if (aVerificar) {
     return (
@@ -47,7 +49,7 @@ export function AdminPanel() {
     );
   }
 
-  if (!email) return <Entrada />;
+  if (!codigo) return <Entrada />;
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -79,7 +81,7 @@ export function AdminPanel() {
           ))}
         </nav>
 
-        <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">{email}</span>
+        <span className="ml-auto" />
         <Button variant="outline" size="sm" onClick={alternarTema} title="Trocar o tema">
           {escuro ? <Sun /> : <Moon />}
         </Button>
@@ -114,34 +116,37 @@ export function AdminPanel() {
   );
 }
 
-/** Ecrã de entrada. Sem "criar conta" nem "recuperar palavra-passe": a conta
-    é criada e reposta no painel do Supabase, por quem lá tem acesso. */
+/**
+ * Ecrã de entrada: quatro dígitos.
+ *
+ * O código não é validado aqui — vai à Edge Function, que o compara no
+ * servidor. Um `if` no browser não guardaria nada: para o painel ler os
+ * pedidos, a tabela teria de estar aberta ao público, e aí o código seria
+ * decoração.
+ */
 function Entrada() {
   const entrar = useAdminStore((s) => s.entrar);
   const erro = useAdminStore((s) => s.erro);
   const aEntrar = useAdminStore((s) => s.aEntrar);
-  const [email, setEmail] = useState('');
-  const [palavra, setPalavra] = useState('');
+  const [codigo, setCodigo] = useState('');
 
   return (
     <div className="grid h-full place-items-center bg-background p-6">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          entrar(email.trim(), palavra);
+          entrar(codigo);
         }}
-        className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-6 shadow-sm"
+        className="w-full max-w-xs space-y-4 rounded-xl border bg-card p-6 text-center shadow-sm"
       >
         <img
           src={logoUrl}
           alt="KYPZL"
-          className="h-7 w-auto dark:brightness-0 dark:invert"
+          className="mx-auto h-7 w-auto dark:brightness-0 dark:invert"
         />
         <div>
           <h1 className="text-lg font-bold">Administração</h1>
-          <p className="text-xs text-muted-foreground">
-            Entre com a conta criada no painel do Supabase.
-          </p>
+          <p className="text-xs text-muted-foreground">Introduza o código de acesso.</p>
         </div>
 
         {!isSupabaseConfigured && (
@@ -151,33 +156,20 @@ function Entrada() {
           </p>
         )}
 
-        <label className="block space-y-1">
-          <span className="text-xs font-semibold text-muted-foreground">E-mail</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:border-foreground"
-          />
-        </label>
-
-        <label className="block space-y-1">
-          <span className="text-xs font-semibold text-muted-foreground">Palavra-passe</span>
-          <input
-            type="password"
-            required
-            value={palavra}
-            onChange={(e) => setPalavra(e.target.value)}
-            autoComplete="current-password"
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:border-foreground"
-          />
-        </label>
+        <input
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 8))}
+          inputMode="numeric"
+          autoComplete="off"
+          autoFocus
+          placeholder="••••"
+          aria-label="Código de acesso"
+          className="h-14 w-full rounded-md border bg-background text-center text-3xl font-bold tracking-[0.5em] outline-none focus:border-foreground"
+        />
 
         {erro && <p className="text-xs font-semibold text-destructive">{erro}</p>}
 
-        <Button type="submit" className="w-full" disabled={aEntrar}>
+        <Button type="submit" className="w-full" disabled={aEntrar || codigo.length < 4}>
           {aEntrar && <Loader2 className="animate-spin" />}
           Entrar
         </Button>

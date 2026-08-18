@@ -11,13 +11,9 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  alternarKitTemplate,
-  apagarKitTemplate,
-  fetchKitTemplates,
-  guardarKitTemplate,
-  type KitTemplateRow,
-} from '@/lib/api';
+import { admin } from '@/lib/adminApi';
+import type { KitTemplateRow } from '@/lib/api';
+import { useAdminStore } from '@/store/useAdminStore';
 import {
   converterMolde,
   ErroDeMolde,
@@ -49,8 +45,9 @@ type Estado =
   | { fase: 'pronto'; molde: MoldeConvertido; ficheiro: string };
 
 export function GestorModelos() {
+  const codigo = useAdminStore((s) => s.codigo)!;
   const [nome, setNome] = useState('');
-  const [codigo, setCodigo] = useState('');
+  const [codModelo, setCodModelo] = useState('');
   const [pecas, setPecas] = useState<Record<PecaKit, Estado>>({
     camisola: { fase: 'vazio' },
     calcao: { fase: 'vazio' },
@@ -59,17 +56,17 @@ export function GestorModelos() {
   const [aGuardar, setAGuardar] = useState(false);
   const [guardados, setGuardados] = useState<KitTemplateRow[] | null>(null);
 
-  const recarregar = () => fetchKitTemplates().then(setGuardados);
+  const recarregar = () => admin.modelos(codigo).then(setGuardados);
   useEffect(() => {
     recarregar();
   }, []);
 
   const prontas = PECAS_KIT.filter((p) => pecas[p].fase === 'pronto');
-  const podeGuardar = nome.trim() !== '' && codigo.trim() !== '' && prontas.length > 0;
+  const podeGuardar = nome.trim() !== '' && codModelo.trim() !== '' && prontas.length > 0;
 
   const limpar = () => {
     setNome('');
-    setCodigo('');
+    setCodModelo('');
     setPecas({ camisola: { fase: 'vazio' }, calcao: { fase: 'vazio' }, meiao: { fase: 'vazio' } });
   };
 
@@ -82,8 +79,8 @@ export function GestorModelos() {
       for (const peca of prontas) {
         const estado = pecas[peca];
         if (estado.fase !== 'pronto') continue;
-        await guardarKitTemplate({
-          cod_modelo: codigo.trim(),
+        await admin.guardarModelo(codigo, {
+          cod_modelo: codModelo.trim(),
           nome: nome.trim(),
           peca,
           lado: 'frente',
@@ -132,8 +129,8 @@ export function GestorModelos() {
               Cód. Modelo
             </span>
             <input
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value.replace(/\s/g, ''))}
+              value={codModelo}
+              onChange={(e) => setCodModelo(e.target.value.replace(/\s/g, ''))}
               placeholder="007"
               className="h-9 w-full rounded-md border bg-background px-3 text-sm font-bold outline-none focus:border-foreground"
             />
@@ -339,6 +336,8 @@ function ListaGuardados({
   linhas: KitTemplateRow[];
   aoMudar: () => void;
 }) {
+  const codigo = useAdminStore((s) => s.codigo)!;
+  const apagar = (id: string) => admin.apagarModelo(codigo, id).then(aoMudar);
   const porTema = new Map<string, KitTemplateRow[]>();
   for (const l of linhas) {
     porTema.set(l.cod_modelo, [...(porTema.get(l.cod_modelo) ?? []), l]);
@@ -375,7 +374,7 @@ function ListaGuardados({
                   ))}
                 </span>
                 <button
-                  onClick={() => alternarKitTemplate(p.id, !p.enabled).then(aoMudar)}
+                  onClick={() => admin.alternarModelo(codigo, p.id, !p.enabled).then(aoMudar)}
                   title={p.enabled ? 'Esconder do simulador' : 'Mostrar no simulador'}
                   className="text-muted-foreground transition hover:text-foreground"
                 >
@@ -384,7 +383,7 @@ function ListaGuardados({
                 <button
                   onClick={() => {
                     if (confirm(`Apagar ${PECA_LABEL[p.peca]} de ${p.nome}?`)) {
-                      apagarKitTemplate(p.id).then(aoMudar);
+                      apagar(p.id);
                     }
                   }}
                   title="Apagar"

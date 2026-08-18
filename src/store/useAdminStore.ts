@@ -1,69 +1,71 @@
 import { create } from 'zustand';
-import { supabase } from '@/lib/supabase';
+import { admin, ErroDeAdmin } from '@/lib/adminApi';
 
 /**
- * Sessão da área de administração.
+ * Entrada na administração por CÓDIGO.
  *
- * Não há registo aberto: a conta é criada pela KYPZL no painel do Supabase
- * (Authentication → Users). É isso que mantém a lista de leads fechada —
- * a política de leitura da tabela `orders` exige sessão iniciada, e sem
- * utilizador criado à mão não há quem inicie.
+ * O código não é verificado aqui — é enviado à Edge Function `admin`, que o
+ * compara no servidor e só então lê ou escreve. Este store guarda-o para as
+ * chamadas seguintes não voltarem a pedi-lo, e é tudo o que faz.
  *
- * A sessão é gerida pelo próprio cliente Supabase (guarda e renova o token);
- * este store só espelha o estado para a interface.
+ * Fica em `sessionStorage`, não em `localStorage`: num computador partilhado
+ * do escritório, fechar o separador tira a sessão. São quatro dígitos, custa
+ * pouco escrever outra vez.
  */
 
+const CHAVE = 'kypzl:admin-codigo';
+
 interface AdminStore {
-  email: string | null;
-  /** null enquanto ainda não se sabe — evita piscar o ecrã de entrada a
-      quem já tem sessão guardada. */
-  aVerificar: boolean;
+  codigo: string | null;
   erro: string | null;
   aEntrar: boolean;
 
-  iniciar: () => () => void;
-  entrar: (email: string, palavra: string) => Promise<void>;
-  sair: () => Promise<void>;
+  /** Revalida o código guardado no arranque — se o tiverem mudado no
+      servidor, mais vale o painel pedir de novo do que falhar a cada ecrã. */
+  retomar: () => Promise<void>;
+  aVerificar: boolean;
+
+  entrar: (codigo: string) => Promise<void>;
+  sair: () => void;
 }
 
 export const useAdminStore = create<AdminStore>((set) => ({
-  email: null,
-  aVerificar: true,
+  codigo: null,
   erro: null,
   aEntrar: false,
+  aVerificar: true,
 
-  /** Liga o store ao cliente Supabase. Devolve a função de desligar. */
-  iniciar: () => {
-    if (!supabase) {
+  retomar: async () => {
+    const guardado = sessionStorage.getItem(CHAVE);
+    if (!guardado) {
       set({ aVerificar: false });
-      return () => {};
-    }
-    supabase.auth.getSession().then(({ data }) => {
-      set({ email: data.session?.user.email ?? null, aVerificar: false });
-    });
-    const { data } = supabase.auth.onAuthStateChange((_e, sessao) => {
-      set({ email: sessao?.user.email ?? null, aVerificar: false });
-    });
-    return () => data.subscription.unsubscribe();
-  },
-
-  entrar: async (email, palavra) => {
-    if (!supabase) {
-      set({ erro: 'Supabase não configurado neste ambiente.' });
       return;
     }
-    set({ aEntrar: true, erro: null });
-    const { error } = await supabase.auth.signInWithPassword({ email, password: palavra });
-    set({
-      aEntrar: false,
-      // a mensagem da API vem em inglês e é sempre a mesma para utilizador
-      // errado ou palavra errada (de propósito, para não revelar contas)
-      erro: error ? 'E-mail ou palavra-passe incorretos.' : null,
-    });
+    try {
+      await admin.entrar(guardado);
+      set({ codigo: guardado, aVerificar: false });
+    } catch {
+      sessionStorage.removeItem(CHAVE);
+      set({ aVerificar: false });
+    }
   },
 
-  sair: async () => {
-    await supabase?.auth.signOut();
-    set({ email: null });
+  entrar: async (codigo) => {
+    set({ aEntrar: true, erro: null });
+    try {
+      await admin.entrar(codigo);
+      sessionStorage.setItem(CHAVE, codigo);
+      set({ codigo, aEntrar: false });
+    } catch (e) {
+      set({
+        aEntrar: false,
+        erro: e instanceof ErroDeAdmin ? e.message : 'Não foi possível entrar.',
+      });
+    }
+  },
+
+  sair: () => {
+    sessionStorage.removeItem(CHAVE);
+    set({ codigo: null, erro: null });
   },
 }));
