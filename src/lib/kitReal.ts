@@ -4,6 +4,8 @@ import { AMOSTRAS, CAIXAS, type Caixa } from './kitCaixas';
 import * as milan from './estampas/milanDados';
 import * as dinoCamisola from './estampas/dinoCamisolaDados';
 import * as dinoCalcao from './estampas/dinoCalcaoDados';
+import * as askaCamisola from './estampas/askaCamisolaDados';
+import * as astonCamisola from './estampas/astonCamisolaDados';
 
 /**
  * Regista os TEMAS REAIS convertidos dos ficheiros do cliente.
@@ -39,6 +41,18 @@ interface Tema {
   porPeca?: Partial<Record<PecaKit, DadosTema>>;
   /** Nomes das camadas no painel de cores, por cor de origem (opcional). */
   nomes?: Record<string, string>;
+  /** Cor da peça por baixo da arte, quando o molde não traz fundo próprio
+      (o Aston Vila desenha o corpo em vez de o preencher). */
+  corBase?: string;
+}
+
+/** Cor de fundo de uma peça: a do seu molde; senão a de outra peça do mesmo
+    tema, para o conjunto ler como um só quando só a camisola tem arte. */
+function fundoDe(tema: Tema, dados?: DadosTema): string {
+  const doTema =
+    tema.dados?.COR_FUNDO ??
+    Object.values(tema.porPeca ?? {}).find((d) => d?.COR_FUNDO)?.COR_FUNDO;
+  return dados?.COR_FUNDO ?? doTema ?? tema.corBase ?? '#221f20';
 }
 
 const TEMAS: Tema[] = [
@@ -55,6 +69,27 @@ const TEMAS: Tema[] = [
     codModelo: '004',
     porPeca: { camisola: dinoCamisola, calcao: dinoCalcao },
     nomes: { '#cb9863': 'Faixa' },
+  },
+  {
+    id: 'aska',
+    nome: 'Aska',
+    codModelo: '005',
+    porPeca: { camisola: askaCamisola },
+    nomes: {
+      '#cb9863': 'Faixa',
+      '#ffffff': 'Peitilho',
+      '#222128': 'Ombros',
+      '#e52424': 'Vivos',
+      '#221f20': 'Costura',
+    },
+  },
+  {
+    id: 'aston',
+    nome: 'Aston Vila',
+    codModelo: '006',
+    porPeca: { camisola: astonCamisola },
+    corBase: '#8d1f38',
+    nomes: { '#ffffff': 'Peitilho', '#8d1f38': 'Corpo', '#bfd1ed': 'Mangas' },
   },
 ];
 
@@ -79,7 +114,7 @@ export function registarReais() {
           codModelo: tema.codModelo,
           nome: tema.nome,
           peca,
-          corBasePadrao: (dados ?? tema.dados)?.COR_FUNDO ?? '#221f20',
+          corBasePadrao: fundoDe(tema, dados),
           amostraViewBox: AMOSTRAS[peca],
           camadas: (dados?.CAMADAS ?? []).map((c, i) => ({
             id: c.id,

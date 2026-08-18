@@ -4,16 +4,22 @@ vai usar) para camadas por cor.
 
 Formato de entrada (export do Figma/Illustrator):
 
-    <mask id="..."> <path d="silhueta da peça"/> </mask>
+    <mask id="..." style="mask-type:alpha"> <path d="silhueta"/> </mask>
     <g mask="url(#...)">
         <rect fill="#1F2A44"/>          ← fundo
         <path stroke="#CB9863" .../>    ← arte
+        <g>                             ← o Figma embrulha grupos de arte
+          <mask style="mask-type:luminance"> <path fill="white"/> </mask>
+          <g mask="url(#...)"> ...arte... </g>
+        </g>
     </g>
 
-A máscara é a peça; o que está dentro do grupo é a estampa. A caixa da
+A máscara ALFA é a peça; o que está dentro do grupo é a estampa. A caixa da
 máscara passa a ser o QUADRO — é ela que o motor mapeia para a caixa da
 peça no visualizador, tal como fazia com a prancheta do Illustrator. A
-silhueta em si não é precisa: o recorte já é feito pelo alfa do PNG da peça.
+silhueta em si não é precisa: o recorte já é feito pelo alfa do PNG da peça
+— e é por isso que as máscaras de LUMINÂNCIA lá dentro se podem ignorar:
+são estênceis do Figma, não desenho.
 
 Cada COR distinta (de preenchimento ou de traço) vira uma camada
 recolorível. O retângulo que cobre o molde inteiro não vira camada: passa
@@ -51,17 +57,49 @@ def arredondar(texto):
                   lambda m: f'{round(float(m.group(0)), 1):g}', texto)
 
 
+# O Figma exporta algumas cores pelo NOME. O painel de cores usa um
+# <input type="color">, que só aceita #rrggbb — um 'white' lá dentro cairia
+# em preto sem dar erro. Só as que o Figma costuma emitir.
+NOMEADAS = {
+    'white': '#ffffff', 'black': '#000000', 'red': '#ff0000',
+    'lime': '#00ff00', 'blue': '#0000ff', 'yellow': '#ffff00',
+    'aqua': '#00ffff', 'cyan': '#00ffff', 'fuchsia': '#ff00ff',
+    'magenta': '#ff00ff', 'silver': '#c0c0c0', 'gray': '#808080',
+    'grey': '#808080', 'maroon': '#800000', 'olive': '#808000',
+    'green': '#008000', 'purple': '#800080', 'teal': '#008080',
+    'navy': '#000080', 'orange': '#ffa500',
+}
+
+
+def normalizar_cor(v):
+    """Leva a cor a #rrggbb, que é o que o painel de cores sabe editar."""
+    v = v.strip().lower()
+    if v in NOMEADAS:
+        return NOMEADAS[v]
+    if re.fullmatch(r'#[0-9a-f]{3}', v):
+        return '#' + ''.join(c * 2 for c in v[1:])
+    return v
+
+
 def cor_de(el):
     """Cor efetiva do elemento: preenchimento ou, se não houver, traço."""
     for atr in ('fill', 'stroke'):
         v = el.get(atr)
         if v and v.lower() not in ('none', 'transparent'):
-            return v.lower(), atr
+            return normalizar_cor(v), atr
     return None, None
 
 
 def caixa_da_mascara(mascara):
-    """Caixa envolvente aproximada da silhueta, pelos números do path."""
+    """Caixa envolvente da silhueta.
+
+    O Figma declara a caixa nos atributos da máscara — é exata e é essa que
+    se usa. Sem eles, resta estimar pelos números do path, o que engorda a
+    caixa (os pontos de controlo das bézier caem fora do traço).
+    """
+    if all(mascara.get(a) is not None for a in ('x', 'y', 'width', 'height')):
+        return tuple(float(mascara.get(a)) for a in ('x', 'y', 'width', 'height'))
+
     xs, ys = [], []
     for el in mascara.iter():
         d = el.get('d')
@@ -73,6 +111,20 @@ def caixa_da_mascara(mascara):
     if not xs:
         return None
     return min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)
+
+
+def desenhaveis(el):
+    """Elementos que desenham, saltando o conteúdo das <mask> encaixadas.
+
+    Uma máscara é um estêncil: as suas formas dizem ONDE se vê o que está
+    por baixo, não o que se pinta. Contá-las dava uma camada branca
+    fantasma em cada grupo que o Figma embrulha.
+    """
+    for filho in el:
+        if filho.tag == f'{SVG_NS}mask':
+            continue
+        yield filho
+        yield from desenhaveis(filho)
 
 
 def emitir(el, cor, atr):
@@ -99,10 +151,15 @@ def main(entrada, saida, prefixo):
     if not mascaras:
         sys.exit('SVG sem <mask> — este conversor espera arte dentro de um molde.')
 
-    grupo = next((g for g in raiz.iter(f'{SVG_NS}g')
-                  if g.get('mask', '').startswith('url(')), None)
+    # o molde é a máscara ALFA; as de luminância que aparecem lá dentro são
+    # efeitos do Figma e o grupo delas não é o molde
+    def e_molde(g):
+        m = re.search(r'url\(#([^)]+)\)', g.get('mask', '') or '')
+        return m and 'luminance' not in (mascaras.get(m.group(1), raiz).get('style') or '')
+
+    grupo = next((g for g in raiz.iter(f'{SVG_NS}g') if e_molde(g)), None)
     if grupo is None:
-        sys.exit('SVG sem grupo mascarado.')
+        sys.exit('SVG sem grupo preso a uma máscara alfa.')
 
     ref = re.search(r'url\(#([^)]+)\)', grupo.get('mask')).group(1)
     quadro = caixa_da_mascara(mascaras[ref])
@@ -120,7 +177,7 @@ def main(entrada, saida, prefixo):
                 and y + h >= quadro[1] + quadro[3])
 
     camadas, cor_fundo, ignorados = {}, None, 0
-    for el in grupo.iter():
+    for el in desenhaveis(grupo):
         if not el.tag.startswith(SVG_NS) or el.tag.split('}')[1] not in ATRS:
             continue
         cor, atr = cor_de(el)

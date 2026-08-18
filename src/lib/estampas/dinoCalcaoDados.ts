@@ -4,7 +4,7 @@
 // O QUADRO é a caixa do molde no SVG; o motor mapeia-o para a caixa
 // da peça no visualizador. O recorte fica a cargo do alfa do PNG.
 
-export const QUADRO = { x: 110.5, y: 839.4, w: 394.0, h: 296.8 };
+export const QUADRO = { x: 110.0, y: 839.0, w: 394.0, h: 298.0 };
 
 export const COR_FUNDO = '#1f2a44';
 
