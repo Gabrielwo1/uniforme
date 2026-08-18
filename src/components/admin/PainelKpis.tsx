@@ -6,18 +6,17 @@ import { useAdminStore } from '@/store/useAdminStore';
 import { calcularKpis, type Kpis } from './adminDados';
 
 /**
- * Resumo do funil.
+ * Resumo do funil, no topo do painel.
+ *
+ * Recebe os leads em vez de os ir buscar: partilha o ecrã com a tabela, e
+ * duas leituras da mesma coisa seriam duas chamadas à função de servidor.
  *
  * Só mostra o que os dados sustentam: pedidos recebidos, peças pedidas e
  * temas escolhidos. Não há "taxa de conversão" nem "visitantes" porque não
  * há analítica ligada — inventar uma métrica que não se mede é pior do que
  * não a ter.
  */
-export function PainelKpis() {
-  const { leads, aCarregar, erro } = useLeads();
-  if (aCarregar) return <Espera />;
-  if (erro) return <Falha mensagem={erro} />;
-
+export function PainelKpis({ leads }: { leads: LeadRow[] }) {
   const k = calcularKpis(leads);
 
   return (

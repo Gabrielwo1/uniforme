@@ -129,3 +129,32 @@ export function dataCurta(iso: string): string {
     minute: '2-digit',
   });
 }
+
+/* ------------------------------------------------------------ CONTACTO -- */
+
+/**
+ * Link de WhatsApp para responder ao lead, já com a mensagem escrita.
+ *
+ * Devolve `null` quando o telefone não serve. Vale a pena verificar: o campo
+ * é livre no formulário e chegam lá coisas que não são números — um botão
+ * que abre uma conversa com um número inventado é pior do que um botão
+ * desligado que diz porquê.
+ */
+export function whatsappDoLead(lead: LeadRow): string | null {
+  const digitos = (lead.customer?.phone ?? '').replace(/\D/g, '');
+  if (digitos.length < 9) return null;
+
+  // 9 dígitos é um número português sem indicativo; com mais, assume-se que
+  // o indicativo já lá está (o formulário não o pede em separado)
+  const numero = digitos.length === 9 ? `351${digitos}` : digitos;
+
+  const artigos = artigosDoLead(lead)
+    .map((a) => `${a.quantidade}× ${a.nome}`)
+    .join(', ');
+  const texto =
+    `Olá ${lead.customer?.name ?? ''}! Aqui é a KYPZL. `
+    + `Recebemos o seu pedido${artigos ? ` (${artigos})` : ''} e já estamos a prepará-lo. `
+    + 'Podemos falar sobre tamanhos e prazos?';
+
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+}

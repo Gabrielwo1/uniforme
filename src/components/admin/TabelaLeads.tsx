@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 import type { LeadRow } from '@/lib/api';
 import { Button } from '../ui/button';
 import { KitPreview } from '../kit/KitPreview';
-import { Espera, Falha, useLeads } from './PainelKpis';
-import { artigosDoLead, dataCurta, pecasPedidas } from './adminDados';
+import { artigosDoLead, dataCurta, pecasPedidas, whatsappDoLead } from './adminDados';
+import { IconeWhatsApp } from '../ui/icone-whatsapp';
 
 /**
  * Tabela de leads: quem pediu, o quê e quando.
@@ -16,8 +16,7 @@ import { artigosDoLead, dataCurta, pecasPedidas } from './adminDados';
  * permite à produção ver exatamente o que o cliente montou, meses depois,
  * sem depender de nenhum ficheiro à parte.
  */
-export function TabelaLeads() {
-  const { leads, aCarregar, erro } = useLeads();
+export function TabelaLeads({ leads }: { leads: LeadRow[] }) {
   const [procura, setProcura] = useState('');
   const [aberto, setAberto] = useState<string | null>(null);
 
@@ -30,9 +29,6 @@ export function TabelaLeads() {
         .some((v) => String(v).toLowerCase().includes(q)),
     );
   }, [leads, procura]);
-
-  if (aCarregar) return <Espera />;
-  if (erro) return <Falha mensagem={erro} />;
 
   return (
     <div className="space-y-3">
@@ -66,6 +62,7 @@ export function TabelaLeads() {
               <tr>
                 <th className="p-3 font-bold">Cliente</th>
                 <th className="hidden p-3 font-bold sm:table-cell">Contacto</th>
+                <th className="w-10" />
                 <th className="hidden p-3 font-bold md:table-cell">Clube</th>
                 <th className="p-3 text-right font-bold">Peças</th>
                 <th className="hidden p-3 text-right font-bold lg:table-cell">Data</th>
@@ -121,17 +118,14 @@ function Linha({
             {c.email}
           </a>
           {c.phone && (
-            <a
-              href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener"
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:underline"
-            >
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Phone className="h-3 w-3 shrink-0" />
               {c.phone}
-            </a>
+            </span>
           )}
+        </td>
+        <td className="p-3">
+          <BotaoWhatsApp lead={lead} />
         </td>
         <td className="hidden p-3 text-xs md:table-cell">{c.club || '—'}</td>
         <td className="p-3 text-right font-bold tabular-nums">{pecasPedidas(lead)}</td>
@@ -147,7 +141,7 @@ function Linha({
 
       {aberta && (
         <tr className="border-b bg-muted/30">
-          <td colSpan={6} className="p-4">
+          <td colSpan={7} className="p-4">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
               <div className="flex flex-wrap gap-3">
                 {artigos.map((a, i) => (
@@ -181,6 +175,40 @@ function Linha({
         </tr>
       )}
     </>
+  );
+}
+
+/** Responder ao lead pelo WhatsApp, com a mensagem já escrita. Desligado
+    quando o telefone não dá um número — ver `whatsappDoLead`. */
+function BotaoWhatsApp({ lead }: { lead: LeadRow }) {
+  const link = whatsappDoLead(lead);
+
+  if (!link) {
+    return (
+      <span
+        title={
+          lead.customer?.phone
+            ? 'O telefone deste lead não é um número válido.'
+            : 'Este lead não deixou telefone.'
+        }
+        className="grid h-8 w-8 place-items-center rounded-md border text-muted-foreground/40"
+      >
+        <IconeWhatsApp className="h-4 w-4" />
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener"
+      onClick={(e) => e.stopPropagation()}
+      title="Responder pelo WhatsApp"
+      className="grid h-8 w-8 place-items-center rounded-md border transition hover:border-primary hover:bg-primary/10 hover:text-primary"
+    >
+      <IconeWhatsApp className="h-4 w-4" />
+    </a>
   );
 }
 

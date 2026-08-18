@@ -6,25 +6,22 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import logoUrl from '@/assets/kypzl-logo.png';
 import { Button } from '../ui/button';
-import { PainelKpis } from './PainelKpis';
-import { TabelaLeads } from './TabelaLeads';
+import { PainelPrincipal } from './PainelPrincipal';
 import { GestorModelos } from './GestorModelos';
 
 /**
  * Área de administração da KYPZL — `/admin`.
  *
- *   · Resumo: KPIs do funil (leads, peças pedidas, temas mais escolhidos).
- *   · Leads: quem pediu o quê, com o conjunto desenhado tal como o montou.
+ *   · Painel: KPIs do funil em cima, tabela de leads em baixo.
  *   · Modelos: inserir a arte de camisola, calção e meião.
  *
- * Fica atrás de sessão porque os leads têm dados pessoais — a conta é criada
- * pela KYPZL no painel do Supabase, não há registo aberto aqui.
+ * Fica atrás de código porque os leads têm dados pessoais — e o código é
+ * conferido no servidor, não aqui (ver src/lib/adminApi.ts).
  */
-type Separador = 'resumo' | 'leads' | 'modelos';
+type Separador = 'painel' | 'modelos';
 
 const SEPARADORES: { id: Separador; rotulo: string; Icone: typeof Users }[] = [
-  { id: 'resumo', rotulo: 'Resumo', Icone: BarChart3 },
-  { id: 'leads', rotulo: 'Leads', Icone: Users },
+  { id: 'painel', rotulo: 'Painel', Icone: BarChart3 },
   { id: 'modelos', rotulo: 'Modelos', Icone: Shirt },
 ];
 
@@ -35,7 +32,7 @@ export function AdminPanel() {
   const sair = useAdminStore((s) => s.sair);
   const escuro = useTemaStore((s) => s.tema === 'escuro');
   const alternarTema = useTemaStore((s) => s.alternar);
-  const [separador, setSeparador] = useState<Separador>('resumo');
+  const [separador, setSeparador] = useState<Separador>('painel');
 
   useEffect(() => {
     retomar();
@@ -108,9 +105,7 @@ export function AdminPanel() {
       </nav>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
-        {separador === 'resumo' && <PainelKpis />}
-        {separador === 'leads' && <TabelaLeads />}
-        {separador === 'modelos' && <GestorModelos />}
+        {separador === 'painel' ? <PainelPrincipal /> : <GestorModelos />}
       </div>
     </div>
   );
