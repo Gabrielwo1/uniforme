@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useKitOrderStore } from '@/store/useKitOrderStore';
 import { useFlowStore } from '@/store/useFlowStore';
@@ -5,6 +6,8 @@ import { CustomerForm, isCustomerValid } from '../CustomerForm';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { KitPreview } from './KitPreview';
+import { Animacao } from '../ui/animacao';
+import sucesso from '@/assets/animacoes/sucesso.json';
 
 /**
  * Painel lateral do pedido do simulador, em dois passos:
@@ -29,6 +32,30 @@ export function KitCartDrawer() {
   const nosDados = passo === 'dados';
   const podeConfirmar = isCustomerValid(cliente);
   const total = itens.reduce((n, i) => n + i.quantidade, 0);
+
+  /** Interlúdio do "Finalizar pedido": a animação de sucesso do designer
+      toca por cima da lista e só depois entra o passo dos dados. Avança
+      quando ela termina (~1,7 s) OU ao fim de 2,5 s — o Lottie anda em
+      requestAnimationFrame, que congela com o separador em segundo plano,
+      e sem o teto quem trocasse de separador ficava preso na animação. */
+  const [aFinalizar, setAFinalizar] = useState(false);
+  const avancou = useRef(false);
+  const avancar = () => {
+    if (avancou.current) return;
+    avancou.current = true;
+    setAFinalizar(false);
+    setPasso('dados');
+  };
+  const finalizarComAnimacao = () => {
+    if (itens.length === 0) return;
+    avancou.current = false;
+    setAFinalizar(true);
+  };
+  useEffect(() => {
+    if (!aFinalizar) return;
+    const t = setTimeout(avancar, 2500);
+    return () => clearTimeout(t);
+  });
 
   const confirmar = () => {
     if (!podeConfirmar) return;
@@ -130,6 +157,17 @@ export function KitCartDrawer() {
           )}
         </div>
 
+        {aFinalizar && (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-background/85 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2">
+              <Animacao dados={sucesso} className="h-32 w-32" aoTerminar={avancar} />
+              <p className="text-sm font-bold">
+                {total} {total === 1 ? 'conjunto confirmado' : 'conjuntos confirmados'}
+              </p>
+            </div>
+          </div>
+        )}
+
         <SheetFooter className="gap-2">
           {nosDados ? (
             <>
@@ -149,8 +187,8 @@ export function KitCartDrawer() {
             <>
               <Button
                 className="w-full"
-                disabled={itens.length === 0}
-                onClick={() => setPasso('dados')}
+                disabled={itens.length === 0 || aFinalizar}
+                onClick={finalizarComAnimacao}
               >
                 Finalizar pedido
               </Button>

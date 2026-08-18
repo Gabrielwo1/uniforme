@@ -13,6 +13,7 @@ import { Button } from '../ui/button';
 import { CadeadoConjunto, GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
 import { KitCartDrawer } from './KitCartDrawer';
 import { PainelAplicacoes } from './PainelAplicacoes';
+import { TelaCarregamento } from './TelaCarregamento';
 import { Animacao } from '../ui/animacao';
 import sucesso from '@/assets/animacoes/sucesso.json';
 
@@ -93,6 +94,17 @@ export function KitLab() {
     };
   }, [reset]);
 
+  // A tela de carregamento fica ATÉ ambos: os temas prontos E ~3 s passados
+  // (pedido do cliente — apresenta a marca e não pisca em cache quente).
+  const [minimoPassou, setMinimoPassou] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMinimoPassou(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+  const aCarregar = !prontas || !minimoPassou;
+
+  if (aCarregar) return <TelaCarregamento />;
+
   return (
     <div className="flex h-full flex-col bg-background">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b px-5">
@@ -154,9 +166,6 @@ export function KitLab() {
           {PECAS_KIT.map((peca) => (
             <PainelCores key={peca} peca={peca} />
           ))}
-          {!prontas && (
-            <p className="text-[11px] text-muted-foreground">A carregar o tema convertido…</p>
-          )}
         </aside>
 
         <KitViewer fundo="/moldes/fundo-campo.jpg" />
