@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgePlus, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
+import { ArrowLeft, BadgePlus, Plus, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
@@ -54,6 +54,14 @@ export function KitLab() {
     adicionar(design, `${estampa.nome} · ${estampa.codModelo}`);
   };
 
+  /** Com o carrinho vazio, o conjunto que está no ecrã conta como o pedido:
+      abrir o painel a dizer "ainda não adicionou nada" com o conjunto ali à
+      frente seria um beco sem saída. */
+  const finalizar = () => {
+    if (noCarrinho === 0) adicionarAoCarrinho();
+    else abrirPainel();
+  };
+
   // A estampa real pesa ~3 MB de vetores: entra por import dinâmico para não
   // carregar com o app. Depois de registada, `reset` torna-a a seleção.
   const [prontas, setProntas] = useState(false);
@@ -94,19 +102,20 @@ export function KitLab() {
         <Button
           variant="outline"
           size="sm"
-          onClick={abrirPainel}
-          title="Ver pedido"
-          className="relative"
+          onClick={adicionarAoCarrinho}
+          title="Guardar este conjunto e continuar a personalizar"
         >
+          <Plus />
+          Adicionar outro
+        </Button>
+        <Button size="sm" onClick={finalizar} className="relative">
           <ShoppingBag />
+          Finalizar pedido
           {noCarrinho > 0 && (
-            <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+            <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary-foreground px-1 text-[10px] font-bold text-primary">
               {noCarrinho}
             </span>
           )}
-        </Button>
-        <Button size="sm" onClick={adicionarAoCarrinho}>
-          Adicionar ao carrinho
         </Button>
       </header>
 
