@@ -1,6 +1,7 @@
 import type { LadoKit, PecaKit } from '@/types/kit';
 import { registarEstampas } from './kitDemo';
 import { AMOSTRAS, CAIXAS, type Caixa } from './kitCaixas';
+import { fetchKitTemplates, type KitTemplateRow } from './api';
 import * as milan from './estampas/milanDados';
 import * as dinoCamisola from './estampas/dinoCamisolaDados';
 import * as dinoCalcao from './estampas/dinoCalcaoDados';
@@ -114,30 +115,69 @@ function naCaixa(dados: DadosTema, svg: string, c: Caixa, lado: LadoKit, peca: P
   return `<g transform="${t}">${svg.split('__L__').join(`${peca}-${lado}`)}</g>`;
 }
 
+function registar(tema: Tema) {
+  registarEstampas(
+    (['camisola', 'calcao', 'meiao'] as PecaKit[]).map((peca) => {
+      // arte por peça quando o tema a tem; senão a arte única do tema
+      const dados = tema.porPeca ? tema.porPeca[peca] : tema.dados;
+      return {
+        id: `${tema.id}-${peca}`,
+        codModelo: tema.codModelo,
+        nome: tema.nome,
+        peca,
+        corBasePadrao: fundoDe(tema, dados),
+        amostraViewBox: AMOSTRAS[peca],
+        camadas: (dados?.CAMADAS ?? []).map((c, i) => ({
+          id: c.id,
+          nome: `Camada ${letraDaCamada(i)}`,
+          corPadrao: c.cor,
+          desenho: {
+            frente: naCaixa(dados!, c.svg, CAIXAS[peca].frente, 'frente', peca),
+            verso: naCaixa(dados!, c.svg, CAIXAS[peca].verso, 'verso', peca),
+          },
+        })),
+      };
+    }),
+  );
+}
+
+/** Temas que vieram no código, convertidos por nós. */
 export function registarReais() {
-  for (const tema of TEMAS) {
-    registarEstampas(
-      (['camisola', 'calcao', 'meiao'] as PecaKit[]).map((peca) => {
-        // arte por peça quando o tema a tem; senão a arte única do tema
-        const dados = tema.porPeca ? tema.porPeca[peca] : tema.dados;
-        return {
-          id: `${tema.id}-${peca}`,
-          codModelo: tema.codModelo,
-          nome: tema.nome,
-          peca,
-          corBasePadrao: fundoDe(tema, dados),
-          amostraViewBox: AMOSTRAS[peca],
-          camadas: (dados?.CAMADAS ?? []).map((c, i) => ({
-            id: c.id,
-            nome: `Camada ${letraDaCamada(i)}`,
-            corPadrao: c.cor,
-            desenho: {
-              frente: naCaixa(dados!, c.svg, CAIXAS[peca].frente, 'frente', peca),
-              verso: naCaixa(dados!, c.svg, CAIXAS[peca].verso, 'verso', peca),
-            },
-          })),
-        };
-      }),
-    );
+  TEMAS.forEach(registar);
+}
+
+/**
+ * Temas inseridos pela KYPZL no painel de administração.
+ *
+ * Entram DEPOIS dos do código e pelo mesmo caminho — a partir daqui o motor
+ * não distingue uns dos outros. Falhar a ir buscá-los não pode partir o
+ * simulador: sem rede, ficam os que vieram no código.
+ */
+export async function registarDaBaseDeDados(): Promise<number> {
+  let linhas: KitTemplateRow[] = [];
+  try {
+    linhas = await fetchKitTemplates();
+  } catch (e) {
+    console.warn('[kitReal] modelos da base de dados:', e);
+    return 0;
   }
+
+  const porCodigo = new Map<string, KitTemplateRow[]>();
+  for (const l of linhas) {
+    porCodigo.set(l.cod_modelo, [...(porCodigo.get(l.cod_modelo) ?? []), l]);
+  }
+
+  for (const [cod, pecas] of porCodigo) {
+    const porPeca: Partial<Record<PecaKit, DadosTema>> = {};
+    for (const p of pecas) {
+      porPeca[p.peca] = {
+        QUADRO: p.quadro,
+        COR_FUNDO: p.cor_fundo,
+        CAMADAS: p.camadas,
+      };
+    }
+    registar({ id: `bd-${cod}`, nome: pecas[0].nome, codModelo: cod, porPeca });
+  }
+
+  return porCodigo.size;
 }

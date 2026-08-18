@@ -170,3 +170,85 @@ export async function uploadLogo(blob: Blob, ext = 'png'): Promise<string> {
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+
+/* ------------------------------------------------------ ADMINISTRAÇÃO -- */
+
+/**
+ * Os pedidos são a lista de LEADS. A tabela está fechada ao público (tem
+ * nome, e-mail e telefone) e só abre a quem tem sessão iniciada — a conta
+ * que a KYPZL cria no painel do Supabase. Sem sessão isto devolve vazio,
+ * não rebenta: o painel mostra o ecrã de entrada.
+ */
+export interface LeadRow {
+  id: string;
+  customer: OrderCustomer;
+  /** Pode ser KitOrderItem[] (simulador) ou OrderItem[] (editor antigo). */
+  items: unknown[];
+  created_at: string;
+}
+
+export async function fetchLeads(limite = 500): Promise<LeadRow[]> {
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { data, error } = await supabase
+    .from('orders')
+    .select('id, customer, items, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as LeadRow[];
+}
+
+/* ------------------------------------------------------------ MODELOS -- */
+
+export interface KitTemplateRow {
+  id: string;
+  cod_modelo: string;
+  nome: string;
+  peca: 'camisola' | 'calcao' | 'meiao';
+  lado: 'frente' | 'verso';
+  quadro: { x: number; y: number; w: number; h: number };
+  cor_fundo: string | null;
+  camadas: { id: string; cor: string; svg: string }[];
+  enabled: boolean;
+  created_at: string;
+}
+
+/** Modelos guardados. `todos` só devolve o que não está ativo a quem tem
+    sessão — a política de leitura pública filtra por `enabled`. */
+export async function fetchKitTemplates(): Promise<KitTemplateRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('kit_templates')
+    .select('*')
+    .order('created_at', { ascending: true });
+  if (error) {
+    console.warn('[api] fetchKitTemplates:', error.message);
+    return [];
+  }
+  return (data ?? []) as KitTemplateRow[];
+}
+
+export type NovoKitTemplate = Omit<KitTemplateRow, 'id' | 'created_at' | 'enabled'>;
+
+/** Grava (ou substitui) o modelo de uma peça. O `upsert` pela chave
+    natural é o que torna reenviar o mesmo ficheiro inofensivo em vez de
+    duplicar a arte na peça. */
+export async function guardarKitTemplate(t: NovoKitTemplate): Promise<void> {
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { error } = await supabase
+    .from('kit_templates')
+    .upsert({ ...t, enabled: true }, { onConflict: 'cod_modelo,peca,lado' });
+  if (error) throw new Error(error.message);
+}
+
+export async function alternarKitTemplate(id: string, enabled: boolean): Promise<void> {
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { error } = await supabase.from('kit_templates').update({ enabled }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function apagarKitTemplate(id: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { error } = await supabase.from('kit_templates').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}

@@ -70,9 +70,13 @@ export function KitLab() {
   const [prontas, setProntas] = useState(false);
   useEffect(() => {
     let vivo = true;
-    import('@/lib/kitReal').then(({ registarReais }) => {
+    import('@/lib/kitReal').then(async ({ registarReais, registarDaBaseDeDados }) => {
       if (!vivo) return;
       registarReais();
+      // os do painel de administração entram a seguir; se a rede falhar,
+      // ficam os que vieram no código e o simulador abre na mesma
+      await registarDaBaseDeDados();
+      if (!vivo) return;
       reset();
       setProntas(true);
     });
