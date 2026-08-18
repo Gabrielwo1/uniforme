@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Check, Loader2, Pencil, Plus, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useKitOrderStore } from '@/store/useKitOrderStore';
+import logoUrl from '@/assets/kypzl-logo.png';
 import { useFlowStore } from '@/store/useFlowStore';
 import { submitKitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -88,11 +89,13 @@ export function KitCheckout() {
         <Button variant="ghost" size="icon" onClick={() => useFlowStore.getState().back()}>
           <ArrowLeft />
         </Button>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            KYPZL
-          </p>
-          <h1 className="text-base font-bold leading-tight">Finalizar pedido</h1>
+        {/* a marca entra como imagem, não como texto: o cabeçalho é o
+            único sítio do simulador onde ela aparece. `nowrap` porque o
+            título a partir em duas linhas estica o bloco para lá dos 56px
+            do cabeçalho e corta a logo pelo topo. */}
+        <div className="shrink-0">
+          <img src={logoUrl} alt="KYPZL" className="mb-1 h-4 w-auto" />
+          <h1 className="whitespace-nowrap text-base font-bold leading-tight">Finalizar pedido</h1>
         </div>
         <span className="ml-auto text-xs text-muted-foreground">
           {total} {total === 1 ? 'conjunto' : 'conjuntos'}

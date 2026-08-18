@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BadgePlus, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
+import logoUrl from '@/assets/kypzl-logo.png';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
 import { estampaDemoPorId } from '@/lib/kitDemo';
@@ -14,18 +15,17 @@ import { PainelAplicacoes } from './PainelAplicacoes';
 /**
  * Simulador de conjuntos, na arquitetura da referência:
  *
- *   - menu superior: áreas de personalização (estampas, nome/número,
- *     escudo/logos)
  *   - esquerda: cores (por peça: zonas + camadas da estampa)
  *   - centro: o conjunto, frente e verso
- *   - direita: galeria de estampas em quadrados, com separadores por peça
+ *   - direita: personalização — separadores no topo (estampas, nome/número,
+ *     escudo/logos) e, por baixo, o painel da área escolhida
  */
 type MenuTopo = 'estampas' | 'nome' | 'escudo';
 
-const MENU: { id: MenuTopo; rotulo: string; Icone: typeof Shirt }[] = [
-  { id: 'estampas', rotulo: 'Modelos / Estampas', Icone: Shirt },
-  { id: 'nome', rotulo: 'Nome e Número', Icone: Type },
-  { id: 'escudo', rotulo: 'Escudo e Logos', Icone: BadgePlus },
+const MENU: { id: MenuTopo; rotulo: string; curto: string; Icone: typeof Shirt }[] = [
+  { id: 'estampas', rotulo: 'Modelos / Estampas', curto: 'Estampas', Icone: Shirt },
+  { id: 'nome', rotulo: 'Nome e Número', curto: 'Nome e Nº', Icone: Type },
+  { id: 'escudo', rotulo: 'Escudo e Logos', curto: 'Escudo', Icone: BadgePlus },
 ];
 
 export function KitLab() {
@@ -81,46 +81,11 @@ export function KitLab() {
         >
           <ArrowLeft />
         </Button>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            KYPZL
-          </p>
-          <h1 className="text-base font-bold leading-tight">Simulador de conjuntos</h1>
-        </div>
+        {/* só a marca: o que o ecrã é vê-se pelo próprio ecrã, e o
+            cabeçalho ganha o espaço para os controlos */}
+        <img src={logoUrl} alt="KYPZL" className="h-5 w-auto shrink-0" />
 
-        {/* menu superior, estilo referência */}
-        <nav className="mx-auto hidden items-center gap-1 md:flex">
-          {MENU.map(({ id, rotulo, Icone }) => (
-            <button
-              key={id}
-              onClick={() => {
-                setMenu(id);
-                setLocalEmFoco(null);
-              }}
-              className={cn(
-                'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold transition',
-                menu === id
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-accent',
-              )}
-            >
-              <Icone className="h-3.5 w-3.5" />
-              {rotulo}
-              {contagem[id] > 0 && (
-                <span
-                  className={cn(
-                    'grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
-                    menu === id ? 'bg-background text-foreground' : 'bg-foreground text-background',
-                  )}
-                >
-                  {contagem[id]}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        <span className="hidden text-xs text-muted-foreground lg:inline">
+        <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">
           {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
         </span>
         <Button variant="outline" size="sm" onClick={reset} title="Repor cores e temas">
@@ -160,10 +125,42 @@ export function KitLab() {
 
         <KitViewer fundo="/moldes/fundo-campo.jpg" />
 
+        {/* Personalização: o menu é o TOPO deste bloco, não do cabeçalho —
+            escolher a área e mexer nela é o mesmo gesto, e ter o separador
+            do outro lado do ecrã obrigava a atravessá-lo a cada troca. */}
         <aside className="space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            {MENU.find((m) => m.id === menu)?.rotulo}
-          </p>
+          <nav className="grid grid-cols-3 gap-1 rounded-lg border bg-card p-1 shadow-sm">
+            {MENU.map(({ id, rotulo, curto, Icone }) => (
+              <button
+                key={id}
+                onClick={() => {
+                  setMenu(id);
+                  setLocalEmFoco(null);
+                }}
+                title={rotulo}
+                className={cn(
+                  'relative flex flex-col items-center gap-1 rounded-md px-1 py-2 text-[11px] font-bold leading-tight transition',
+                  menu === id
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-accent',
+                )}
+              >
+                <Icone className="h-4 w-4" />
+                {curto}
+                {contagem[id] > 0 && (
+                  <span
+                    className={cn(
+                      'absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
+                      menu === id ? 'bg-background text-foreground' : 'bg-foreground text-background',
+                    )}
+                  >
+                    {contagem[id]}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+
           {menu === 'estampas' && <GaleriaEstampas />}
           {menu === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
           {menu === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
