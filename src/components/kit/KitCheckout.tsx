@@ -94,7 +94,7 @@ export function KitCheckout() {
             título a partir em duas linhas estica o bloco para lá dos 56px
             do cabeçalho e corta a logo pelo topo. */}
         <div className="shrink-0">
-          <img src={logoUrl} alt="KYPZL" className="mb-1 h-4 w-auto" />
+          <img src={logoUrl} alt="KYPZL" className="mb-1 h-5 w-auto" />
           <h1 className="whitespace-nowrap text-base font-bold leading-tight">Finalizar pedido</h1>
         </div>
         <span className="ml-auto text-xs text-muted-foreground">

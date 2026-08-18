@@ -83,7 +83,7 @@ export function KitLab() {
         </Button>
         {/* só a marca: o que o ecrã é vê-se pelo próprio ecrã, e o
             cabeçalho ganha o espaço para os controlos */}
-        <img src={logoUrl} alt="KYPZL" className="h-5 w-auto shrink-0" />
+        <img src={logoUrl} alt="KYPZL" className="h-8 w-auto shrink-0" />
 
         <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">
           {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
