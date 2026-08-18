@@ -35,16 +35,11 @@ export function registarEstampas(lista: Estampa[]) {
 
 /* ---------------------------------------------------------------- moldes -- */
 
-/* Peças no estilo "vestido" (forma 3D de corpo invisível), geradas por IA
-   na pose do jogador-modelo — é o que faz o conjunto encaixar nele. Uma
-   zona por peça, por agora: quando o designer separar gola/mangas destes
-   mockups em camadas, as zonas extra voltam a entrar aqui. */
+/* As peças são as camadas do mockup do designer ("UNIFORME DINO"), cozidas
+   na tela comum por scripts/montar-dino.py. Cada uma é uma zona colorível
+   à parte — o que separa a gola e as mangas do corpo. */
 
-/** Ambiente de teste `?lab=jogador`: peças cozidas para vestir o jogador
-    recortado, numa pasta própria — a versão principal não muda. */
-export const VARIANTE_JOGADOR =
-  new URLSearchParams(window.location.search).get('lab') === 'jogador';
-const RAIZ_MOLDES = VARIANTE_JOGADOR ? '/moldes/jog' : '/moldes';
+const RAIZ_MOLDES = '/moldes/jog';
 
 function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
   const corpo: ZonaPeca = {
@@ -53,19 +48,16 @@ function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
   };
   if (peca !== 'camisola') return [corpo];
 
-  // Gola e punhos são zonas próprias, desenhadas DEPOIS do corpo: é o que
-  // impede a estampa de lhes passar por cima (só o corpo a recebe).
-  const gola: ZonaPeca = {
-    id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
-    corPadrao: '#151515',
-  };
-  // os punhos só vieram no mockup do designer (ambiente do jogador)
-  // a camada MANGA do designer cobre a manga inteira (não só o punho):
-  // é o que tira a estampa das mangas e as torna coloríveis à parte
-  return VARIANTE_JOGADOR
-    ? [corpo, gola, { id: 'mangas', nome: 'Mangas',
-        imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`, corPadrao: '#151515' }]
-    : [corpo, { ...gola, corPadrao: '#e9e9e9' }];
+  // Gola e mangas são zonas próprias, desenhadas DEPOIS do corpo: é o que
+  // impede a estampa de lhes passar por cima (só o corpo a recebe). A
+  // camada MANGA do designer cobre a manga inteira, não só o punho.
+  return [
+    corpo,
+    { id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
+      corPadrao: '#151515' },
+    { id: 'mangas', nome: 'Mangas', imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`,
+      corPadrao: '#151515' },
+  ];
 }
 
 export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {

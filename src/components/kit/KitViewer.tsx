@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, LockOpen } from 'lucide-react';
 import { useKitStore } from '@/store/useKitStore';
-import { VARIANTE_JOGADOR, estampaDemoPorId, estampasDemo, moldeDemo } from '@/lib/kitDemo';
+import { estampaDemoPorId, estampasDemo, moldeDemo } from '@/lib/kitDemo';
 import {
   LADOS_KIT,
   LADO_LABEL,
@@ -16,9 +16,8 @@ import { PecaMockup, forcarCor } from './PecaMockup';
 import { CamadaAplicacoes } from './CamadaAplicacoes';
 
 /**
- * Visualizador do conjunto: frente e verso lado a lado, com as três peças
- * FLUTUANTES empilhadas ao alto — a estética do simulador de referência,
- * sem corpo por trás.
+ * Visualizador do conjunto: frente e verso lado a lado, vestidos no
+ * jogador do mockup do designer.
  *
  * O cadeado prende/solta a peça da sincronização (ver `useKitStore.alvos`).
  */
@@ -56,26 +55,24 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
       </span>
 
       {/* As peças partilham uma tela comum que mapeia a coluna inteira
-          (ver scripts/vestir-conjunto.py): o layout está cosido nos PNG,
-          por isso os slots são todos idênticos, sem margens mágicas. */}
+          (ver scripts/montar-dino.py): o layout está cosido nos PNG, por
+          isso os slots são todos idênticos, sem margens mágicas. */}
       <div className="relative h-[615px] w-[270px]">
-        {VARIANTE_JOGADOR && (
-          /* mockup do designer: o avatar já vestido é o fundo. As peças
-             recoloridas assentam-lhe por cima ao pixel (mesma prancheta),
-             por isso não há folgas onde o kit do avatar espreite. */
-          <img
-            src={`/moldes/jog/jogador-${lado}.png`}
-            alt=""
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
-          />
-        )}
+        {/* mockup do designer: o avatar já vestido é o fundo. As peças
+            recoloridas assentam-lhe por cima ao pixel (mesma prancheta),
+            por isso não há folgas onde o kit do avatar espreite. */}
+        <img
+          src={`/moldes/jog/jogador-${lado}.png`}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
+        />
         <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
         <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
         <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
         {/* chuteiras: camada estática, não recolorem */}
         <img
-          src={VARIANTE_JOGADOR ? `/moldes/jog/botas-${lado}.png` : `/moldes/botas-${lado}.png`}
+          src={`/moldes/jog/botas-${lado}.png`}
           alt=""
           aria-hidden
           className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain"

@@ -17,9 +17,9 @@ import { useDesignStore } from './store/useDesignStore';
 import { useFlowStore } from './store/useFlowStore';
 
 /**
- * Laboratórios fora do fluxo normal: `?lab=kit` abre o simulador tal como
- * está; `?lab=jogador` abre o AMBIENTE DE TESTE com o jogador recortado
- * por trás (peças cozidas em `moldes/jog/`), sem tocar na versão principal.
+ * Atalho fora do fluxo normal: `?lab=kit` abre o simulador de conjuntos.
+ * `?lab=jogador` continua a valer — era o nome do ambiente de teste, agora
+ * a única versão — para não partir as ligações já partilhadas.
  */
 const LAB = new URLSearchParams(window.location.search).get('lab');
 const LAB_KIT = LAB === 'kit' || LAB === 'jogador';

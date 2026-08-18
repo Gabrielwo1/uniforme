@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgePlus, PersonStanding, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
+import { ArrowLeft, BadgePlus, RotateCcw, Shirt, ShoppingBag, Type } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { useKitStore } from '@/store/useKitStore';
-import { VARIANTE_JOGADOR, estampaDemoPorId } from '@/lib/kitDemo';
+import { estampaDemoPorId } from '@/lib/kitDemo';
 import { useKitOrderStore } from '@/store/useKitOrderStore';
 import { PECAS_KIT } from '@/types/kit';
 import { cn } from '@/lib/utils';
@@ -14,8 +14,8 @@ import { PainelAplicacoes } from './PainelAplicacoes';
 /**
  * Simulador de conjuntos, na arquitetura da referência:
  *
- *   - menu superior: áreas de personalização (estampas hoje; nome/número e
- *     escudo/logos entram a seguir — os botões já marcam o sítio)
+ *   - menu superior: áreas de personalização (estampas, nome/número,
+ *     escudo/logos)
  *   - esquerda: cores (por peça: zonas + camadas da estampa)
  *   - centro: o conjunto, frente e verso
  *   - direita: galeria de estampas em quadrados, com separadores por peça
@@ -26,12 +26,6 @@ const MENU: { id: MenuTopo; rotulo: string; Icone: typeof Shirt }[] = [
   { id: 'estampas', rotulo: 'Modelos / Estampas', Icone: Shirt },
   { id: 'nome', rotulo: 'Nome e Número', Icone: Type },
   { id: 'escudo', rotulo: 'Escudo e Logos', Icone: BadgePlus },
-];
-
-/** Ambientes de teste, alternáveis no cabeçalho (`?lab=`). */
-const VARIANTES: { id: 'kit' | 'jogador'; rotulo: string; Icone: typeof Shirt }[] = [
-  { id: 'kit', rotulo: 'Peças', Icone: Shirt },
-  { id: 'jogador', rotulo: 'Jogador', Icone: PersonStanding },
 ];
 
 export function KitLab() {
@@ -125,31 +119,6 @@ export function KitLab() {
             </button>
           ))}
         </nav>
-
-        {/* alternador dos dois ambientes de teste: as peças sozinhas
-            (versão original) ou vestidas no jogador. A variante é lida do
-            URL no arranque, por isso a troca recarrega a página. */}
-        <div className="ml-auto flex items-center rounded-md border p-0.5 md:ml-0">
-          {VARIANTES.map(({ id, rotulo, Icone }) => {
-            const ativa = (id === 'jogador') === VARIANTE_JOGADOR;
-            return (
-              <button
-                key={id}
-                onClick={() => {
-                  if (!ativa) window.location.search = `?lab=${id}`;
-                }}
-                title={`Ver ${rotulo.toLowerCase()}`}
-                className={cn(
-                  'flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition',
-                  ativa ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent',
-                )}
-              >
-                <Icone className="h-3.5 w-3.5" />
-                {rotulo}
-              </button>
-            );
-          })}
-        </div>
 
         <span className="hidden text-xs text-muted-foreground lg:inline">
           {sincronizadas.length} de {PECAS_KIT.length} peças sincronizadas
