@@ -3,10 +3,6 @@ import { registarEstampas } from './kitDemo';
 import { AMOSTRAS, CAIXAS, type Caixa } from './kitCaixas';
 import { fetchKitTemplates, type KitTemplateRow } from './api';
 import * as milan from './estampas/milanDados';
-import * as dinoCamisola from './estampas/dinoCamisolaDados';
-import * as dinoCalcao from './estampas/dinoCalcaoDados';
-import * as askaCamisola from './estampas/askaCamisolaDados';
-import * as astonCamisola from './estampas/astonCamisolaDados';
 
 /**
  * Regista os TEMAS REAIS convertidos dos ficheiros do cliente.
@@ -77,31 +73,20 @@ function fundoDe(tema: Tema, dados?: DadosTema): string {
   return dados?.COR_FUNDO ?? doTema ?? tema.corBase ?? '#221f20';
 }
 
+/**
+ * Só o MILAN vive no código: é o único tema no formato do Illustrator
+ * (arte única esticada às três peças, ~3 MB de vetores) que o painel de
+ * administração não sabe receber. Os temas em formato de MOLDE — Dino,
+ * Aska, Aston Vila e os que vierem — vivem na tabela `kit_templates` e
+ * gerem-se no /admin; os ficheiros convertidos ficam em src/lib/estampas/
+ * como cópia de segurança do que foi semeado.
+ */
 const TEMAS: Tema[] = [
   {
     id: 'milan',
     nome: 'Milan',
     codModelo: '003',
     dados: milan,
-  },
-  {
-    id: 'dino',
-    nome: 'Dino',
-    codModelo: '004',
-    porPeca: { camisola: dinoCamisola, calcao: dinoCalcao },
-  },
-  {
-    id: 'aska',
-    nome: 'Aska',
-    codModelo: '005',
-    porPeca: { camisola: askaCamisola },
-  },
-  {
-    id: 'aston',
-    nome: 'Aston Vila',
-    codModelo: '006',
-    porPeca: { camisola: astonCamisola },
-    corBase: '#8d1f38',
   },
 ];
 

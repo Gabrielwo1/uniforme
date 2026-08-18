@@ -172,8 +172,8 @@ export function GestorModelos() {
           <Espera />
         ) : guardados.length === 0 ? (
           <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-            Ainda não há modelos na base de dados. Os temas que vieram no
-            código do simulador continuam a aparecer — estes juntam-se-lhes.
+            Ainda não há modelos na base de dados. (O tema Milan é o único
+            embutido no código e não aparece nesta lista.)
           </p>
         ) : (
           <ListaGuardados linhas={guardados} aoMudar={recarregar} />
