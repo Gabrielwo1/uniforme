@@ -19,14 +19,14 @@ export interface Caixa {
 }
 
 /** Caixa da estampa por peça e lado — a posição real de cada peça no
-    avatar do SEGUNDO mockup do designer, medida por scripts/montar-dino2.py.
-    Na camisola é só o TRONCO (a camisa nova vem inteira; o tronco é o alfa
-    dela menos o das mangas): a estampa não passa às mangas nem à gola, que
-    são zonas com cor própria. */
+    avatar do mockup do designer, medida por scripts/montar-dino2.py.
+    Na camisola é a CAMISA INTEIRA, mangas incluídas (terceiro envio,
+    2026-08-28: o cliente quer a estampa a correr pela manga); só a TIRA do
+    punho e a gola ficam de fora, como zonas com cor própria por cima. */
 export const CAIXAS: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 495, y: 410, w: 474, h: 821 },
-    verso: { x: 420, y: 399, w: 488, h: 872 },
+    frente: { x: 386, y: 410, w: 708, h: 822 },
+    verso: { x: 290, y: 396, w: 736, h: 880 },
   },
   calcao: {
     frente: { x: 445, y: 1207, w: 591, h: 377 },
@@ -40,7 +40,7 @@ export const CAIXAS: Record<PecaKit, Record<LadoKit, Caixa>> = {
 
 /** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
 export const AMOSTRAS: Record<PecaKit, string> = {
-  camisola: '500 440 460 660',
+  camisola: '400 430 680 700',
   calcao: '450 1210 580 370',
   meiao: '455 1705 570 520',
 };

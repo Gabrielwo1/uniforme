@@ -49,14 +49,15 @@ function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
   };
   if (peca !== 'camisola') return [corpo];
 
-  // Gola e mangas são zonas próprias, desenhadas DEPOIS do corpo: é o que
-  // impede a estampa de lhes passar por cima (só o corpo a recebe). A
-  // camada MANGA do designer cobre a manga inteira, não só o punho.
+  // Gola e PUNHOS são zonas próprias, desenhadas DEPOIS do corpo. Desde o
+  // terceiro envio a camisa vem inteira (a estampa corre pela manga) e a
+  // camada "mangas" é só a TIRA do punho — o id mantém-se pelo nome dos
+  // ficheiros, o rótulo é que diz a verdade.
   return [
     corpo,
     { id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
       corPadrao: '#151515' },
-    { id: 'mangas', nome: 'Mangas', imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`,
+    { id: 'mangas', nome: 'Punhos', imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`,
       corPadrao: '#151515' },
   ];
 }

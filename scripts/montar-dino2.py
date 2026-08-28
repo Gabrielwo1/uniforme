@@ -35,6 +35,9 @@ ALTURA_AVATAR = 596                # altura do avatar na tela (wrapper px)
 TOPO_AVATAR = 6
 
 D = '/Users/syntax/Downloads/uniforme dino correto ultimo feito-2'
+# terceiro envio (2026-08-28): a camisa fica INTEIRA (mangas incluídas — a
+# estampa passa a cobri-las) e só a TIRA do punho é zona colorível à parte
+D2 = '/Users/syntax/Downloads/wetransfer_camiseta-costa-webp-inteira-webp_2026-08-28_1337'
 
 # O CorelDRAW trocou as pastas: o SVG da FRENTE aponta para a pasta COSTA
 # e vice-versa. A verdade é a IMAGEM, confirmada à vista.
@@ -46,20 +49,22 @@ BASE = {
     'frente': f'{D}/peças que faltou/PEÇAS WEBP/FRENTE/AVATAR WEBP.webp',
     'verso': f'{D}/peças que faltou/PEÇAS WEBP/COSTAS/AVATAR COSTA WEBP.webp',
 }
+W2 = f'{D}/peças que faltou/PEÇAS WEBP'
 PECAS = {
     'frente': {
-        'camisola': 'FRENTE/FRENTE CAMISETA',
-        'calcao': 'FRENTE/BERMUDA FRENTE',
-        'meiao': 'FRENTE/MEIAO FRENTE',
-        'gola': 'FRENTE/GOLA FRENTE',
-        'mangas': 'FRENTE/MANGAS FRENTE',
+        'camisola': f'{D2}/camiseta inteira frente webp.webp',
+        'calcao': f'{W2}/FRENTE/BERMUDA FRENTE.webp',
+        'meiao': f'{W2}/FRENTE/MEIAO FRENTE.webp',
+        'gola': f'{W2}/FRENTE/GOLA FRENTE.webp',
+        # a tira do punho é a única parte da manga com cor própria
+        'mangas': f'{D2}/TIRAS MANGAS FRENTE.webp',
     },
     'verso': {
-        'camisola': 'COSTAS/CAMISETA COSTAS',
-        'calcao': 'COSTAS/BERMUDA COSTAS',
-        'meiao': 'COSTAS/MEIAO COSTAS',
-        'gola': 'COSTAS/GOLA COSTAS',
-        'mangas': 'COSTAS/COSTAS MANGAS',
+        'camisola': f'{D2}/camiseta costa webp inteira.webp',
+        'calcao': f'{W2}/COSTAS/BERMUDA COSTAS.webp',
+        'meiao': f'{W2}/COSTAS/MEIAO COSTAS.webp',
+        'gola': f'{W2}/COSTAS/GOLA COSTAS.webp',
+        'mangas': f'{D2}/TIRAS MANGAS COSTA.webp',
     },
 }
 
@@ -185,7 +190,7 @@ def montar(lado):
     tela.save(f'{SAIDA}/jogador-{lado}.png')
 
     caixa_meiao = None
-    pecas_nativas = {z: Image.open(f'{D}/peças que faltou/PEÇAS WEBP/{n}.webp').convert('RGBA')
+    pecas_nativas = {z: Image.open(n).convert('RGBA')
                      for z, n in PECAS[lado].items()}
     guardadas = {}
     residuo = buracos.copy()
@@ -226,17 +231,27 @@ def montar(lado):
     print(f'  mangas    camisa dif/px {dif:.1f} rel {rel} → '
           f'caixa x={x}, y={y}, w={larg}, h={alt}')
 
-    # 3) GOLA: depois de colocada a camisa, o único buraco que resta no
-    # terço de cima É a gola — o resíduo aponta-a sem ambiguidade
+    # 3) GOLA, por duas vias com preferência clara:
+    #    · fatia-da-camisa (SQDIFF): exata quando a gola é recorte da
+    #      camiseta — é o caso do VERSO (dif/px ~80);
+    #    · resíduo dos buracos: quando a gola traz píxeis que a camiseta
+    #      não tem (a da FRENTE inclui a sombra do pescoço, dif/px ~750).
+    #    O limiar de 300 separa os dois regimes com margem para os lados.
     im = pecas_nativas['gola']
-    recorte = residuo.copy()
-    recorte[int(recorte.shape[0] * 0.30):] = 0
-    canto, e, score = localizar_no_buraco(recorte, im, escala_base)
+    rel, dif = localizar_dentro(pecas_nativas['camisola'], im)
+    if dif < 300:
+        canto = (canto_cam[0] + rel[0] * esc_cam, canto_cam[1] + rel[1] * esc_cam)
+        e = esc_cam
+        via = f'camisa dif/px {dif:.0f}'
+    else:
+        recorte = residuo.copy()
+        recorte[int(recorte.shape[0] * 0.30):] = 0
+        canto, e, score = localizar_no_buraco(recorte, im, escala_base)
+        via = f'resíduo {score:.3f} (camisa dif/px {dif:.0f})'
     grande = im.resize((round(im.width * e), round(im.height * e)), Image.LANCZOS)
     tela, x, y, larg, alt = para_tela(realcar(grande), canto)
     tela.save(f'{SAIDA}/vestida-gola-{lado}.png')
-    print(f'  gola      resíduo {score:.3f} escala {e:.2f} → '
-          f'caixa x={x}, y={y}, w={larg}, h={alt}')
+    print(f'  gola      {via} → caixa x={x}, y={y}, w={larg}, h={alt}')
 
     # chuteiras: os píxeis opacos da BASE abaixo do fim do buraco do meião.
     # Ficam numa camada PRÓPRIA, por cima do meião (z15 > z10 no viewer):
