@@ -160,10 +160,6 @@ def montar(lado):
     print(f'--- {lado} (vestido {vestido.size}, base×{escala_base:.3f}, '
           f'tela×{esc:.4f}) ---')
 
-    # fundo: o avatar já vestido, como no mockup anterior
-    tela, *_ = para_tela(vestido, (0, 0))
-    tela.save(f'{SAIDA}/jogador-{lado}.png')
-
     # buracos = transparente DENTRO do corpo do vestido (fora, transparente
     # é só fundo). A base sobe para a escala do vestido primeiro.
     base_grande = base.resize(
@@ -174,6 +170,19 @@ def montar(lado):
     bg = np.array(base_grande.getchannel('A'))
     alfa_base[:bg.shape[0], :bg.shape[1]] = bg
     buracos = (corpo & (alfa_base < 60)).astype(np.float32)
+
+    # Fundo: o avatar vestido SEM o kit. O kit dele é branco e a escala do
+    # encaixe das peças tem desvio residual (~0,5%), por isso a borda branca
+    # espreitava 1–3 px à volta de camisa, calção e meião. Onde a base diz
+    # que há tecido (buracos), o fundo fica transparente — dilatado 2 px
+    # para levar também o rebordo anti-serrilhado branco. Um desencaixe
+    # passa a mostrar o FUNDO DA PÁGINA, que nunca grita como o branco.
+    kit = cv2.dilate(buracos.astype(np.uint8),
+                     np.ones((5, 5), np.uint8)).astype(bool)
+    sem_kit = np.array(vestido)
+    sem_kit[kit, 3] = 0
+    tela, *_ = para_tela(Image.fromarray(sem_kit), (0, 0))
+    tela.save(f'{SAIDA}/jogador-{lado}.png')
 
     caixa_meiao = None
     pecas_nativas = {z: Image.open(f'{D}/peças que faltou/PEÇAS WEBP/{n}.webp').convert('RGBA')
