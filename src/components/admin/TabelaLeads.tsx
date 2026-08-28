@@ -150,7 +150,7 @@ function Linha({
                       {a.quantidade}× {a.nome}
                     </p>
                     {a.design ? (
-                      <div className="flex gap-1 rounded-md bg-[url(/moldes/fundo-campo.jpg)] bg-cover bg-center p-1">
+                      <div className="flex gap-1 rounded-md bg-[url(/moldes/fundo.jpg)] bg-cover bg-center p-1">
                         <KitPreview design={a.design} lado="frente" className="h-40" />
                         <KitPreview design={a.design} lado="verso" className="h-40" />
                       </div>

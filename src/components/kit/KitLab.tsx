@@ -168,7 +168,7 @@ export function KitLab() {
           ))}
         </aside>
 
-        <KitViewer fundo="/moldes/fundo-campo.jpg" />
+        <KitViewer fundo="/moldes/fundo.jpg" />
 
         {/* Personalização: o menu é o TOPO deste bloco, não do cabeçalho —
             escolher a área e mexer nela é o mesmo gesto, e ter o separador

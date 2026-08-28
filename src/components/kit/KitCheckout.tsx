@@ -243,7 +243,7 @@ function FichaConjunto({ item }: { item: KitOrderItem }) {
       </div>
 
       <div className="grid gap-4 p-4 md:grid-cols-[1fr_minmax(0,300px)]">
-        <div className="flex justify-center gap-4 rounded-lg bg-[url(/moldes/fundo-campo.jpg)] bg-cover bg-center p-4">
+        <div className="flex justify-center gap-4 rounded-lg bg-[url(/moldes/fundo.jpg)] bg-cover bg-center p-4">
           {(['frente', 'verso'] as const).map((lado) => (
             <div key={lado} className="flex flex-col items-center gap-1">
               <span className="rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white">

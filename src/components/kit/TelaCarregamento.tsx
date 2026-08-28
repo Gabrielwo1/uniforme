@@ -23,7 +23,7 @@ export function TelaCarregamento() {
       {/* o mesmo campo do simulador, esbatido: a tela é um antegosto do
           ecrã que vem a seguir, não um ecrã à parte */}
       <img
-        src="/moldes/fundo-campo.jpg"
+        src="/moldes/fundo.jpg"
         alt=""
         aria-hidden
         className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm"

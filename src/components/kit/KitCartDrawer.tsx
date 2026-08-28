@@ -106,7 +106,7 @@ export function KitCartDrawer() {
             <ul className="space-y-2 py-2">
               {itens.map((item) => (
                 <li key={item.id} className="flex gap-3 rounded-lg border bg-card p-2">
-                  <div className="flex shrink-0 gap-1 overflow-hidden rounded-md bg-[url(/moldes/fundo-campo.jpg)] bg-cover bg-center p-1">
+                  <div className="flex shrink-0 gap-1 overflow-hidden rounded-md bg-[url(/moldes/fundo.jpg)] bg-cover bg-center p-1">
                     <KitPreview design={item.design} lado="frente" className="h-24" />
                     <KitPreview design={item.design} lado="verso" className="h-24" />
                   </div>
