@@ -1,4 +1,7 @@
 """
+SUPERSEDIDO por scripts/montar-dino2.py (segundo mockup do designer).
+Fica como referência do primeiro envio.
+
 Monta o ambiente do JOGADOR a partir do mockup do designer ("UNIFORME DINO").
 
 O designer entregou, por lado, o AVATAR (jogador já vestido) e as peças

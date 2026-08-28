@@ -24,7 +24,7 @@ export function KitPreview({
   className?: string;
 }) {
   return (
-    <div className={cn('relative aspect-[270/615]', className)}>
+    <div className={cn('relative aspect-[380/615]', className)}>
       {/* o mesmo empilhamento do simulador: o avatar do designer por baixo,
           as peças recoloridas por cima ao pixel, as chuteiras entre o meião
           e o calção. Sem ele a miniatura eram peças a flutuar, que não é o

@@ -13,12 +13,12 @@ import type { Estampa, LadoKit, MoldePeca, PecaKit, ZonaPeca } from '@/types/kit
  */
 
 /** Tela COMUM das peças vestidas: a coluna inteira do visualizador
-    (wrapper 270×615 × 4 — ver scripts/vestir-conjunto.py). Todas as peças
+    (wrapper 380×615 × 4 — ver scripts/montar-dino2.py). Todas as peças
     partilham a tela, por isso todos os slots são idênticos. */
 const TELAS: Record<PecaKit, { w: number; h: number }> = {
-  camisola: { w: 1080, h: 2460 },
-  calcao: { w: 1080, h: 2460 },
-  meiao: { w: 1080, h: 2460 },
+  camisola: { w: 1520, h: 2460 },
+  calcao: { w: 1520, h: 2460 },
+  meiao: { w: 1520, h: 2460 },
 };
 
 /* --------------------------------------------------- estampas registadas -- */
@@ -35,9 +35,10 @@ export function registarEstampas(lista: Estampa[]) {
 
 /* ---------------------------------------------------------------- moldes -- */
 
-/* As peças são as camadas do mockup do designer ("UNIFORME DINO"), cozidas
-   na tela comum por scripts/montar-dino.py. Cada uma é uma zona colorível
-   à parte — o que separa a gola e as mangas do corpo. */
+/* As peças são as camadas do SEGUNDO mockup do designer ("uniforme dino
+   correto ultimo feito-2"), cozidas na tela comum por
+   scripts/montar-dino2.py. Cada uma é uma zona colorível à parte — o que
+   separa a gola e as mangas do corpo. */
 
 const RAIZ_MOLDES = '/moldes/jog';
 

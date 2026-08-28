@@ -1,7 +1,8 @@
 import type { LadoKit, PecaKit } from '@/types/kit';
 
 /**
- * Geometria das peças na tela comum (1080×2460).
+ * Geometria das peças na tela comum (1520×2460 — wrapper 380×615 × 4; o
+ * avatar do segundo mockup é mais largo que o primeiro).
  *
  * Vive à parte porque é partilhada por dois consumidores muito diferentes:
  * o `kitReal` (que pesa megabytes de vetores e entra por import dinâmico) e
@@ -18,30 +19,30 @@ export interface Caixa {
 }
 
 /** Caixa da estampa por peça e lado — a posição real de cada peça no
-    avatar do mockup do designer, medida por scripts/montar-dino.py.
-    Na camisola é só o TRONCO: a estampa não passa às mangas nem à gola,
-    que são zonas com cor própria. */
+    avatar do SEGUNDO mockup do designer, medida por scripts/montar-dino2.py.
+    Na camisola é só o TRONCO (a camisa nova vem inteira; o tronco é o alfa
+    dela menos o das mangas): a estampa não passa às mangas nem à gola, que
+    são zonas com cor própria. */
 export const CAIXAS: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    // só o TRONCO: as mangas são camada à parte no mockup do designer
-    frente: { x: 283, y: 386, w: 517, h: 873 },
-    verso: { x: 280, y: 365, w: 519, h: 905 },
+    frente: { x: 495, y: 410, w: 474, h: 821 },
+    verso: { x: 420, y: 399, w: 488, h: 872 },
   },
   calcao: {
-    frente: { x: 251, y: 1245, w: 581, h: 440 },
-    verso: { x: 244, y: 1236, w: 593, h: 435 },
+    frente: { x: 445, y: 1207, w: 591, h: 377 },
+    verso: { x: 378, y: 1235, w: 582, h: 352 },
   },
   meiao: {
-    frente: { x: 173, y: 1744, w: 753, h: 665 },
-    verso: { x: 205, y: 1756, w: 669, h: 652 },
+    frente: { x: 452, y: 1703, w: 575, h: 522 },
+    verso: { x: 367, y: 1712, w: 596, h: 542 },
   },
 };
 
 /** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
 export const AMOSTRAS: Record<PecaKit, string> = {
-  camisola: '290 430 500 660',
-  calcao: '255 1250 570 425',
-  meiao: '180 1750 740 640',
+  camisola: '500 440 460 660',
+  calcao: '450 1210 580 370',
+  meiao: '455 1705 570 520',
 };
 
 /**
@@ -58,6 +59,6 @@ export const AMOSTRAS: Record<PecaKit, string> = {
  * de ser medidos de novo. O script está em scripts/medir-pernas.py.
  */
 export const PERNAS: Record<'calcao' | 'meiao', Record<LadoKit, [number, number]>> = {
-  calcao: { frente: [0.269, 0.726], verso: [0.272, 0.725] },
-  meiao: { frente: [0.212, 0.772], verso: [0.191, 0.804] },
+  calcao: { frente: [0.269, 0.72], verso: [0.272, 0.731] },
+  meiao: { frente: [0.159, 0.841], verso: [0.162, 0.842] },
 };
