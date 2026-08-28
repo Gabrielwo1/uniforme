@@ -20,17 +20,18 @@ import sucesso from '@/assets/animacoes/sucesso.json';
 /**
  * Simulador de conjuntos, na arquitetura da referência:
  *
- *   - esquerda: cores (por peça: zonas + camadas da estampa)
+ *   - topo, ao centro: as áreas de personalização (modelos, nome/número,
+ *     escudo/logos) — como no concorrente
+ *   - esquerda: o painel da área escolhida (modelos por omissão)
  *   - centro: o conjunto, frente e verso
- *   - direita: personalização — separadores no topo (estampas, nome/número,
- *     escudo/logos) e, por baixo, o painel da área escolhida
+ *   - direita: cores (por peça: zonas + camadas da estampa)
  */
 type MenuTopo = 'estampas' | 'nome' | 'escudo';
 
-const MENU: { id: MenuTopo; rotulo: string; curto: string; Icone: typeof Shirt }[] = [
-  { id: 'estampas', rotulo: 'Modelos / Estampas', curto: 'Estampas', Icone: Shirt },
-  { id: 'nome', rotulo: 'Nome e Número', curto: 'Nome e Nº', Icone: Type },
-  { id: 'escudo', rotulo: 'Escudo e Logos', curto: 'Escudo', Icone: BadgePlus },
+const MENU: { id: MenuTopo; rotulo: string; Icone: typeof Shirt }[] = [
+  { id: 'estampas', rotulo: 'Modelos / Estampas', Icone: Shirt },
+  { id: 'nome', rotulo: 'Nome e Número', Icone: Type },
+  { id: 'escudo', rotulo: 'Escudo e Logos', Icone: BadgePlus },
 ];
 
 export function KitLab() {
@@ -125,7 +126,39 @@ export function KitLab() {
           className="h-8 w-auto shrink-0 dark:brightness-0 dark:invert"
         />
 
-        <span className="ml-auto" />
+        {/* as áreas de personalização ao CENTRO do topo, como no
+            concorrente: escolher a área muda o painel da ESQUERDA */}
+        <nav className="mx-auto hidden items-center gap-1 md:flex">
+          {MENU.map(({ id, rotulo, Icone }) => (
+            <button
+              key={id}
+              onClick={() => {
+                setMenu(id);
+                setLocalEmFoco(null);
+              }}
+              className={cn(
+                'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold transition',
+                menu === id
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'text-muted-foreground hover:bg-accent',
+              )}
+            >
+              <Icone className="h-3.5 w-3.5" />
+              {rotulo}
+              {contagem[id] > 0 && (
+                <span
+                  className={cn(
+                    'grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
+                    menu === id ? 'bg-background text-foreground' : 'bg-foreground text-background',
+                  )}
+                >
+                  {contagem[id]}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
         <Button
           variant="outline"
           size="sm"
@@ -157,58 +190,30 @@ export function KitLab() {
         </Button>
       </header>
 
-      <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[290px_minmax(0,1fr)_300px]">
+      <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[300px_minmax(0,1fr)_290px]">
+        {/* ESQUERDA: a área escolhida no topo — modelos, nome/número ou
+            escudos (o concorrente põe os modelos deste lado). O cadeado
+            vive aqui porque manda na escolha de estampa E nas cores. */}
         <aside className="space-y-3">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Cores
+            {MENU.find((m) => m.id === menu)?.rotulo}
           </p>
           <CadeadoConjunto />
-          {PECAS_KIT.map((peca) => (
-            <PainelCores key={peca} peca={peca} />
-          ))}
+          {menu === 'estampas' && <GaleriaEstampas />}
+          {menu === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
+          {menu === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
         </aside>
 
         <KitViewer fundo="/moldes/fundo.jpg" />
 
-        {/* Personalização: o menu é o TOPO deste bloco, não do cabeçalho —
-            escolher a área e mexer nela é o mesmo gesto, e ter o separador
-            do outro lado do ecrã obrigava a atravessá-lo a cada troca. */}
+        {/* DIREITA: só cores, por peça */}
         <aside className="space-y-3">
-          <nav className="grid grid-cols-3 gap-1 rounded-lg border bg-card p-1 shadow-sm">
-            {MENU.map(({ id, rotulo, curto, Icone }) => (
-              <button
-                key={id}
-                onClick={() => {
-                  setMenu(id);
-                  setLocalEmFoco(null);
-                }}
-                title={rotulo}
-                className={cn(
-                  'relative flex flex-col items-center gap-1 rounded-md px-1 py-2 text-[11px] font-bold leading-tight transition',
-                  menu === id
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:bg-accent',
-                )}
-              >
-                <Icone className="h-4 w-4" />
-                {curto}
-                {contagem[id] > 0 && (
-                  <span
-                    className={cn(
-                      'absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
-                      menu === id ? 'bg-background text-foreground' : 'bg-foreground text-background',
-                    )}
-                  >
-                    {contagem[id]}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {menu === 'estampas' && <GaleriaEstampas />}
-          {menu === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
-          {menu === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Cores
+          </p>
+          {PECAS_KIT.map((peca) => (
+            <PainelCores key={peca} peca={peca} />
+          ))}
         </aside>
       </div>
 
