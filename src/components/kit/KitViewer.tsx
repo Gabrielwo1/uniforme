@@ -9,10 +9,12 @@ import {
   PECA_LABEL,
   type Estampa,
   type LadoKit,
+  type PecaConfig,
   type PecaKit,
 } from '@/types/kit';
 import { cn } from '@/lib/utils';
-import { PecaMockup, forcarCor } from './PecaMockup';
+import { PecaMockup } from './PecaMockup';
+import { AMOSTRAS } from '@/lib/kitCaixas';
 import { CamadaAplicacoes } from './CamadaAplicacoes';
 
 /**
@@ -189,9 +191,10 @@ export function GaleriaEstampas() {
 
       <div className="grid grid-cols-3 gap-2 p-3">
         {estampasDemo(peca).map((e) => (
-          <QuadradoEstampa
+          <MiniaturaEstampa
             key={e.id}
             estampa={e}
+            peca={peca}
             ativa={e.id === config.estampaId}
             onEscolher={() => setEstampa(peca, e.id)}
           />
@@ -201,50 +204,81 @@ export function GaleriaEstampas() {
   );
 }
 
-/** Quadrado da galeria: o desenho do tema nas cores por omissão. */
-function QuadradoEstampa({
+/**
+ * Miniatura da galeria: a PEÇA VESTIDA com o tema nas cores por omissão —
+ * como na referência, um ícone da camisola/calção/meião e não um quadrado
+ * de padrão flat. É o mesmo motor do visualizador, recortado à janela da
+ * peça (AMOSTRAS): a miniatura nunca mente sobre o resultado.
+ *
+ * Por baixo vai o CÓDIGO, não o nome: com o catálogo a crescer, "Cod. 044"
+ * é o que a produção e o cliente trocam ao telefone. O nome fica no title.
+ */
+function MiniaturaEstampa({
   estampa,
+  peca,
   ativa,
   onEscolher,
 }: {
   estampa: Estampa;
+  peca: PecaKit;
   ativa: boolean;
   onEscolher: () => void;
 }) {
+  const molde = moldeDemo(peca, 'frente');
+  const [ax, ay, aw, ah] = (estampa.amostraViewBox ?? AMOSTRAS[peca])
+    .split(' ')
+    .map(Number);
+  const [, , telaW, telaH] = molde.viewBox.split(' ').map(Number);
+
+  // a config por omissão do tema: é o que a galeria promete que a peça
+  // fica se for escolhida sem mexer em nada
+  const config: PecaConfig = {
+    estampaId: estampa.id,
+    coresZonas: { corpo: estampa.corBasePadrao },
+    cores: {},
+  };
+
   return (
-    <button onClick={onEscolher} title={estampa.nome} className="group flex flex-col items-center gap-1">
+    <button
+      onClick={onEscolher}
+      title={`${estampa.nome} · Cod. ${estampa.codModelo}`}
+      className="group flex flex-col items-center gap-1"
+    >
       <div
         className={cn(
-          'aspect-square w-full overflow-hidden rounded-md border-2 transition',
-          ativa ? 'border-primary ring-2 ring-primary/40' : 'border-border group-hover:border-foreground/40',
+          'relative w-full overflow-hidden rounded-md border-2 bg-gradient-to-b from-[#f2f4f6] to-[#dde2e8] transition dark:from-[#26262a] dark:to-[#1a1a1d]',
+          ativa
+            ? 'border-primary ring-2 ring-primary/40'
+            : 'border-border group-hover:border-foreground/40',
         )}
-        style={{ backgroundColor: estampa.corBasePadrao }}
+        style={{ aspectRatio: `${aw} / ${ah}` }}
       >
-        {estampa.camadas.length > 0 && (
-          <svg
-            viewBox={estampa.amostraViewBox ?? '0 0 1080 2460'}
-            preserveAspectRatio="xMidYMid slice"
+        {/* a tela inteira, escalada e deslocada para a janela da peça
+            encher a miniatura — o recorte é do contentor, não das camadas */}
+        <div
+          className="absolute"
+          style={{
+            width: `${(telaW / aw) * 100}%`,
+            height: `${(telaH / ah) * 100}%`,
+            left: `${(-ax / aw) * 100}%`,
+            top: `${(-ay / ah) * 100}%`,
+          }}
+        >
+          <PecaMockup
+            molde={molde}
+            estampa={estampa}
+            config={config}
             className="h-full w-full"
-          >
-            {estampa.camadas.map((c) => (
-              <g
-                key={c.id}
-                dangerouslySetInnerHTML={{
-                  __html: forcarCor(c.desenho.frente ?? '', c.corPadrao),
-                }}
-              />
-            ))}
-          </svg>
-        )}
+          />
+        </div>
       </div>
       <span
         className={cn(
-          'w-full truncate rounded-md px-1.5 py-0.5 text-center text-xs font-bold leading-tight',
+          'w-full truncate rounded-md px-1 py-0.5 text-center text-[11px] font-bold leading-tight',
           ativa ? 'bg-foreground text-background' : 'bg-muted text-foreground',
         )}
-        title={`Cod. ${estampa.codModelo}`}
       >
-        {estampa.nome}
+        Cod. {estampa.codModelo}
       </span>
     </button>
   );
