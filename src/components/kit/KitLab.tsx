@@ -126,38 +126,7 @@ export function KitLab() {
           className="h-8 w-auto shrink-0 dark:brightness-0 dark:invert"
         />
 
-        {/* as áreas de personalização ao CENTRO do topo, como no
-            concorrente: escolher a área muda o painel da ESQUERDA */}
-        <nav className="mx-auto hidden items-center gap-1 md:flex">
-          {MENU.map(({ id, rotulo, Icone }) => (
-            <button
-              key={id}
-              onClick={() => {
-                setMenu(id);
-                setLocalEmFoco(null);
-              }}
-              className={cn(
-                'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold transition',
-                menu === id
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-accent',
-              )}
-            >
-              <Icone className="h-3.5 w-3.5" />
-              {rotulo}
-              {contagem[id] > 0 && (
-                <span
-                  className={cn(
-                    'grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
-                    menu === id ? 'bg-background text-foreground' : 'bg-foreground text-background',
-                  )}
-                >
-                  {contagem[id]}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
+        <span className="ml-auto" />
 
         <Button
           variant="outline"
@@ -204,7 +173,45 @@ export function KitLab() {
           {menu === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
         </aside>
 
-        <KitViewer fundo="/moldes/fundo.jpg" />
+        {/* o menu das áreas flutua SOBRE o cenário, no topo — pedido do
+            cliente: faz parte do palco, não do cabeçalho. O contentor leva
+            fundo próprio com desfoque, senão os separadores inativos
+            desapareciam contra a imagem escura. */}
+        <div className="relative min-w-0">
+          <nav className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 rounded-lg border bg-background/85 p-1 shadow-lg backdrop-blur">
+            {MENU.map(({ id, rotulo, Icone }) => (
+              <button
+                key={id}
+                onClick={() => {
+                  setMenu(id);
+                  setLocalEmFoco(null);
+                }}
+                className={cn(
+                  'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition',
+                  menu === id
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-accent',
+                )}
+              >
+                <Icone className="h-3.5 w-3.5" />
+                {rotulo}
+                {contagem[id] > 0 && (
+                  <span
+                    className={cn(
+                      'grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold',
+                      menu === id
+                        ? 'bg-background text-foreground'
+                        : 'bg-foreground text-background',
+                    )}
+                  >
+                    {contagem[id]}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+          <KitViewer fundo="/moldes/fundo.jpg" />
+        </div>
 
         {/* DIREITA: só cores, por peça */}
         <aside className="space-y-3">
