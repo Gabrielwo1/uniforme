@@ -245,15 +245,16 @@ def montar(lado):
         arr[~dentro, 3] = 0
         return Image.fromarray(arr)
 
-    # FUNDO = o jogador vestido INTEIRO, intocado (sugestão do cliente, e
-    # é a resposta certa): qualquer vão entre peças mostra os píxeis do
-    # próprio render — transições naturais de tecido e pele — em vez do
-    # fundo da página. As tentativas de limpar/recortar o fundo (kit
-    # removido, brancos apagados, pele prolongada) foram todas piores do
-    # que isto. O kit branco dele fica coberto pelas peças crescidas; as
-    # mãos e a cabeça ficam à frente via tirar_pele.
-    tela, *_ = para_tela(vestido, (0, 0))
-    tela.save(f'{SAIDA}/jogador-{lado}.png')
+    # cobertura das peças colocadas — decide que parte do kit branco do
+    # vestido pode ficar à vista (só a faixa junto ao contorno delas)
+    uniao = np.zeros(corpo.shape, dtype=bool)
+    colocadas = []
+
+    def cobrir(grande, canto):
+        af = np.array(grande.getchannel('A')) > 60
+        y0, x0 = max(0, int(canto[1])), max(0, int(canto[0]))
+        rec = uniao[y0:y0 + af.shape[0], x0:x0 + af.shape[1]]
+        rec |= af[:rec.shape[0], :rec.shape[1]]
 
     caixa_meiao = None
     pecas_nativas = {z: Image.open(n).convert('RGBA')
@@ -276,8 +277,11 @@ def montar(lado):
         canto0 = canto                      # posição do CONTEÚDO, sem a margem
         canto = (canto[0] - margem, canto[1] - margem)
         grande = tirar_pele(grande, canto)
-        tela, x, y, larg, alt = para_tela(realcar(grande), canto)
-        tela.save(f'{SAIDA}/vestida-{zona}-{lado}.png')
+        cobrir(grande, canto)
+        colocadas.append((zona, grande, canto))
+        x, y = round(canto[0] * esc + (W - vestido.width * esc) / 2), \
+               round(canto[1] * esc + TOPO_AVATAR * M)
+        larg, alt = round(grande.width * esc), round(grande.height * esc)
         guardadas[zona] = (canto0, escolhida)
         # o que esta peça cobre sai do resíduo — é nele que a gola se acha
         af = np.array(grande.getchannel('A')) > 60
@@ -300,10 +304,9 @@ def montar(lado):
                   Image.LANCZOS))
     canto = (canto[0] - margem, canto[1] - margem)
     grande = tirar_pele(grande, canto)
-    tela, x, y, larg, alt = para_tela(realcar(grande), canto)
-    tela.save(f'{SAIDA}/vestida-mangas-{lado}.png')
-    print(f'  mangas    camisa dif/px {dif:.1f} rel {rel} → '
-          f'caixa x={x}, y={y}, w={larg}, h={alt}')
+    cobrir(grande, canto)
+    colocadas.append(('mangas', grande, canto))
+    print(f'  mangas    camisa dif/px {dif:.1f} rel {rel}')
 
     # 3) GOLA, por duas vias com preferência clara:
     #    · fatia-da-camisa (SQDIFF): exata quando a gola é recorte da
@@ -327,9 +330,57 @@ def montar(lado):
                   Image.LANCZOS))
     canto = (canto[0] - margem, canto[1] - margem)
     grande = tirar_pele(grande, canto)
-    tela, x, y, larg, alt = para_tela(realcar(grande), canto)
-    tela.save(f'{SAIDA}/vestida-gola-{lado}.png')
-    print(f'  gola      {via} → caixa x={x}, y={y}, w={larg}, h={alt}')
+    cobrir(grande, canto)
+    colocadas.append(('gola', grande, canto))
+    print(f'  gola      {via}')
+
+    # KIT VISÍVEL = tecido branco do vestido que nenhuma peça cobre. Os
+    # renders são de gerações diferentes e o kit dele é mais largo — à
+    # vista, aparecia como uma silhueta branca duplicada à volta do
+    # conjunto. Cada peça é INUNDADA nele: cresce iterativamente só para
+    # dentro desse tecido, até ele acabar (máx. ~14 px). Onde não há kit
+    # não há crescimento — o desenho da peça não deforma.
+    kit = cv2.dilate(buracos.astype(np.uint8), np.ones((5, 5), np.uint8)) \
+              .astype(bool) | (branco_vest & corpo)
+    ys_buraco = np.nonzero(buracos.any(axis=1))[0]
+    topo_kit = max(0, int(ys_buraco.min()) - 4) if len(ys_buraco) else 0
+    kit[:topo_kit] = False                # protege dentes e brilhos do rosto
+    kit_visivel = kit & ~uniao
+
+    nucleo3 = np.ones((3, 3), np.uint8)
+
+    def inundar(grande, canto):
+        arr = np.array(grande)
+        alvo = np.zeros(arr.shape[:2], dtype=bool)
+        y0, x0 = int(canto[1]), int(canto[0])
+        cy0, cx0 = max(0, y0), max(0, x0)
+        cy1 = min(kit_visivel.shape[0], y0 + arr.shape[0])
+        cx1 = min(kit_visivel.shape[1], x0 + arr.shape[1])
+        if cy1 > cy0 and cx1 > cx0:
+            alvo[cy0 - y0:cy1 - y0, cx0 - x0:cx1 - x0] = kit_visivel[cy0:cy1, cx0:cx1]
+        tem = arr[..., 3] > 60
+        for _ in range(14):
+            crescer = cv2.dilate(tem.astype(np.uint8), nucleo3).astype(bool) & alvo & ~tem
+            if not crescer.any():
+                break
+            vizinho = np.dstack([cv2.dilate(arr[..., c], nucleo3) for c in range(4)])
+            arr[crescer] = vizinho[crescer]
+            arr[crescer, 3] = 255
+            tem |= crescer
+        return Image.fromarray(arr)
+
+    for zona, grande, canto in colocadas:
+        pronta = tirar_pele(inundar(grande, canto), canto)
+        tela, x, y, larg, alt = para_tela(realcar(pronta), canto)
+        tela.save(f'{SAIDA}/vestida-{zona}-{lado}.png')
+        print(f'  {zona:9s} gravada → caixa x={x}, y={y}, w={larg}, h={alt}')
+
+    # FUNDO: o vestido com o kit que ainda ficasse à vista removido — as
+    # peças inundadas já cobrem o rasto até ~14 px; isto é o resguardo
+    sem = np.array(vestido)
+    sem[kit_visivel, 3] = 0
+    tela, *_ = para_tela(Image.fromarray(sem), (0, 0))
+    tela.save(f'{SAIDA}/jogador-{lado}.png')
 
     # chuteiras: os píxeis opacos da BASE abaixo do fim do buraco do meião.
     # Ficam numa camada PRÓPRIA, por cima do meião (z15 > z10 no viewer):
