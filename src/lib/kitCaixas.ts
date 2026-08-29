@@ -29,7 +29,7 @@ export const CAIXAS: Record<PecaKit, Record<LadoKit, Caixa>> = {
     verso: { x: 290, y: 396, w: 736, h: 880 },
   },
   calcao: {
-    frente: { x: 445, y: 1207, w: 591, h: 377 },
+    frente: { x: 445, y: 1211, w: 591, h: 370 },
     verso: { x: 378, y: 1235, w: 582, h: 352 },
   },
   meiao: {

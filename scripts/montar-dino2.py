@@ -38,6 +38,8 @@ D = '/Users/syntax/Downloads/uniforme dino correto ultimo feito-2'
 # terceiro envio (2026-08-28): a camisa fica INTEIRA (mangas incluídas — a
 # estampa passa a cobri-las) e só a TIRA do punho é zona colorível à parte
 D2 = '/Users/syntax/Downloads/wetransfer_camiseta-costa-webp-inteira-webp_2026-08-28_1337'
+# bermuda da frente refeita (envio avulso de 2026-08-29)
+D3 = '/Users/syntax/Downloads'
 
 # O CorelDRAW trocou as pastas: o SVG da FRENTE aponta para a pasta COSTA
 # e vice-versa. A verdade é a IMAGEM, confirmada à vista.
@@ -53,7 +55,7 @@ W2 = f'{D}/peças que faltou/PEÇAS WEBP'
 PECAS = {
     'frente': {
         'camisola': f'{D2}/camiseta inteira frente webp.webp',
-        'calcao': f'{W2}/FRENTE/BERMUDA FRENTE.webp',
+        'calcao': f'{D3}/bermuda frente.webp',
         'meiao': f'{W2}/FRENTE/MEIAO FRENTE.webp',
         'gola': f'{W2}/FRENTE/GOLA FRENTE.webp',
         # a tira do punho é a única parte da manga com cor própria
