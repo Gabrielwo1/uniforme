@@ -25,24 +25,24 @@ export interface Caixa {
     punho e a gola ficam de fora, como zonas com cor própria por cima. */
 export const CAIXAS: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 386, y: 410, w: 708, h: 822 },
-    verso: { x: 290, y: 396, w: 736, h: 880 },
+    frente: { x: 387, y: 411, w: 708, h: 822 },
+    verso: { x: 295, y: 399, w: 729, h: 873 },
   },
   calcao: {
-    frente: { x: 445, y: 1211, w: 591, h: 370 },
-    verso: { x: 378, y: 1235, w: 582, h: 352 },
+    frente: { x: 447, y: 1195, w: 589, h: 389 },
+    verso: { x: 379, y: 1233, w: 585, h: 352 },
   },
   meiao: {
-    frente: { x: 452, y: 1703, w: 575, h: 522 },
-    verso: { x: 367, y: 1712, w: 596, h: 542 },
+    frente: { x: 454, y: 1691, w: 571, h: 533 },
+    verso: { x: 365, y: 1712, w: 599, h: 547 },
   },
 };
 
 /** Janela da miniatura quadrada, por peça (sobre a caixa da frente). */
 export const AMOSTRAS: Record<PecaKit, string> = {
   camisola: '400 430 680 700',
-  calcao: '450 1210 580 370',
-  meiao: '455 1705 570 520',
+  calcao: '450 1195 590 390',
+  meiao: '455 1690 570 535',
 };
 
 /**
@@ -59,6 +59,6 @@ export const AMOSTRAS: Record<PecaKit, string> = {
  * de ser medidos de novo. O script está em scripts/medir-pernas.py.
  */
 export const PERNAS: Record<'calcao' | 'meiao', Record<LadoKit, [number, number]>> = {
-  calcao: { frente: [0.269, 0.72], verso: [0.272, 0.731] },
-  meiao: { frente: [0.159, 0.841], verso: [0.162, 0.842] },
+  calcao: { frente: [0.269, 0.719], verso: [0.273, 0.731] },
+  meiao: { frente: [0.166, 0.838], verso: [0.164, 0.839] },
 };

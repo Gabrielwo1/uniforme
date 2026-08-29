@@ -34,39 +34,39 @@ SAIDA = 'public/moldes/jog'
 ALTURA_AVATAR = 596                # altura do avatar na tela (wrapper px)
 TOPO_AVATAR = 6
 
-D = '/Users/syntax/Downloads/uniforme dino correto ultimo feito-2'
-# terceiro envio (2026-08-28): a camisa fica INTEIRA (mangas incluídas — a
-# estampa passa a cobri-las) e só a TIRA do punho é zona colorível à parte
-D2 = '/Users/syntax/Downloads/wetransfer_camiseta-costa-webp-inteira-webp_2026-08-28_1337'
-# bermuda da frente refeita (envio avulso de 2026-08-29)
-D3 = '/Users/syntax/Downloads'
+# Envio CONSOLIDADO (2026-08-29, "UNIFORME FUTEBOL SIMULADOR DINO"):
+# tudo numa pasta, nomes certos (a troca frente/costas do CorelDRAW
+# desapareceu), mangas e calção corrigidos. A camisa continua INTEIRA e a
+# TIRA do punho é a zona colorível à parte.
+D4 = '/Users/syntax/Downloads/UNIFORME FUTEBOL SIMULADOR DINO'
+SVG4 = f'{D4}/ARQUIVOS SVG'
+WEBP4 = f'{D4}/ARQUIVOS WEBP'
+# única peça em falta no envio: o webp do meião de costas — fica o do envio
+# anterior ("uniforme dino correto ultimo feito-2")
+D_ANTIGO = '/Users/syntax/Downloads/uniforme dino correto ultimo feito-2'
 
-# O CorelDRAW trocou as pastas: o SVG da FRENTE aponta para a pasta COSTA
-# e vice-versa. A verdade é a IMAGEM, confirmada à vista.
 VESTIDO = {
-    'frente': f'{D}/COSTA SVG AVATAR_Images/COSTA SVG AVATAR_ImgID1.png',
-    'verso': f'{D}/FRENTE SVG AVATAR_Images/FRENTE SVG AVATAR_ImgID1.png',
+    'frente': f'{SVG4}/FRENTE/AVATAR FRENTE_Images/AVATAR FRENTE_ImgID1.png',
+    'verso': f'{SVG4}/COSTAS/AVATAR COSTAS_Images/AVATAR COSTAS_ImgID1.png',
 }
 BASE = {
-    'frente': f'{D}/peças que faltou/PEÇAS WEBP/FRENTE/AVATAR WEBP.webp',
-    'verso': f'{D}/peças que faltou/PEÇAS WEBP/COSTAS/AVATAR COSTA WEBP.webp',
+    'frente': f'{WEBP4}/FRENTE/AVATAR FRENTE.webp',
+    'verso': f'{WEBP4}/COSTAS/AVATAR COSTAS.webp',
 }
-W2 = f'{D}/peças que faltou/PEÇAS WEBP'
 PECAS = {
     'frente': {
-        'camisola': f'{D2}/camiseta inteira frente webp.webp',
-        'calcao': f'{D3}/bermuda frente.webp',
-        'meiao': f'{W2}/FRENTE/MEIAO FRENTE.webp',
-        'gola': f'{W2}/FRENTE/GOLA FRENTE.webp',
-        # a tira do punho é a única parte da manga com cor própria
-        'mangas': f'{D2}/TIRAS MANGAS FRENTE.webp',
+        'camisola': f'{WEBP4}/FRENTE/CAMISETA FRENTE.webp',
+        'calcao': f'{WEBP4}/FRENTE/BERMUDA FRENTE.webp',
+        'meiao': f'{WEBP4}/FRENTE/MEIÃO FRENTE.webp',
+        'gola': f'{WEBP4}/FRENTE/GOLA FRENTE.webp',
+        'mangas': f'{WEBP4}/FRENTE/TIRAS MANGAS FRENTE.webp',
     },
     'verso': {
-        'camisola': f'{D2}/camiseta costa webp inteira.webp',
-        'calcao': f'{W2}/COSTAS/BERMUDA COSTAS.webp',
-        'meiao': f'{W2}/COSTAS/MEIAO COSTAS.webp',
-        'gola': f'{W2}/COSTAS/GOLA COSTAS.webp',
-        'mangas': f'{D2}/TIRAS MANGAS COSTA.webp',
+        'camisola': f'{WEBP4}/COSTAS/CAMISETA COSTA.webp',
+        'calcao': f'{WEBP4}/COSTAS/BERMUDA COSTAS.webp',
+        'meiao': f'{D_ANTIGO}/peças que faltou/PEÇAS WEBP/COSTAS/MEIAO COSTAS.webp',
+        'gola': f'{WEBP4}/COSTAS/GOLAS COSTA.webp',
+        'mangas': f'{WEBP4}/COSTAS/TIRAS MANGAS COSTA.webp',
     },
 }
 
