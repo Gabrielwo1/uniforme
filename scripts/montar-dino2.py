@@ -25,7 +25,7 @@ import os
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 M = 4
 W, H = 380 * M, 615 * M            # tela comum nova (wrapper 380×615)
@@ -173,29 +173,93 @@ def montar(lado):
         (round(base.width * escala_base), round(base.height * escala_base)),
         Image.LANCZOS)
     corpo = np.array(vestido.getchannel('A')) > 60
+    # a fronteira pele↔fundo é uma penugem com alfa 1..90 — e entre a
+    # bainha e o joelho há até linhas de alfa ZERO (vazio do próprio
+    # render). A máscara da sangria é o corpo dilatado 3 px: cobre a
+    # penugem e esses vazios interiores, e continua a cortar o rebordo
+    # na silhueta exterior (o fundo da página fica a >3 px do corpo).
+    corpo_folgado = cv2.dilate(
+        (np.array(vestido.getchannel('A')) > 0).astype(np.uint8),
+        np.ones((13, 13), np.uint8)).astype(bool)
     alfa_base = np.zeros(corpo.shape, dtype=np.uint8)
     bg = np.array(base_grande.getchannel('A'))
     alfa_base[:bg.shape[0], :bg.shape[1]] = bg
     buracos = (corpo & (alfa_base < 60)).astype(np.float32)
-
-    # Fundo: o avatar vestido SEM o kit. O kit dele é branco e a escala do
-    # encaixe das peças tem desvio residual (~0,5%), por isso a borda branca
-    # espreitava 1–3 px à volta de camisa, calção e meião. Onde a base diz
-    # que há tecido (buracos), o fundo fica transparente — dilatado 2 px
-    # para levar também o rebordo anti-serrilhado branco. Um desencaixe
-    # passa a mostrar o FUNDO DA PÁGINA, que nunca grita como o branco.
-    kit = cv2.dilate(buracos.astype(np.uint8),
-                     np.ones((5, 5), np.uint8)).astype(bool)
-    sem_kit = np.array(vestido)
-    sem_kit[kit, 3] = 0
-    tela, *_ = para_tela(Image.fromarray(sem_kit), (0, 0))
-    tela.save(f'{SAIDA}/jogador-{lado}.png')
+    # A PELE (e tudo o que na base é opaco: mãos, chuteiras, cabeça) fica
+    # SEMPRE à frente das peças — é a regra de encaixe da referência: o
+    # polegar pende por cima do calção. Erodida 1 px para a peça ainda
+    # entrar um fio por baixo da pele e não abrir vão.
+    pele = cv2.erode((alfa_base > 200).astype(np.uint8),
+                     np.ones((3, 3), np.uint8)).astype(bool)
 
     caixa_meiao = None
     pecas_nativas = {z: Image.open(n).convert('RGBA')
                      for z, n in PECAS[lado].items()}
     guardadas = {}
     residuo = buracos.copy()
+    # cobertura das peças colocadas, no espaço do vestido — é a âncora da
+    # limpeza do fundo (os remates brancos abraçam o contorno das peças)
+    uniao = np.zeros(corpo.shape, dtype=bool)
+
+    def sangrar(grande, canto, forca=11):
+        """Estica a peça ~2 px para fora, só onde o novo rebordo cai SOBRE
+        O CORPO do avatar.
+
+        O encaixe tem desvio residual e ficava um VÃO de 1–4 px entre a
+        peça e a pele (bainha, punho, cano da meia) — em fundo claro, o
+        vão lê-se como linha branca. Limpar o fundo não resolve um vão;
+        fechar a peça sobre ele resolve. Para o lado de FORA da silhueta
+        o rebordo é cortado, senão a peça ganhava um halo contra o fundo
+        da página.
+        """
+        # margem transparente ANTES de esticar: o conteúdo da peça toca a
+        # borda do próprio recorte (a bainha É a última linha do ficheiro)
+        # e o MaxFilter não cresce para fora da tela da imagem — sem a
+        # margem, a sangria no rebordo de baixo não acontecia de todo
+        pad = 8
+        com_margem = Image.new('RGBA', (grande.width + 2 * pad, grande.height + 2 * pad))
+        com_margem.alpha_composite(grande, (pad, pad))
+        canto = (canto[0] - pad, canto[1] - pad)
+        grande = com_margem
+        est = grande.filter(ImageFilter.MaxFilter(forca))
+        est_a = np.array(est)
+        orig = np.array(grande)
+        rebordo = (est_a[..., 3] > 0) & (orig[..., 3] == 0)
+        # recorte do corpo alinhado à posição da peça
+        y0, x0 = int(canto[1]), int(canto[0])
+        dentro = np.zeros(rebordo.shape, dtype=bool)
+        cy0, cx0 = max(0, y0), max(0, x0)
+        cy1 = min(corpo.shape[0], y0 + rebordo.shape[0])
+        cx1 = min(corpo.shape[1], x0 + rebordo.shape[1])
+        if cy1 > cy0 and cx1 > cx0:
+            dentro[cy0 - y0:cy1 - y0, cx0 - x0:cx1 - x0] = corpo_folgado[cy0:cy1, cx0:cx1]
+        est_a[rebordo & ~dentro, 3] = 0
+        fora = Image.fromarray(est_a)
+        fora.alpha_composite(grande)   # o interior fica intacto
+        return fora, canto
+
+    def tirar_pele(grande, canto):
+        """Zera o alfa da peça onde a base diz que há pele/mão/chuteira.
+
+        É o que devolve o entalhe do polegar que a sangria encolhia: a
+        sangria fecha vãos, e esta subtração garante que nunca fecha POR
+        CIMA do corpo — as duas juntas dão o encaixe da referência.
+        """
+        arr = np.array(grande)
+        y0, x0 = int(canto[1]), int(canto[0])
+        cy0, cx0 = max(0, y0), max(0, x0)
+        cy1 = min(pele.shape[0], y0 + arr.shape[0])
+        cx1 = min(pele.shape[1], x0 + arr.shape[1])
+        if cy1 > cy0 and cx1 > cx0:
+            rec = pele[cy0:cy1, cx0:cx1]
+            arr[cy0 - y0:cy1 - y0, cx0 - x0:cx1 - x0][rec, 3] = 0
+        return Image.fromarray(arr)
+
+    def cobrir(grande, canto):
+        af = np.array(grande.getchannel('A')) > 60
+        y0, x0 = max(0, int(canto[1])), max(0, int(canto[0]))
+        rec = uniao[y0:y0 + af.shape[0], x0:x0 + af.shape[1]]
+        rec |= af[:rec.shape[0], :rec.shape[1]]
 
     # 1) as peças GRANDES encaixam nos buracos, cada uma na sua banda
     for zona in ('camisola', 'calcao', 'meiao'):
@@ -205,11 +269,14 @@ def montar(lado):
         recorte[: int(recorte.shape[0] * b0)] = 0
         recorte[int(recorte.shape[0] * b1):] = 0
         canto, escolhida, score = localizar_no_buraco(recorte, im, escala_base)
-        grande = im.resize((round(im.width * escolhida), round(im.height * escolhida)),
-                           Image.LANCZOS)
+        grande, canto = sangrar(
+            im.resize((round(im.width * escolhida), round(im.height * escolhida)),
+                      Image.LANCZOS), canto)
+        grande = tirar_pele(grande, canto)
         tela, x, y, larg, alt = para_tela(realcar(grande), canto)
         tela.save(f'{SAIDA}/vestida-{zona}-{lado}.png')
         guardadas[zona] = (canto, escolhida)
+        cobrir(grande, canto)
         # o que esta peça cobre sai do resíduo — é nele que a gola se acha
         af = np.array(grande.getchannel('A')) > 60
         y0, x0 = int(canto[1]), int(canto[0])
@@ -226,8 +293,13 @@ def montar(lado):
     im = pecas_nativas['mangas']
     rel, dif = localizar_dentro(pecas_nativas['camisola'], im)
     canto = (canto_cam[0] + rel[0] * esc_cam, canto_cam[1] + rel[1] * esc_cam)
-    grande = im.resize((round(im.width * esc_cam), round(im.height * esc_cam)),
-                       Image.LANCZOS)
+    # sangria curta: a tira é estreita e a versão forte espetava um nariz
+    # preto para fora da manga
+    grande, canto = sangrar(
+        im.resize((round(im.width * esc_cam), round(im.height * esc_cam)),
+                  Image.LANCZOS), canto, forca=5)
+    grande = tirar_pele(grande, canto)
+    cobrir(grande, canto)
     tela, x, y, larg, alt = para_tela(realcar(grande), canto)
     tela.save(f'{SAIDA}/vestida-mangas-{lado}.png')
     print(f'  mangas    camisa dif/px {dif:.1f} rel {rel} → '
@@ -250,10 +322,46 @@ def montar(lado):
         recorte[int(recorte.shape[0] * 0.30):] = 0
         canto, e, score = localizar_no_buraco(recorte, im, escala_base)
         via = f'resíduo {score:.3f} (camisa dif/px {dif:.0f})'
-    grande = im.resize((round(im.width * e), round(im.height * e)), Image.LANCZOS)
+    grande, canto = sangrar(
+        im.resize((round(im.width * e), round(im.height * e)),
+                  Image.LANCZOS), canto, forca=5)
+    grande = tirar_pele(grande, canto)
+    cobrir(grande, canto)
     tela, x, y, larg, alt = para_tela(realcar(grande), canto)
     tela.save(f'{SAIDA}/vestida-gola-{lado}.png')
     print(f'  gola      {via} → caixa x={x}, y={y}, w={larg}, h={alt}')
+
+    # FUNDO: o avatar vestido SEM o kit branco. Duas limpezas:
+    #  · onde a base diz que há tecido (buracos, dilatados 2 px);
+    #  · numa BANDA de ~10 px à volta do contorno das peças colocadas, tudo
+    #    o que for claro e sem saturação (mistura com o branco do render:
+    #    remates enrolados de bainha, punho e cano da meia) ou tiver alfa
+    #    baixo (penugem do recorte). A banda é ancorada às PEÇAS e não aos
+    #    buracos porque os remates ficam FORA dos buracos — foi por isso
+    #    que a primeira tentativa não lhes tocou. A pele sobrevive por ser
+    #    saturada; os dentes e o rosto ficam a dezenas de px da banda.
+    kit = cv2.dilate(buracos.astype(np.uint8),
+                     np.ones((5, 5), np.uint8)).astype(bool)
+    sem_kit = np.array(vestido)
+    sem_kit[kit, 3] = 0
+
+    banda = cv2.dilate(uniao.astype(np.uint8),
+                       np.ones((21, 21), np.uint8)).astype(bool)
+    rgb = sem_kit[..., :3].astype(np.int16)
+    claro = rgb.min(axis=-1) > 150
+    sem_cor = (rgb.max(axis=-1) - rgb.min(axis=-1)) < 50
+    penugem = sem_kit[..., 3] < 90
+    rasto = banda & (penugem | (claro & sem_cor)) & (sem_kit[..., 3] > 0)
+    # a ORLA da silhueta também: os degraus da pele têm salpicos de mistura
+    # clara que se leem como pontos brancos contra tecido escuro. Os dentes
+    # e os olhos ficam no interior do rosto, longe da orla de 3 px.
+    orla = cv2.dilate((sem_kit[..., 3] < 10).astype(np.uint8),
+                      np.ones((7, 7), np.uint8)).astype(bool)
+    rasto |= orla & claro & sem_cor & (sem_kit[..., 3] > 0)
+    sem_kit[rasto, 3] = 0
+    print(f'  rasto branco removido: {int(rasto.sum())} px')
+    tela, *_ = para_tela(Image.fromarray(sem_kit), (0, 0))
+    tela.save(f'{SAIDA}/jogador-{lado}.png')
 
     # chuteiras: os píxeis opacos da BASE abaixo do fim do buraco do meião.
     # Ficam numa camada PRÓPRIA, por cima do meião (z15 > z10 no viewer):
