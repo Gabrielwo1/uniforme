@@ -25,7 +25,7 @@ import os
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 M = 4
 W, H = 380 * M, 615 * M            # tela comum nova (wrapper 380×615)
@@ -106,19 +106,28 @@ def localizar_no_buraco(buracos, peca, escala_base):
     exporta tudo do mesmo documento.
     """
     alvo = buracos.astype(np.float32)
-    melhor = (None, escala_base, -1.0)
-    for esc in np.arange(escala_base * 0.9, escala_base * 1.12, 0.01):
-        larg, alt = int(peca.width * esc), int(peca.height * esc)
-        if larg < 4 or alt < 4 or larg > alvo.shape[1] or alt > alvo.shape[0]:
-            continue
-        modelo = np.array(
-            peca.resize((larg, alt), Image.LANCZOS).getchannel('A'),
-            dtype=np.float32) / 255.0
-        r = cv2.matchTemplate(alvo, modelo, cv2.TM_CCORR_NORMED)
-        _, score, _, canto = cv2.minMaxLoc(r)
-        if score > melhor[2]:
-            melhor = (canto, float(esc), score)
-    return melhor
+
+    def tenta(escalas, melhor):
+        for esc in escalas:
+            larg, alt = int(peca.width * esc), int(peca.height * esc)
+            if larg < 4 or alt < 4 or larg > alvo.shape[1] or alt > alvo.shape[0]:
+                continue
+            modelo = np.array(
+                peca.resize((larg, alt), Image.LANCZOS).getchannel('A'),
+                dtype=np.float32) / 255.0
+            r = cv2.matchTemplate(alvo, modelo, cv2.TM_CCORR_NORMED)
+            _, score, _, canto = cv2.minMaxLoc(r)
+            if score > melhor[2]:
+                melhor = (canto, float(esc), score)
+        return melhor
+
+    # grosso (passo 0,01) e depois FINO (0,002) à volta do melhor: o passo
+    # grosso deixava até 0,5% de desvio, que ao tamanho da peça são 2–4 px
+    # de folga nas bordas
+    melhor = tenta(np.arange(escala_base * 0.9, escala_base * 1.12, 0.01),
+                   (None, escala_base, -1.0))
+    e0 = melhor[1]
+    return tenta(np.arange(e0 - 0.008, e0 + 0.009, 0.002), melhor)
 
 
 FOLGA = 16
@@ -146,6 +155,19 @@ def localizar_dentro(mae, filha):
     minimo, _, canto, _ = cv2.minMaxLoc(r)
     area = max(1, int((mascara > 0).sum()))
     return (canto[0] - FOLGA, canto[1] - FOLGA), minimo / area
+
+
+def aproximar(im):
+    """Cresce a peça 1 px em todas as direções — um encosto, não uma
+    reconstrução: fecha folgas finas do encaixe sem mexer no desenho. A
+    margem transparente é necessária porque o conteúdo toca a borda do
+    próprio recorte (a bainha é a última linha do ficheiro) e o filtro não
+    cresce para fora da tela."""
+    com_margem = Image.new('RGBA', (im.width + 4, im.height + 4))
+    com_margem.alpha_composite(im, (2, 2))
+    crescida = com_margem.filter(ImageFilter.MaxFilter(3))
+    crescida.alpha_composite(com_margem)
+    return crescida
 
 
 def montar(lado):
@@ -205,11 +227,14 @@ def montar(lado):
         recorte[: int(recorte.shape[0] * b0)] = 0
         recorte[int(recorte.shape[0] * b1):] = 0
         canto, escolhida, score = localizar_no_buraco(recorte, im, escala_base)
-        grande = im.resize((round(im.width * escolhida), round(im.height * escolhida)),
-                           Image.LANCZOS)
+        grande = aproximar(
+            im.resize((round(im.width * escolhida), round(im.height * escolhida)),
+                      Image.LANCZOS))
+        canto0 = canto                      # posição do CONTEÚDO, sem a margem
+        canto = (canto[0] - 2, canto[1] - 2)
         tela, x, y, larg, alt = para_tela(realcar(grande), canto)
         tela.save(f'{SAIDA}/vestida-{zona}-{lado}.png')
-        guardadas[zona] = (canto, escolhida)
+        guardadas[zona] = (canto0, escolhida)
         # o que esta peça cobre sai do resíduo — é nele que a gola se acha
         af = np.array(grande.getchannel('A')) > 60
         y0, x0 = int(canto[1]), int(canto[0])
@@ -226,8 +251,9 @@ def montar(lado):
     im = pecas_nativas['mangas']
     rel, dif = localizar_dentro(pecas_nativas['camisola'], im)
     canto = (canto_cam[0] + rel[0] * esc_cam, canto_cam[1] + rel[1] * esc_cam)
-    grande = im.resize((round(im.width * esc_cam), round(im.height * esc_cam)),
-                       Image.LANCZOS)
+    grande = aproximar(im.resize((round(im.width * esc_cam), round(im.height * esc_cam)),
+                                  Image.LANCZOS))
+    canto = (canto[0] - 2, canto[1] - 2)
     tela, x, y, larg, alt = para_tela(realcar(grande), canto)
     tela.save(f'{SAIDA}/vestida-mangas-{lado}.png')
     print(f'  mangas    camisa dif/px {dif:.1f} rel {rel} → '
@@ -250,7 +276,9 @@ def montar(lado):
         recorte[int(recorte.shape[0] * 0.30):] = 0
         canto, e, score = localizar_no_buraco(recorte, im, escala_base)
         via = f'resíduo {score:.3f} (camisa dif/px {dif:.0f})'
-    grande = im.resize((round(im.width * e), round(im.height * e)), Image.LANCZOS)
+    grande = aproximar(im.resize((round(im.width * e), round(im.height * e)),
+                                  Image.LANCZOS))
+    canto = (canto[0] - 2, canto[1] - 2)
     tela, x, y, larg, alt = para_tela(realcar(grande), canto)
     tela.save(f'{SAIDA}/vestida-gola-{lado}.png')
     print(f'  gola      {via} → caixa x={x}, y={y}, w={larg}, h={alt}')
