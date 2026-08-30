@@ -334,17 +334,25 @@ def montar(lado):
     colocadas.append(('gola', grande, canto))
     print(f'  gola      {via}')
 
-    # KIT VISÍVEL = tecido branco do vestido que nenhuma peça cobre. Os
-    # renders são de gerações diferentes e o kit dele é mais largo — à
-    # vista, aparecia como uma silhueta branca duplicada à volta do
-    # conjunto. Cada peça é INUNDADA nele: cresce iterativamente só para
-    # dentro desse tecido, até ele acabar (máx. ~14 px). Onde não há kit
-    # não há crescimento — o desenho da peça não deforma.
-    kit = cv2.dilate(buracos.astype(np.uint8), np.ones((5, 5), np.uint8)) \
-              .astype(bool) | (branco_vest & corpo)
+    # A ideia ORIGINAL, com a técnica que faltava: o fundo fica SEM kit
+    # nenhum (só pele, cabeça e chuteiras do vestido, à resolução máxima)
+    # e cada píxel que era tecido é preenchido pela peça mais próxima, por
+    # INUNDAÇÃO — a peça cresce iterativamente só para dentro da região do
+    # kit, herdando as cores da própria borda. Não há linha branca (o kit
+    # branco desaparece todo do fundo) nem espaço fantasma (todo o kit é
+    # coberto por peça). Salvaguardas:
+    #   · ~pele: mãos, braços e joelhos nunca são removidos nem pintados —
+    #     os brilhos claros da pele ficavam na definição de "branco";
+    #   · vizinhança dos buracos (31 px): o resto do corpo nem é olhado;
+    #   · abaixo do topo da gola: dentes e rosto fora do alcance.
+    kit = (cv2.dilate(buracos.astype(np.uint8), np.ones((5, 5), np.uint8))
+               .astype(bool) | (branco_vest & corpo))
+    kit &= cv2.dilate(buracos.astype(np.uint8),
+                      np.ones((31, 31), np.uint8)).astype(bool)
+    kit &= ~pele
     ys_buraco = np.nonzero(buracos.any(axis=1))[0]
     topo_kit = max(0, int(ys_buraco.min()) - 4) if len(ys_buraco) else 0
-    kit[:topo_kit] = False                # protege dentes e brilhos do rosto
+    kit[:topo_kit] = False
     kit_visivel = kit & ~uniao
 
     nucleo3 = np.ones((3, 3), np.uint8)
@@ -359,7 +367,7 @@ def montar(lado):
         if cy1 > cy0 and cx1 > cx0:
             alvo[cy0 - y0:cy1 - y0, cx0 - x0:cx1 - x0] = kit_visivel[cy0:cy1, cx0:cx1]
         tem = arr[..., 3] > 60
-        for _ in range(14):
+        for _ in range(22):
             crescer = cv2.dilate(tem.astype(np.uint8), nucleo3).astype(bool) & alvo & ~tem
             if not crescer.any():
                 break
@@ -375,10 +383,11 @@ def montar(lado):
         tela.save(f'{SAIDA}/vestida-{zona}-{lado}.png')
         print(f'  {zona:9s} gravada → caixa x={x}, y={y}, w={larg}, h={alt}')
 
-    # FUNDO: o vestido com o kit que ainda ficasse à vista removido — as
-    # peças inundadas já cobrem o rasto até ~14 px; isto é o resguardo
+    # FUNDO: o vestido SEM O KIT TODO — não só o que estava à vista. As
+    # peças inundadas cobrem a região; o que escapar mostra o fundo da
+    # página, nunca tecido branco.
     sem = np.array(vestido)
-    sem[kit_visivel, 3] = 0
+    sem[kit, 3] = 0
     tela, *_ = para_tela(Image.fromarray(sem), (0, 0))
     tela.save(f'{SAIDA}/jogador-{lado}.png')
 
