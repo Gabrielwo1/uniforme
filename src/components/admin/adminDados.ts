@@ -21,7 +21,16 @@ export interface ArtigoDoLead {
 interface ItemKit {
   nome?: string;
   quantidade?: number;
+  /** Linhas do orçamento por peça (formato novo, 2026-08): a quantidade do
+      conjunto passa a ser a maior linha incluída. */
+  linhas?: Record<string, { incluida?: boolean; quantidade?: number }>;
   design?: KitDesign;
+}
+
+function quantidadeDoKit(item: ItemKit): number {
+  const incluidas = Object.values(item.linhas ?? {}).filter((l) => l.incluida !== false);
+  if (incluidas.length === 0) return item.quantidade ?? 1;
+  return Math.max(...incluidas.map((l) => l.quantidade ?? 1));
 }
 
 interface ItemAntigo {
@@ -43,7 +52,7 @@ export function artigosDoLead(lead: LeadRow): ArtigoDoLead[] {
     if (eDoSimulador(item)) {
       return {
         nome: item.nome ?? 'Conjunto',
-        quantidade: item.quantidade ?? 1,
+        quantidade: quantidadeDoKit(item),
         design: item.design,
       };
     }

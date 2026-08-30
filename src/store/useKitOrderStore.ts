@@ -1,21 +1,23 @@
 import { create } from 'zustand';
-import type { KitDesign } from '@/types/kit';
-import type { KitOrderItem } from '@/types/kitOrder';
+import { PECAS_KIT, type KitDesign, type PecaKit } from '@/types/kit';
+import type { KitOrderItem, LinhaOrcamento } from '@/types/kitOrder';
 import type { OrderCustomer } from '@/types/order';
 
 /**
- * Carrinho do SIMULADOR DE CONJUNTOS — sem IA.
+ * Orçamento do SIMULADOR DE CONJUNTOS — sem IA.
  *
- * Fluxo: "Adicionar ao carrinho" no simulador → painel lateral em dois
- * passos (lista → dados do cliente) → página de checkout. É o mesmo
- * desenho do fluxo antigo, mas sem a geração de foto pelo caminho: o
- * conjunto já é a imagem final, composta pelo motor.
+ * Fluxo: "Adicionar outro" guarda o conjunto e continua; "Orçamento" abre a
+ * página do orçamento (estilo do concorrente), onde cada conjunto se
+ * desdobra em três linhas — camisola, calção, meião — com quantidade,
+ * tamanhos e personalização por linha.
  */
 
 const KEY = 'kypzl:kit-order:v1';
 const CLIENTE_KEY = 'esportes:order:customer:v1'; // partilhado com o fluxo antigo
 
-export type PassoPainel = 'carrinho' | 'dados';
+/** Quantidade com que cada linha nasce — o mínimo habitual de produção
+    (o concorrente usa o mesmo valor). */
+export const QUANTIDADE_INICIAL = 10;
 
 const CLIENTE_VAZIO: OrderCustomer = { name: '', email: '', phone: '', club: '', notes: '' };
 
@@ -36,43 +38,49 @@ function gravar(chave: string, valor: unknown) {
   }
 }
 
+function linhasNovas(quantidade = QUANTIDADE_INICIAL): Record<PecaKit, LinhaOrcamento> {
+  return Object.fromEntries(
+    PECAS_KIT.map((p) => [p, { incluida: true, quantidade }]),
+  ) as Record<PecaKit, LinhaOrcamento>;
+}
+
+/** Carrinhos gravados antes das linhas existirem ganham-nas ao carregar,
+    herdando a quantidade do conjunto (se era 1, era só o valor por
+    omissão de então — sobe para o mínimo). */
+function migrar(itens: KitOrderItem[]): KitOrderItem[] {
+  return itens.map((i) =>
+    i.linhas ? i : { ...i, linhas: linhasNovas(i.quantidade > 1 ? i.quantidade : QUANTIDADE_INICIAL) },
+  );
+}
+
 export interface KitOrderStore {
   itens: KitOrderItem[];
   cliente: OrderCustomer;
-  painelAberto: boolean;
-  passo: PassoPainel;
 
   adicionar: (design: KitDesign, nome: string) => void;
   remover: (id: string) => void;
-  setQuantidade: (id: string, quantidade: number) => void;
+  setLinha: (id: string, peca: PecaKit, mudanca: Partial<LinhaOrcamento>) => void;
   limpar: () => void;
   setCliente: (cliente: OrderCustomer) => void;
-  abrirPainel: () => void;
-  fecharPainel: () => void;
-  setPasso: (passo: PassoPainel) => void;
 }
 
 export const useKitOrderStore = create<KitOrderStore>((set, get) => ({
-  itens: ler<KitOrderItem[]>(KEY, []),
+  itens: migrar(ler<KitOrderItem[]>(KEY, [])),
   cliente: { ...CLIENTE_VAZIO, ...ler<Partial<OrderCustomer>>(CLIENTE_KEY, {}) },
-  painelAberto: false,
-  passo: 'carrinho',
 
   adicionar: (design, nome) => {
     const item: KitOrderItem = {
       // o design é clonado: editar o simulador a seguir não pode mexer
-      // no que já está no carrinho
+      // no que já está no orçamento
       id: `kit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       nome,
       design: JSON.parse(JSON.stringify(design)) as KitDesign,
       quantidade: 1,
+      linhas: linhasNovas(),
       createdAt: new Date().toISOString(),
     };
     const itens = [...get().itens, item];
-    // NÃO abre o painel: quem carrega em "Adicionar outro" quer continuar a
-    // personalizar, e ver o carrinho saltar à frente a cada conjunto é uma
-    // interrupção. A confirmação é a notificação que o simulador mostra.
-    set({ itens, passo: 'carrinho' });
+    set({ itens });
     gravar(KEY, itens);
   },
 
@@ -82,10 +90,18 @@ export const useKitOrderStore = create<KitOrderStore>((set, get) => ({
     gravar(KEY, itens);
   },
 
-  setQuantidade: (id, quantidade) => {
-    const itens = get().itens.map((i) =>
-      i.id === id ? { ...i, quantidade: Math.max(1, quantidade) } : i,
-    );
+  setLinha: (id, peca, mudanca) => {
+    const itens = get().itens.map((i) => {
+      if (i.id !== id) return i;
+      const atual = i.linhas?.[peca] ?? { incluida: true, quantidade: QUANTIDADE_INICIAL };
+      const linha: LinhaOrcamento = { ...atual, ...mudanca };
+      // os tamanhos, quando definidos, SÃO a quantidade — duas fontes da
+      // mesma conta divergem sempre
+      const somaTamanhos = Object.values(linha.tamanhos ?? {}).reduce((n, q) => n + q, 0);
+      if (somaTamanhos > 0) linha.quantidade = somaTamanhos;
+      linha.quantidade = Math.max(1, linha.quantidade);
+      return { ...i, linhas: { ...(i.linhas ?? linhasNovas()), [peca]: linha } };
+    });
     set({ itens });
     gravar(KEY, itens);
   },
@@ -99,9 +115,4 @@ export const useKitOrderStore = create<KitOrderStore>((set, get) => ({
     set({ cliente });
     gravar(CLIENTE_KEY, cliente);
   },
-
-  /** Abre sempre na lista — os dados são o passo seguinte. */
-  abrirPainel: () => set({ painelAberto: true, passo: 'carrinho' }),
-  fecharPainel: () => set({ painelAberto: false }),
-  setPasso: (passo) => set({ passo }),
 }));

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgePlus, Moon, Plus, RotateCcw, Shirt, ShoppingBag, Sun, Type } from 'lucide-react';
+import { ArrowLeft, BadgePlus, ClipboardList, Moon, Plus, RotateCcw, Shirt, Sun, Type } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
 import { toast } from 'sonner';
 import { useFlowStore } from '@/store/useFlowStore';
@@ -11,7 +11,6 @@ import { PECAS_KIT } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { CadeadoConjunto, GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
-import { KitCartDrawer } from './KitCartDrawer';
 import { PainelAplicacoes } from './PainelAplicacoes';
 import { TelaCarregamento } from './TelaCarregamento';
 import { Animacao } from '../ui/animacao';
@@ -38,10 +37,7 @@ export function KitLab() {
   const reset = useKitStore((s) => s.reset);
   const design = useKitStore((s) => s.design);
   const adicionar = useKitOrderStore((s) => s.adicionar);
-  const abrirPainel = useKitOrderStore((s) => s.abrirPainel);
-  const noCarrinho = useKitOrderStore((s) =>
-    s.itens.reduce((n, i) => n + i.quantidade, 0),
-  );
+  const noOrcamento = useKitOrderStore((s) => s.itens.length);
   const [menu, setMenu] = useState<MenuTopo>('estampas');
   const setLocalEmFoco = useKitStore((s) => s.setLocalEmFoco);
   const aplicacoes = useKitStore((s) => s.design.aplicacoes);
@@ -60,19 +56,19 @@ export function KitLab() {
     const estampa = estampaDemoPorId('camisola', design.pecas.camisola.estampaId);
     const nome = `${estampa.nome} · ${estampa.codModelo}`;
     adicionar(design, nome);
-    toast.success(`${nome} adicionado ao carrinho`, {
-      description: 'Camisola, calção e meião. Continue a personalizar ou finalize o pedido.',
+    toast.success(`${nome} adicionado ao orçamento`, {
+      description: 'Camisola, calção e meião. Continue a personalizar ou peça o orçamento.',
       icon: <Animacao dados={sucesso} className="h-6 w-6" />,
-      action: { label: 'Ver pedido', onClick: abrirPainel },
+      action: { label: 'Ver orçamento', onClick: () => useFlowStore.getState().goToKitCheckout() },
     });
   };
 
-  /** Com o carrinho vazio, o conjunto que está no ecrã conta como o pedido:
-      abrir o painel a dizer "ainda não adicionou nada" com o conjunto ali à
+  /** Com o orçamento vazio, o conjunto que está no ecrã conta como o
+      pedido: abrir a página a dizer "está vazio" com o conjunto ali à
       frente seria um beco sem saída. */
-  const finalizar = () => {
-    if (noCarrinho === 0) adicionarAoCarrinho();
-    abrirPainel();
+  const orcamento = () => {
+    if (noOrcamento === 0) adicionarAoCarrinho();
+    useFlowStore.getState().goToKitCheckout();
   };
 
   // A estampa real pesa ~3 MB de vetores: entra por import dinâmico para não
@@ -148,12 +144,12 @@ export function KitLab() {
           <Plus />
           Adicionar outro
         </Button>
-        <Button size="sm" onClick={finalizar} className="relative">
-          <ShoppingBag />
-          Finalizar pedido
-          {noCarrinho > 0 && (
+        <Button size="sm" onClick={orcamento} className="relative">
+          <ClipboardList />
+          Orçamento
+          {noOrcamento > 0 && (
             <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary-foreground px-1 text-[10px] font-bold text-primary">
-              {noCarrinho}
+              {noOrcamento}
             </span>
           )}
         </Button>
@@ -224,7 +220,6 @@ export function KitLab() {
         </aside>
       </div>
 
-      <KitCartDrawer />
     </div>
   );
 }
