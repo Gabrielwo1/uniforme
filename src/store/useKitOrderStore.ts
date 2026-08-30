@@ -95,10 +95,6 @@ export const useKitOrderStore = create<KitOrderStore>((set, get) => ({
       if (i.id !== id) return i;
       const atual = i.linhas?.[peca] ?? { incluida: true, quantidade: QUANTIDADE_INICIAL };
       const linha: LinhaOrcamento = { ...atual, ...mudanca };
-      // os tamanhos, quando definidos, SÃO a quantidade — duas fontes da
-      // mesma conta divergem sempre
-      const somaTamanhos = Object.values(linha.tamanhos ?? {}).reduce((n, q) => n + q, 0);
-      if (somaTamanhos > 0) linha.quantidade = somaTamanhos;
       linha.quantidade = Math.max(1, linha.quantidade);
       return { ...i, linhas: { ...(i.linhas ?? linhasNovas()), [peca]: linha } };
     });

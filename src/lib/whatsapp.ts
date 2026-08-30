@@ -23,17 +23,6 @@ export const WHATSAPP_KYPZL = '351912300289';
 /** Além disto o WhatsApp começa a truncar em alguns clientes. */
 const LIMITE = 1600;
 
-/** Lista curta (nomes/números) inline se couber; senão só a contagem —
-    o detalhe completo vive no pedido registado. */
-function resumir(rotulo: string, valores: string[]): string | null {
-  const cheios = valores.filter((v) => v.trim());
-  if (cheios.length === 0) return null;
-  const juntos = cheios.join(', ');
-  return juntos.length <= 120
-    ? `      ${rotulo}: ${juntos}`
-    : `      ${rotulo}: ${cheios.length} (no pedido registado)`;
-}
-
 function linhasDoConjunto(item: KitOrderItem): string[] {
   const linhas = [`▪️ ${item.nome}`];
 
@@ -52,15 +41,6 @@ function linhasDoConjunto(item: KitOrderItem): string[] {
     const unicas = [...new Set(cores.map((c) => c.toUpperCase()))];
     const qtd = orc?.quantidade ?? item.quantidade;
     linhas.push(`   ${qtd}× ${PECA_LABEL[peca]}: ${estampa.nome} · ${unicas.join(' ')}`);
-
-    const tamanhos = Object.entries(orc?.tamanhos ?? {}).filter(([, n]) => n > 0);
-    if (tamanhos.length > 0) {
-      linhas.push(`      Tamanhos: ${tamanhos.map(([t, n]) => `${t}×${n}`).join(' ')}`);
-    }
-    const nomes = resumir('Nomes', orc?.nomes ?? []);
-    if (nomes) linhas.push(nomes);
-    const numeros = resumir('Números', orc?.numeros ?? []);
-    if (numeros) linhas.push(numeros);
   }
 
   for (const a of item.design.aplicacoes ?? []) {

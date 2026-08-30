@@ -17,35 +17,22 @@ import { CustomerForm, isCustomerValid } from '../CustomerForm';
 import { Button } from '../ui/button';
 import { Animacao } from '../ui/animacao';
 import { IconeWhatsApp } from '../ui/icone-whatsapp';
-import { Textarea } from '../ui/textarea';
 import sucesso from '@/assets/animacoes/sucesso.json';
 import { KitPreview } from './KitPreview';
 
 /**
- * Página do ORÇAMENTO — a arquitetura do concorrente, passo a passo:
+ * Página do ORÇAMENTO, passo a passo (a arquitetura do concorrente, mas
+ * no NOSSO design system — tokens da plataforma, sem cores próprias):
  *
- *   1. Itens adicionados: cada conjunto numa faixa própria, desdobrado em
- *      três linhas (camisola, calção, meião) com marcar/desmarcar,
- *      quantidade e os detalhes "Adicione" (tamanho, nome, número).
+ *   1. Itens adicionados: cada conjunto no seu cartão, desdobrado em três
+ *      linhas (camisola, calção, meião) com marcar/desmarcar e quantidade.
  *   2. Os dados do cliente.
  *   3. Enviar — o resumo abre no WhatsApp e o pedido fica registado.
  *
+ * Sem tamanhos, nomes ou números aqui (decisão do cliente): só as
+ * quantidades por peça; o resto combina-se na conversa.
  * SEM IA: o conjunto composto pelo motor É a imagem final.
  */
-
-/** A cor da faixa do concorrente — deliberadamente fixa (não segue o tema):
-    é a identidade desta página nos dois modos. */
-const FAIXA = 'bg-[#4e6a70] text-white';
-
-const TAMANHOS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
-
-/** Que detalhes fazem sentido por peça (como no concorrente: a camisola
-    leva tudo, o calção não leva nome, o meião só tamanhos). */
-const DETALHES: Record<PecaKit, Array<'tamanho' | 'nome' | 'numero'>> = {
-  camisola: ['tamanho', 'nome', 'numero'],
-  calcao: ['tamanho', 'numero'],
-  meiao: ['tamanho'],
-};
 
 const LINHA_PADRAO: LinhaOrcamento = { incluida: true, quantidade: QUANTIDADE_INICIAL };
 
@@ -140,7 +127,7 @@ export function KitCheckout() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl space-y-10 p-5 pb-16">
+        <div className="mx-auto max-w-4xl space-y-8 p-5 pb-16">
           <Passo n={1} titulo="Itens adicionados ao seu orçamento">
             {itens.length === 0 ? (
               <p className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
@@ -153,9 +140,9 @@ export function KitCheckout() {
                 </button>
               </p>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {itens.map((item) => (
-                  <BandaConjunto key={item.id} item={item} />
+                  <CartaoConjunto key={item.id} item={item} />
                 ))}
               </div>
             )}
@@ -204,32 +191,35 @@ export function KitCheckout() {
   );
 }
 
-/** Cabeçalho numerado de cada passo, como no concorrente. */
+/** Cabeçalho numerado de cada passo — o mesmo desenho dos passos "o que
+    acontece a seguir", em ponto grande. */
 function Passo({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
   return (
     <section>
-      <div className="mb-3 flex items-center gap-3">
-        <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg font-bold', FAIXA)}>
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-sm font-bold text-background">
           {n}
         </span>
-        <h2 className="text-sm font-extrabold uppercase tracking-wide">{titulo}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {titulo}
+        </h2>
       </div>
       {children}
     </section>
   );
 }
 
-/** Um conjunto do orçamento: faixa com o nome, miniatura e as três linhas. */
-function BandaConjunto({ item }: { item: KitOrderItem }) {
+/** Um conjunto do orçamento: cartão com o nome, miniatura e as três linhas. */
+function CartaoConjunto({ item }: { item: KitOrderItem }) {
   const remover = useKitOrderStore((s) => s.remover);
 
   return (
     <section className="overflow-hidden rounded-lg border bg-card">
-      <div className={cn('flex items-center gap-2 px-4 py-2.5', FAIXA)}>
-        <h3 className="text-sm font-bold uppercase tracking-wide">— {item.nome}</h3>
+      <div className="flex items-center gap-2 border-b px-4 py-2.5">
+        <h3 className="text-sm font-bold">{item.nome}</h3>
         <button
           onClick={() => remover(item.id)}
-          className="ml-auto grid h-7 w-7 place-items-center rounded transition hover:bg-white/15"
+          className="ml-auto grid h-7 w-7 place-items-center rounded text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
           title="Remover este conjunto do orçamento"
         >
           <Trash2 className="h-4 w-4" />
@@ -243,11 +233,10 @@ function BandaConjunto({ item }: { item: KitOrderItem }) {
         </div>
 
         <div>
-          <div className="mb-2 hidden grid-cols-[minmax(0,1fr)_150px_minmax(0,220px)] gap-3 text-xs text-muted-foreground sm:grid">
-            <span>Produto (desmarque para remover ou marque para adicionar)</span>
-            <span className="text-center">Quantidade</span>
-            <span>Adicione</span>
-          </div>
+          <p className="mb-2 text-[11px] text-muted-foreground">
+            Desmarque uma peça para a tirar do orçamento — ou marque para a
+            voltar a pôr.
+          </p>
           <div className="space-y-2">
             {PECAS_KIT.map((peca) => (
               <LinhaPeca key={peca} item={item} peca={peca} />
@@ -256,7 +245,7 @@ function BandaConjunto({ item }: { item: KitOrderItem }) {
         </div>
       </div>
 
-      <details className="group border-t">
+      <details className="border-t">
         <summary className="cursor-pointer select-none px-4 py-2 text-xs font-semibold text-muted-foreground transition hover:text-foreground">
           Ficha técnica (cores e personalização)
         </summary>
@@ -268,152 +257,62 @@ function BandaConjunto({ item }: { item: KitOrderItem }) {
   );
 }
 
-/** Uma linha do orçamento: check, nome da peça, quantidade e detalhes. */
+/** Uma linha do orçamento: check, nome da peça e quantidade. */
 function LinhaPeca({ item, peca }: { item: KitOrderItem; peca: PecaKit }) {
   const setLinha = useKitOrderStore((s) => s.setLinha);
   const linha = linhaDe(item, peca);
-  const [editor, setEditor] = useState<'tamanho' | 'nome' | 'numero' | null>(null);
-
-  const somaTamanhos = Object.values(linha.tamanhos ?? {}).reduce((n, q) => n + q, 0);
-  const nomes = (linha.nomes ?? []).filter((n) => n.trim());
-  const numeros = (linha.numeros ?? []).filter((n) => n.trim());
-  const contagem = { tamanho: somaTamanhos, nome: nomes.length, numero: numeros.length };
-  const rotulos = { tamanho: 'Tamanho', nome: 'Nome', numero: 'Número' } as const;
-
   const mudar = (mudanca: Partial<LinhaOrcamento>) => setLinha(item.id, peca, mudanca);
 
   return (
-    <div className={cn('rounded-md border transition', !linha.incluida && 'bg-muted/40')}>
-      <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-2 p-2.5 sm:grid-cols-[minmax(0,1fr)_150px_minmax(0,220px)] sm:gap-3">
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-md border p-2.5 transition',
+        !linha.incluida && 'bg-muted/40',
+      )}
+    >
+      <button
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        onClick={() => mudar({ incluida: !linha.incluida })}
+        title={linha.incluida ? 'Desmarcar para remover do orçamento' : 'Marcar para adicionar'}
+      >
+        <CheckCircle2
+          className={cn(
+            'h-5 w-5 shrink-0 transition',
+            linha.incluida ? 'text-primary' : 'text-muted-foreground/30',
+          )}
+        />
+        <span
+          className={cn(
+            'truncate text-sm font-bold',
+            !linha.incluida && 'text-muted-foreground line-through',
+          )}
+        >
+          {PECA_LABEL[peca]}
+        </span>
+      </button>
+
+      <div
+        className={cn(
+          'flex items-center gap-1.5',
+          !linha.incluida && 'pointer-events-none opacity-40',
+        )}
+      >
         <button
-          className="flex min-w-0 items-center gap-2 text-left"
-          onClick={() => mudar({ incluida: !linha.incluida })}
-          title={linha.incluida ? 'Desmarcar para remover do orçamento' : 'Marcar para adicionar'}
+          onClick={() => mudar({ quantidade: linha.quantidade - 1 })}
+          className="grid h-6 w-6 place-items-center rounded border transition hover:bg-accent"
+          title="Menos um"
         >
-          <CheckCircle2
-            className={cn(
-              'h-5 w-5 shrink-0 transition',
-              linha.incluida ? 'text-green-600' : 'text-muted-foreground/30',
-            )}
-          />
-          <span
-            className={cn(
-              'truncate text-sm font-bold',
-              !linha.incluida && 'text-muted-foreground line-through',
-            )}
-          >
-            {PECA_LABEL[peca]}
-          </span>
+          <Minus className="h-3 w-3" />
         </button>
-
-        <div
-          className={cn(
-            'flex items-center justify-center gap-1.5',
-            !linha.incluida && 'pointer-events-none opacity-40',
-          )}
+        <span className="min-w-8 text-center text-sm font-bold">{linha.quantidade}</span>
+        <button
+          onClick={() => mudar({ quantidade: linha.quantidade + 1 })}
+          className="grid h-6 w-6 place-items-center rounded border transition hover:bg-accent"
+          title="Mais um"
         >
-          <button
-            onClick={() => mudar({ quantidade: linha.quantidade - 1 })}
-            disabled={somaTamanhos > 0}
-            className="grid h-7 w-7 place-items-center rounded-full border transition hover:bg-accent disabled:opacity-40"
-            title={somaTamanhos > 0 ? 'A quantidade vem dos tamanhos' : 'Menos um'}
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <span className="grid h-8 w-14 place-items-center rounded border text-sm font-bold">
-            {linha.quantidade}
-          </span>
-          <button
-            onClick={() => mudar({ quantidade: linha.quantidade + 1 })}
-            disabled={somaTamanhos > 0}
-            className="grid h-7 w-7 place-items-center rounded-full border transition hover:bg-accent disabled:opacity-40"
-            title={somaTamanhos > 0 ? 'A quantidade vem dos tamanhos' : 'Mais um'}
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        </div>
-
-        <div
-          className={cn(
-            'flex flex-wrap items-center gap-1.5',
-            !linha.incluida && 'pointer-events-none opacity-40',
-          )}
-        >
-          {DETALHES[peca].map((d) => (
-            <button
-              key={d}
-              onClick={() => setEditor(editor === d ? null : d)}
-              className={cn(
-                'flex items-center gap-1 rounded px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide transition',
-                editor === d ? 'bg-foreground text-background' : cn(FAIXA, 'hover:brightness-110'),
-              )}
-            >
-              • {rotulos[d]}
-              {contagem[d] > 0 && (
-                <span className="grid h-4 min-w-4 place-items-center rounded-full bg-white/25 px-1 text-[9px]">
-                  {contagem[d]}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+          <Plus className="h-3 w-3" />
+        </button>
       </div>
-
-      {editor === 'tamanho' && linha.incluida && (
-        <div className="border-t bg-muted/40 p-3">
-          <div className="flex flex-wrap gap-2">
-            {TAMANHOS.map((t) => (
-              <label key={t} className="flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground">{t}</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={linha.tamanhos?.[t] ?? ''}
-                  placeholder="0"
-                  onChange={(e) => {
-                    const n = Math.max(0, Number(e.target.value) || 0);
-                    const tamanhos = { ...(linha.tamanhos ?? {}) };
-                    if (n > 0) tamanhos[t] = n;
-                    else delete tamanhos[t];
-                    mudar({ tamanhos });
-                  }}
-                  className="h-8 w-12 rounded border bg-background text-center text-sm font-bold"
-                />
-              </label>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            Com tamanhos definidos, a quantidade da linha passa a ser a soma
-            ({somaTamanhos > 0 ? somaTamanhos : '—'}).
-          </p>
-        </div>
-      )}
-
-      {(editor === 'nome' || editor === 'numero') && linha.incluida && (
-        <div className="border-t bg-muted/40 p-3">
-          <Textarea
-            rows={4}
-            value={(editor === 'nome' ? linha.nomes : linha.numeros)?.join('\n') ?? ''}
-            placeholder={
-              editor === 'nome'
-                ? 'Um nome por linha — ex.:\nRICARDO\nJOÃO'
-                : 'Um número por linha — ex.:\n10\n7'
-            }
-            onChange={(e) =>
-              mudar(
-                editor === 'nome'
-                  ? { nomes: e.target.value.split('\n') }
-                  : { numeros: e.target.value.split('\n') },
-              )
-            }
-            className="bg-background font-mono text-sm"
-          />
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {editor === 'nome' ? 'Nomes' : 'Números'} a estampar, um por
-            unidade — pode também deixar em branco e combinar depois.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

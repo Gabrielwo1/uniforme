@@ -10,21 +10,14 @@ import type { KitDesign, PecaKit } from './kit';
  */
 
 /**
- * Uma linha do orçamento — UMA peça do conjunto, como no concorrente:
- * cada conjunto abre em três produtos que se podem tirar/pôr, quantificar
- * e detalhar (tamanhos, nomes, números por unidade).
+ * Uma linha do orçamento — UMA peça do conjunto: cada conjunto abre em
+ * três produtos que se podem tirar/pôr e quantificar. Tamanhos, nomes e
+ * números ficam para a conversa (decisão do cliente: só quantidades).
  */
 export interface LinhaOrcamento {
   /** Desmarcada = a peça sai do orçamento (mas fica na linha, remarcável). */
   incluida: boolean;
   quantidade: number;
-  /** Distribuição por tamanho (ex.: `{ M: 4, L: 6 }`). Quando tem algum
-      valor, a quantidade da linha é a SOMA disto — uma fonte só. */
-  tamanhos?: Record<string, number>;
-  /** Nomes a estampar, um por unidade (só faz sentido na camisola). */
-  nomes?: string[];
-  /** Números a estampar, um por unidade (camisola e calção). */
-  numeros?: string[];
 }
 
 export interface KitOrderItem {
