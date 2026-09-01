@@ -1,5 +1,5 @@
 import type { SVGProps } from 'react';
-import { Shirt, Volleyball } from 'lucide-react';
+import { ArrowRight, Shirt, Volleyball } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -80,6 +80,21 @@ export function OutrosSimuladores({ className }: { className?: string }) {
           <Icone className="h-[18px] w-[18px]" />
         </button>
       ))}
+
+      {/* o "ver todos" do concorrente — enquanto não houver página de
+          segmentos, responde com o que está disponível e o que vem aí */}
+      <button
+        onClick={() =>
+          toast.info('Todos os simuladores', {
+            description:
+              'Futebol já está disponível. Basquetebol, voleibol e treino/pólos estão a caminho.',
+          })
+        }
+        className="ml-1 flex h-7 items-center gap-1 rounded-md border px-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground transition hover:bg-accent hover:text-foreground"
+      >
+        Ver todos
+        <ArrowRight className="h-3 w-3" />
+      </button>
     </div>
   );
 }
