@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Mail, Minus, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QUANTIDADE_INICIAL, useKitOrderStore } from '@/store/useKitOrderStore';
 import logoUrl from '@/assets/kypzl-logo.png';
@@ -8,7 +8,7 @@ import { submitKitOrder } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { downloadText } from '@/lib/download';
 import { cn } from '@/lib/utils';
-import { linkWhatsApp } from '@/lib/whatsapp';
+import { linkEmail, linkWhatsApp } from '@/lib/whatsapp';
 import { estampaDemoPorId, moldeDemo } from '@/lib/kitDemo';
 import { fontePorId, localPorId } from '@/lib/kitLocais';
 import { PECAS_KIT, PECA_LABEL, type PecaKit } from '@/types/kit';
@@ -47,7 +47,7 @@ export function KitCheckout() {
   const limpar = useKitOrderStore((s) => s.limpar);
 
   const [aEnviar, setAEnviar] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+  const [enviado, setEnviado] = useState<'whatsapp' | 'email' | null>(null);
 
   const totalPecas = itens.reduce(
     (n, i) =>
@@ -59,21 +59,27 @@ export function KitCheckout() {
     0,
   );
 
-  const enviar = async () => {
+  const enviar = async (canal: 'whatsapp' | 'email') => {
     if (!isCustomerValid(cliente)) {
       toast.error('Preencha nome e e-mail para pedir o orçamento.');
       return;
     }
 
-    // A janela abre AQUI, ainda dentro do clique: depois do primeiro await
-    // o browser já não a reconhece como gesto do utilizador e o bloqueador
-    // de popups engole-a.
-    const janela = window.open(linkWhatsApp(cliente, itens), '_blank', 'noopener');
+    // O resumo abre AQUI, ainda dentro do clique: depois do primeiro await
+    // o browser já não o reconhece como gesto do utilizador e o bloqueador
+    // de popups engole a janela. O mailto não abre janela nova — entrega o
+    // resumo ao programa de e-mail sem sair da página.
+    let janela: Window | null = null;
+    if (canal === 'whatsapp') {
+      janela = window.open(linkWhatsApp(cliente, itens), '_blank', 'noopener');
+    } else {
+      window.location.href = linkEmail(cliente, itens);
+    }
 
     setAEnviar(true);
     try {
       // o registo continua a ser feito: é dele que vive a lista de leads,
-      // e a conversa no WhatsApp pode nunca chegar a ser enviada
+      // e a mensagem pode nunca chegar a ser enviada
       if (isSupabaseConfigured) {
         await submitKitOrder(cliente, itens);
       } else {
@@ -82,9 +88,11 @@ export function KitCheckout() {
           `orcamento-kypzl-${Date.now()}.json`,
         );
       }
-      if (!janela) toast.warning('Permita janelas para abrir o WhatsApp.');
+      if (canal === 'whatsapp' && !janela) {
+        toast.warning('Permita janelas para abrir o WhatsApp.');
+      }
       limpar();
-      setEnviado(true);
+      setEnviado(canal);
     } catch (e) {
       console.warn('[orçamento]', e);
       toast.error('Não foi possível registar o pedido. Tente novamente.');
@@ -100,8 +108,9 @@ export function KitCheckout() {
           <Animacao dados={sucesso} className="mx-auto mb-2 h-28 w-28" />
           <h1 className="text-2xl font-bold">Pedido de orçamento enviado</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            O resumo abriu no WhatsApp. Envie a mensagem e a equipa KYPZL
-            responde com o orçamento e os prazos.
+            {enviado === 'whatsapp'
+              ? 'O resumo abriu no WhatsApp. Envie a mensagem e a equipa KYPZL responde com o orçamento e os prazos.'
+              : 'O resumo abriu no seu programa de e-mail. Envie a mensagem e a equipa KYPZL responde com o orçamento e os prazos.'}
           </p>
           <Button className="mt-6" onClick={() => useFlowStore.getState().goToSite()}>
             Voltar ao site
@@ -158,7 +167,7 @@ export function KitCheckout() {
             <div className="rounded-lg border bg-card p-4">
               <ol className="mb-4 space-y-2 text-xs text-muted-foreground">
                 {[
-                  'O resumo abre no WhatsApp — basta enviar.',
+                  'O resumo abre no WhatsApp ou no e-mail — basta enviar.',
                   'Revemos o conjunto e respondemos com o orçamento e prazos.',
                   'Depois da sua aprovação, entra em produção.',
                 ].map((passo, i) => (
@@ -171,9 +180,21 @@ export function KitCheckout() {
                 ))}
               </ol>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Button className="flex-1" disabled={aEnviar || itens.length === 0} onClick={enviar}>
+                <Button
+                  className="flex-1"
+                  disabled={aEnviar || itens.length === 0}
+                  onClick={() => enviar('whatsapp')}
+                >
                   {aEnviar ? <Loader2 className="animate-spin" /> : <IconeWhatsApp />}
                   {aEnviar ? 'A enviar…' : 'Pedir orçamento por WhatsApp'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={aEnviar || itens.length === 0}
+                  onClick={() => enviar('email')}
+                >
+                  <Mail /> Enviar por e-mail
                 </Button>
                 <Button
                   variant="outline"

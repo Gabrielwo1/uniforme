@@ -80,3 +80,15 @@ export function linkWhatsApp(cliente: OrderCustomer, itens: KitOrderItem[]): str
   const texto = encodeURIComponent(mensagemDoPedido(cliente, itens));
   return `https://wa.me/${WHATSAPP_KYPZL}?text=${texto}`;
 }
+
+/** E-mail geral da KYPZL. */
+export const EMAIL_KYPZL = 'info@kypzl.pt';
+
+/** `mailto:` com o MESMO resumo — para quem prefere e-mail a WhatsApp.
+    O limite prático de um mailto anda perto do do wa.me, por isso a
+    mensagem (já capada a 1600) serve as duas vias. */
+export function linkEmail(cliente: OrderCustomer, itens: KitOrderItem[]): string {
+  const assunto = encodeURIComponent('Pedido de orçamento — simulador KYPZL');
+  const corpo = encodeURIComponent(mensagemDoPedido(cliente, itens));
+  return `mailto:${EMAIL_KYPZL}?subject=${assunto}&body=${corpo}`;
+}
