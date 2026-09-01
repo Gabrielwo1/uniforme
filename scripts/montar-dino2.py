@@ -157,6 +157,40 @@ def localizar_dentro(mae, filha):
     return (canto[0] - FOLGA, canto[1] - FOLGA), minimo / area
 
 
+def alinhar_tira(mae, filha):
+    """Canto da TIRA do punho dentro da camisa, por GEOMETRIA.
+
+    A tira partilha o QUADRO horizontal da camisa (o recorte do designer
+    tem exatamente a mesma largura), mas perdeu o offset vertical ao ser
+    cortada ao conteúdo. O SQDIFF não serve aqui: a tira é escura e a
+    manga clara, o mínimo caía 2–3 px acima do sítio e o punho da camisa
+    espreitava por baixo da tira — a falha que o cliente apanhou no zoom.
+
+    O encaixe certo: alinhar o FUNDO da tira ao fundo da manga, coluna a
+    coluna, e ficar com a mediana do aglomerado mais alto — as colunas do
+    centro da camisa acabam na bainha, não na manga, e dariam offsets
+    absurdos (~250) se entrassem na conta.
+    """
+    am = np.array(mae.getchannel('A'))
+    at = np.array(filha.getchannel('A'))
+    x = (mae.width - filha.width) // 2
+
+    def fundos(a):
+        out = []
+        for c in range(a.shape[1]):
+            ys = np.where(a[:, c] > 10)[0]
+            out.append(int(ys.max()) if len(ys) else -1)
+        return out
+
+    fm, ft = fundos(am), fundos(at)
+    offs = [fm[x + c] - ft[c] for c in range(filha.width)
+            if ft[c] >= 0 and 0 <= x + c < mae.width and fm[x + c] >= 0]
+    base = np.percentile(offs, 10)
+    aglomerado = [o for o in offs if abs(o - base) <= 3]
+    y = round(float(np.median(aglomerado)))
+    return (x, y), len(aglomerado)
+
+
 def montar(lado):
     """Montagem PURISTA, à imagem do concorrente: nenhuma peça é
     modificada — nem crescida, nem inundada, nem recortada. O designer já
@@ -232,16 +266,18 @@ def montar(lado):
         if zona == 'meiao':
             fim_meiao = canto[1] + grande.height
 
-    # 2) MANGAS (tiras do punho): fatia da própria camisa
+    # 2) MANGAS (tiras do punho): geometria — fundo da tira alinhado ao
+    # fundo da manga (ver alinhar_tira; SQDIFF fica proibido aqui)
     (canto_cam, esc_cam) = guardadas['camisola']
     im = pecas_nativas['mangas']
-    rel, dif = localizar_dentro(pecas_nativas['camisola'], im)
+    rel, colunas = alinhar_tira(pecas_nativas['camisola'], im)
     canto = (canto_cam[0] + rel[0] * esc_cam, canto_cam[1] + rel[1] * esc_cam)
     grande = im.resize((round(im.width * esc_cam), round(im.height * esc_cam)),
                        Image.LANCZOS)
     tela, x, y, larg, alt = para_tela(realcar(grande), canto)
     tela.save(f'{SAIDA}/vestida-mangas-{lado}.png')
-    print(f'  mangas    camisa dif/px {dif:.1f} → caixa x={x}, y={y}, w={larg}, h={alt}')
+    print(f'  mangas    fundo-alinhado ({colunas} colunas, rel y={rel[1]}) → '
+          f'caixa x={x}, y={y}, w={larg}, h={alt}')
 
     # 3) GOLA, por duas vias com preferência clara (fatia exata, senão o
     # resíduo dos buracos no terço de cima)
