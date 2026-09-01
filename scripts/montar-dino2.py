@@ -241,6 +241,13 @@ def montar(lado):
     residuo = buracos.copy()
     fim_meiao = None
 
+    # Afinação à mão, em px do VESTIDO, depois do encaixe automático.
+    # Única entrada (2026-08-31, pedido do cliente): o calção da FRENTE
+    # assentava ~4 px de tela alto na perna esquerda (vão até à pele);
+    # descer é seguro porque a peça desenha POR CIMA da pele — na perna
+    # direita só cobre mais um nadinha de coxa.
+    AFINACAO = {('frente', 'calcao'): (0, 2)}
+
     # 1) as peças GRANDES encaixam nos buracos, cada uma na sua banda
     for zona in ('camisola', 'calcao', 'meiao'):
         im = pecas_nativas[zona]
@@ -249,6 +256,8 @@ def montar(lado):
         recorte[: int(recorte.shape[0] * b0)] = 0
         recorte[int(recorte.shape[0] * b1):] = 0
         canto, escolhida, score = localizar_no_buraco(recorte, im, escala_base)
+        dx, dy = AFINACAO.get((lado, zona), (0, 0))
+        canto = (canto[0] + dx, canto[1] + dy)
         grande = im.resize((round(im.width * escolhida), round(im.height * escolhida)),
                            Image.LANCZOS)
         tela, x, y, larg, alt = para_tela(realcar(grande), canto)
