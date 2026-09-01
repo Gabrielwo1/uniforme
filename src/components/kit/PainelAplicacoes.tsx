@@ -22,6 +22,7 @@ import {
 } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
+import { SeletorCor } from './SeletorCor';
 
 /**
  * Painel de NOME/NÚMERO e de ESCUDO/LOGOS.
@@ -337,15 +338,12 @@ function Cor({
 }) {
   return (
     <span className="flex items-center gap-1.5">
-      <input
-        type="color"
-        value={cor}
-        onChange={(e) => onChange(e.target.value)}
+      <SeletorCor
+        cor={cor}
+        onChange={onChange}
         title={rotulo}
-        className={cn(
-          'h-8 w-8 cursor-pointer rounded-md border-2 bg-transparent p-0',
-          desligada && 'opacity-30',
-        )}
+        alinhar="esquerda"
+        className={cn('h-8 w-8', desligada && 'opacity-30')}
       />
       <span className="text-[10px] leading-tight text-muted-foreground">
         {rotulo}

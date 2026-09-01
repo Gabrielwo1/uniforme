@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { PecaMockup } from './PecaMockup';
 import { AMOSTRAS } from '@/lib/kitCaixas';
 import { CamadaAplicacoes } from './CamadaAplicacoes';
+import { SeletorCor } from './SeletorCor';
 
 /**
  * Visualizador do conjunto: frente e verso lado a lado, vestidos no
@@ -382,13 +383,7 @@ function Swatch({
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="relative">
-        <input
-          type="color"
-          value={cor}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-10 cursor-pointer rounded-md border-2 border-border bg-transparent p-0"
-          title={label}
-        />
+        <SeletorCor cor={cor} onChange={onChange} title={label} className="h-10 w-10" />
         {marca && (
           <span className="pointer-events-none absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[9px] font-bold text-background">
             {marca}
