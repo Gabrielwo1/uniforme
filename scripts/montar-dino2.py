@@ -99,11 +99,14 @@ def realcar(im):
 
 
 def localizar_no_buraco(buracos, peca, escala_base):
-    """Canto e escala da peça, pelo encaixe do seu alfa nos buracos.
-
-    `escala_base` é a razão vestido/base (as peças vêm à escala do avatar
-    base); a procura varre uma vizinhança dela porque o designer nem sempre
-    exporta tudo do mesmo documento.
+    """Canto da peça, pelo encaixe do seu alfa nos buracos — a ESCALA é
+    fixa em `escala_base` (razão vestido/base): o envio consolidado vem
+    todo do mesmo documento, e deixar a correlação escolher a escala fazia
+    asneira — os buracos são um nadinha maiores que as peças (o kit do
+    vestido rende com sombra, que alarga o alfa) e o melhor score caía a
+    1,25 em vez de 1,261: 0,9% mais pequena, que na bainha do calção eram
+    os ~3 px de vão que o cliente apanhou no zoom. Procurar POSIÇÃO sim,
+    escala não.
     """
     alvo = buracos.astype(np.float32)
 
@@ -121,13 +124,7 @@ def localizar_no_buraco(buracos, peca, escala_base):
                 melhor = (canto, float(esc), score)
         return melhor
 
-    # grosso (passo 0,01) e depois FINO (0,002) à volta do melhor: o passo
-    # grosso deixava até 0,5% de desvio, que ao tamanho da peça são 2–4 px
-    # de folga nas bordas
-    melhor = tenta(np.arange(escala_base * 0.9, escala_base * 1.12, 0.01),
-                   (None, escala_base, -1.0))
-    e0 = melhor[1]
-    return tenta(np.arange(e0 - 0.008, e0 + 0.009, 0.002), melhor)
+    return tenta([escala_base], (None, escala_base, -1.0))
 
 
 FOLGA = 16

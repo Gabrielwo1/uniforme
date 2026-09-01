@@ -25,15 +25,15 @@ export interface Caixa {
     punho e a gola ficam de fora, como zonas com cor própria por cima. */
 export const CAIXAS: Record<PecaKit, Record<LadoKit, Caixa>> = {
   camisola: {
-    frente: { x: 386, y: 410, w: 708, h: 822 },
-    verso: { x: 294, y: 399, w: 729, h: 873 },
+    frente: { x: 384, y: 410, w: 710, h: 824 },
+    verso: { x: 292, y: 396, w: 733, h: 878 },
   },
   calcao: {
-    frente: { x: 447, y: 1195, w: 589, h: 389 },
-    verso: { x: 378, y: 1232, w: 584, h: 352 },
+    frente: { x: 447, y: 1195, w: 587, h: 386 },
+    verso: { x: 376, y: 1230, w: 589, h: 356 },
   },
   meiao: {
-    frente: { x: 454, y: 1691, w: 570, h: 533 },
+    frente: { x: 454, y: 1689, w: 573, h: 535 },
     verso: { x: 364, y: 1712, w: 598, h: 547 },
   },
 };
