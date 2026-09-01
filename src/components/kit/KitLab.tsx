@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgePlus, ClipboardList, Moon, Plus, RotateCcw, Shirt, Sun, Type } from 'lucide-react';
+import { ArrowLeft, BadgePlus, ClipboardList, Moon, Palette, Plus, RotateCcw, Shirt, Sun, Type } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
 import { toast } from 'sonner';
 import { useFlowStore } from '@/store/useFlowStore';
@@ -10,6 +10,7 @@ import { useKitOrderStore } from '@/store/useKitOrderStore';
 import { PECAS_KIT } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 import { CadeadoConjunto, GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
 import { OutrosSimuladores } from './OutrosSimuladores';
 import { PainelAplicacoes } from './PainelAplicacoes';
@@ -34,12 +35,31 @@ const MENU: { id: MenuTopo; rotulo: string; Icone: typeof Shirt }[] = [
   { id: 'escudo', rotulo: 'Escudo e Logos', Icone: BadgePlus },
 ];
 
+/** Painéis do telemóvel: os mesmos três do menu + as cores (que no
+    desktop vivem na coluna direita), cada um numa folha de baixo. */
+type PainelMovel = MenuTopo | 'cores';
+
+const BARRA_MOVEL: { id: PainelMovel; rotulo: string; Icone: typeof Shirt }[] = [
+  { id: 'estampas', rotulo: 'Modelos', Icone: Shirt },
+  { id: 'cores', rotulo: 'Cores', Icone: Palette },
+  { id: 'nome', rotulo: 'Nome/Nº', Icone: Type },
+  { id: 'escudo', rotulo: 'Escudos', Icone: BadgePlus },
+];
+
+const TITULO_MOVEL: Record<PainelMovel, string> = {
+  estampas: 'Modelos / Estampas',
+  cores: 'Cores',
+  nome: 'Nome e Número',
+  escudo: 'Escudo e Logos',
+};
+
 export function KitLab() {
   const reset = useKitStore((s) => s.reset);
   const design = useKitStore((s) => s.design);
   const adicionar = useKitOrderStore((s) => s.adicionar);
   const noOrcamento = useKitOrderStore((s) => s.itens.length);
   const [menu, setMenu] = useState<MenuTopo>('estampas');
+  const [painelMovel, setPainelMovel] = useState<PainelMovel | null>(null);
   const setLocalEmFoco = useKitStore((s) => s.setLocalEmFoco);
   const aplicacoes = useKitStore((s) => s.design.aplicacoes);
   const escuro = useTemaStore((s) => s.tema === 'escuro');
@@ -105,7 +125,7 @@ export function KitLab() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="relative flex h-14 shrink-0 items-center gap-3 border-b px-5">
+      <header className="relative flex h-14 shrink-0 items-center gap-1.5 border-b px-2 sm:gap-3 sm:px-5">
         <Button
           variant="ghost"
           size="icon"
@@ -120,7 +140,7 @@ export function KitLab() {
           src={logoUrl}
           alt="KYPZL"
           /* a palavra é preta no ficheiro: no escuro tem de virar branca */
-          className="h-8 w-auto shrink-0 dark:brightness-0 dark:invert"
+          className="h-6 w-auto shrink-0 sm:h-8 dark:brightness-0 dark:invert"
         />
 
         {/* os segmentos do simulador, como no concorrente: o ativo a
@@ -152,11 +172,11 @@ export function KitLab() {
           title="Guardar este conjunto e continuar a personalizar"
         >
           <Plus />
-          Adicionar outro
+          <span className="hidden sm:inline">Adicionar outro</span>
         </Button>
         <Button size="sm" onClick={orcamento} className="relative">
           <ClipboardList />
-          Orçamento
+          <span className="hidden sm:inline">Orçamento</span>
           {noOrcamento > 0 && (
             <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary-foreground px-1 text-[10px] font-bold text-primary">
               {noOrcamento}
@@ -165,11 +185,12 @@ export function KitLab() {
         </Button>
       </header>
 
-      <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[300px_minmax(0,1fr)_290px]">
+      <div className="grid flex-1 gap-4 overflow-y-auto p-4 pb-24 lg:grid-cols-[300px_minmax(0,1fr)_290px] lg:pb-4">
         {/* ESQUERDA: a área escolhida no topo — modelos, nome/número ou
             escudos (o concorrente põe os modelos deste lado). O cadeado
-            vive aqui porque manda na escolha de estampa E nas cores. */}
-        <aside className="space-y-3">
+            vive aqui porque manda na escolha de estampa E nas cores.
+            No telemóvel os painéis vivem na barra de baixo. */}
+        <aside className="hidden space-y-3 lg:block">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {MENU.find((m) => m.id === menu)?.rotulo}
           </p>
@@ -184,7 +205,7 @@ export function KitLab() {
             fundo próprio com desfoque, senão os separadores inativos
             desapareciam contra a imagem escura. */}
         <div className="relative min-w-0">
-          <nav className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 rounded-lg border bg-background/85 p-1 shadow-lg backdrop-blur">
+          <nav className="absolute left-1/2 top-3 z-20 hidden -translate-x-1/2 items-center gap-1 rounded-lg border bg-background/85 p-1 shadow-lg backdrop-blur lg:flex">
             {MENU.map(({ id, rotulo, Icone }) => (
               <button
                 key={id}
@@ -220,7 +241,7 @@ export function KitLab() {
         </div>
 
         {/* DIREITA: só cores, por peça */}
-        <aside className="space-y-3">
+        <aside className="hidden space-y-3 lg:block">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             Cores
           </p>
@@ -230,6 +251,39 @@ export function KitLab() {
         </aside>
       </div>
 
+      {/* TELEMÓVEL: barra fixa em baixo, como no concorrente — cada ícone
+          abre o painel respetivo numa folha de baixo */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background/95 backdrop-blur lg:hidden">
+        {BARRA_MOVEL.map(({ id, rotulo, Icone }) => (
+          <button
+            key={id}
+            onClick={() => {
+              setPainelMovel(id);
+              setLocalEmFoco(null);
+            }}
+            className="flex flex-col items-center gap-0.5 py-2 text-muted-foreground transition active:bg-accent"
+          >
+            <Icone className="h-5 w-5" />
+            <span className="text-[10px] font-semibold">{rotulo}</span>
+          </button>
+        ))}
+      </nav>
+
+      <Sheet open={painelMovel !== null} onOpenChange={(o) => !o && setPainelMovel(null)}>
+        <SheetContent lado="baixo">
+          <SheetHeader>
+            <SheetTitle>{painelMovel ? TITULO_MOVEL[painelMovel] : ''}</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+            {(painelMovel === 'estampas' || painelMovel === 'cores') && <CadeadoConjunto />}
+            {painelMovel === 'estampas' && <GaleriaEstampas />}
+            {painelMovel === 'cores'
+              && PECAS_KIT.map((peca) => <PainelCores key={peca} peca={peca} />)}
+            {painelMovel === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
+            {painelMovel === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

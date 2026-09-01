@@ -28,26 +28,40 @@ import { SeletorCor } from './SeletorCor';
    colunas transbordar. Nunca amplia: acima de 1 os PNG só perderiam nitidez. */
 const LARGURA_PAR = 380 * 2 + 24;
 const ALTURA_PAR = 615 + 30;
+/* Em ecrã ESTREITO (telemóvel) o par encolhido ficava ilegível: abaixo
+   desta largura o visualizador mostra UM lado de cada vez, grande, com o
+   alternador Frente/Verso em pílula — como no concorrente. */
+const LARGURA_UM = 380;
+const LIMIAR_MOVEL = 560;
 
 export function KitViewer({ fundo }: { fundo?: string }) {
   const caixa = useRef<HTMLDivElement>(null);
   const [escala, setEscala] = useState(1);
+  const [movel, setMovel] = useState(false);
+  const [ladoMovel, setLadoMovel] = useState<LadoKit>('frente');
 
   useLayoutEffect(() => {
     const el = caixa.current;
     if (!el) return;
-    const ajustar = () =>
-      setEscala(Math.min(1, (el.clientWidth - 32) / LARGURA_PAR));
+    const ajustar = () => {
+      const w = el.clientWidth;
+      const um = w < LIMIAR_MOVEL;
+      setMovel(um);
+      setEscala(Math.min(1, (w - (um ? 24 : 32)) / (um ? LARGURA_UM : LARGURA_PAR)));
+    };
     const ro = new ResizeObserver(ajustar);
     ro.observe(el);
     ajustar();
     return () => ro.disconnect();
   }, []);
 
+  const largura = movel ? LARGURA_UM : LARGURA_PAR;
+  const altura = movel ? 615 : ALTURA_PAR;
+
   return (
     <div
       ref={caixa}
-      className="relative flex h-full min-h-[660px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc] dark:from-[#1b1a19] dark:to-[#100f0f]"
+      className="relative flex h-full min-h-[560px] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe4ea] to-[#b9c2cc] md:min-h-[660px] dark:from-[#1b1a19] dark:to-[#100f0f]"
     >
       {fundo && (
         <>
@@ -67,23 +81,41 @@ export function KitViewer({ fundo }: { fundo?: string }) {
         </>
       )}
 
+      {/* alternador de lado, só no modo de um lado (telemóvel) */}
+      {movel && (
+        <div className="absolute left-1/2 top-3 z-40 flex -translate-x-1/2 rounded-full bg-black/60 p-1 backdrop-blur">
+          {LADOS_KIT.map((lado) => (
+            <button
+              key={lado}
+              onClick={() => setLadoMovel(lado)}
+              className={cn(
+                'rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-widest transition',
+                ladoMovel === lado ? 'bg-white text-black' : 'text-white/80',
+              )}
+            >
+              {LADO_LABEL[lado]}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* a caixa exterior reserva o tamanho JÁ escalado; a interior fica ao
           tamanho natural e encolhe por transform — os slots absolutos das
           peças nunca mudam de geometria */}
       <div
         className="relative"
-        style={{ width: LARGURA_PAR * escala, height: ALTURA_PAR * escala }}
+        style={{ width: largura * escala, height: altura * escala }}
       >
         <div
           className="flex items-start justify-center gap-6"
           style={{
-            width: LARGURA_PAR,
+            width: largura,
             transform: `scale(${escala})`,
             transformOrigin: 'top left',
           }}
         >
-          {LADOS_KIT.map((lado) => (
-            <ConjuntoLado key={lado} lado={lado} />
+          {(movel ? [ladoMovel] : LADOS_KIT).map((lado) => (
+            <ConjuntoLado key={lado} lado={lado} rotulo={!movel} />
           ))}
         </div>
       </div>
@@ -92,12 +124,15 @@ export function KitViewer({ fundo }: { fundo?: string }) {
 }
 
 /** Um lado completo do conjunto (camisola + calção + meião empilhados). */
-function ConjuntoLado({ lado }: { lado: LadoKit }) {
+function ConjuntoLado({ lado, rotulo = true }: { lado: LadoKit; rotulo?: boolean }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="z-40 mb-2 rounded-full bg-black/60 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
-        {LADO_LABEL[lado]}
-      </span>
+      {/* no modo de um lado o alternador já diz o lado — a etiqueta sai */}
+      {rotulo && (
+        <span className="z-40 mb-2 rounded-full bg-black/60 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
+          {LADO_LABEL[lado]}
+        </span>
+      )}
 
       {/* As peças partilham uma tela comum que mapeia a coluna inteira
           (ver scripts/montar-dino2.py): o layout está cosido nos PNG, por

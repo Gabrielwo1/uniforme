@@ -22,18 +22,22 @@ const SheetOverlay = React.forwardRef<
 ));
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-/** Painel deslizante a partir da direita — carrinho/pedido estilo e-commerce. */
+/** Painel deslizante: da direita (carrinho estilo e-commerce) ou de
+    BAIXO (`lado="baixo"`) — a folha dos painéis no telemóvel. */
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { lado?: 'direita' | 'baixo' }
+>(({ className, children, lado = 'direita', ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-sm flex-col border-l bg-background shadow-2xl',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:duration-200 data-[state=open]:duration-300',
+        'fixed z-50 flex flex-col bg-background shadow-2xl',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300',
+        lado === 'direita'
+          ? 'inset-y-0 right-0 h-full w-full max-w-sm border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right'
+          : 'inset-x-0 bottom-0 max-h-[82dvh] w-full rounded-t-2xl border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
         className,
       )}
       {...props}
