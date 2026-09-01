@@ -105,7 +105,7 @@ export function KitLab() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-5">
+      <header className="relative flex h-14 shrink-0 items-center gap-3 border-b px-5">
         <Button
           variant="ghost"
           size="icon"
@@ -124,10 +124,13 @@ export function KitLab() {
         />
 
         {/* os segmentos do simulador, como no concorrente: o ativo a
-            cheio, os próximos esbatidos. Só a partir de md — em ecrãs
-            estreitos o cabeçalho já vai cheio de botões. */}
-        <span className="mx-1 hidden h-8 w-px bg-border md:block" />
-        <OutrosSimuladores className="hidden md:flex" />
+            cheio, os próximos esbatidos — CENTRADOS no cabeçalho, por
+            isso fora do fluxo (o flex tem larguras diferentes de cada
+            lado e o centro do resto não é o centro do ecrã). Só a partir
+            de md — em ecrãs estreitos o cabeçalho já vai cheio. */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <OutrosSimuladores className="hidden md:flex" />
+        </div>
 
         <span className="ml-auto" />
 
