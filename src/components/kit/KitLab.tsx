@@ -11,6 +11,7 @@ import { PECAS_KIT } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { CadeadoConjunto, GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
+import { OutrosSimuladores } from './OutrosSimuladores';
 import { PainelAplicacoes } from './PainelAplicacoes';
 import { TelaCarregamento } from './TelaCarregamento';
 import { Animacao } from '../ui/animacao';
@@ -121,6 +122,12 @@ export function KitLab() {
           /* a palavra é preta no ficheiro: no escuro tem de virar branca */
           className="h-8 w-auto shrink-0 dark:brightness-0 dark:invert"
         />
+
+        {/* os segmentos do simulador, como no concorrente: o ativo a
+            cheio, os próximos esbatidos. Só a partir de md — em ecrãs
+            estreitos o cabeçalho já vai cheio de botões. */}
+        <span className="mx-1 hidden h-8 w-px bg-border md:block" />
+        <OutrosSimuladores className="hidden md:flex" />
 
         <span className="ml-auto" />
 
