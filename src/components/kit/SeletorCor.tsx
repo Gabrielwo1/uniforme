@@ -14,6 +14,7 @@ export function SeletorCor({
   title,
   className,
   alinhar = 'direita',
+  podeLimpar = false,
 }: {
   cor: string;
   onChange: (cor: string) => void;
@@ -24,6 +25,9 @@ export function SeletorCor({
       gatilho e cresce para a esquerda (paineis encostados à direita do
       ecrã), 'esquerda' o contrário. */
   alinhar?: 'esquerda' | 'direita';
+  /** Aceita "sem cor" (`cor === ''`): a grelha ganha o bloco do X (como a
+      "Cor Borda" do concorrente) e o gatilho mostra o X quando vazio. */
+  podeLimpar?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
 
@@ -38,9 +42,14 @@ export function SeletorCor({
         type="button"
         title={title}
         onClick={() => setAberto((v) => !v)}
-        style={{ backgroundColor: cor }}
-        className={cn('block cursor-pointer rounded-md border-2 border-border', className)}
-      />
+        style={{ backgroundColor: cor || '#fff' }}
+        className={cn(
+          'relative block cursor-pointer overflow-hidden rounded-md border-2 border-border',
+          className,
+        )}
+      >
+        {podeLimpar && !cor && <RiscoSemCor />}
+      </button>
 
       {aberto && (
         <>
@@ -58,6 +67,19 @@ export function SeletorCor({
             )}
           >
             <div className="grid grid-cols-8 gap-1">
+              {podeLimpar && (
+                <button
+                  type="button"
+                  title="Sem cor"
+                  onClick={() => escolher('')}
+                  className={cn(
+                    'relative h-6 w-6 overflow-hidden rounded border border-border bg-white transition hover:scale-110',
+                    cor === '' && 'ring-2 ring-primary ring-offset-1 ring-offset-popover',
+                  )}
+                >
+                  <RiscoSemCor />
+                </button>
+              )}
               {PALETA.map(({ nome, hex }) => (
                 <button
                   key={hex}
@@ -77,5 +99,14 @@ export function SeletorCor({
         </>
       )}
     </span>
+  );
+}
+
+/** O X vermelho do "sem cor" — a mesma convenção do concorrente. */
+function RiscoSemCor() {
+  return (
+    <svg viewBox="0 0 24 24" className="absolute inset-0 h-full w-full" aria-hidden>
+      <path d="M4 4 20 20 M20 4 4 20" stroke="#d33" strokeWidth={2} fill="none" />
+    </svg>
   );
 }

@@ -13,7 +13,8 @@ import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 import { CadeadoConjunto, GaleriaEstampas, KitViewer, PainelCores } from './KitViewer';
 import { OutrosSimuladores } from './OutrosSimuladores';
-import { PainelAplicacoes } from './PainelAplicacoes';
+import { PainelEscudoLogos } from './PainelEscudoLogos';
+import { PainelNomeNumero } from './PainelNomeNumero';
 import { TelaCarregamento } from './TelaCarregamento';
 import { Animacao } from '../ui/animacao';
 import sucesso from '@/assets/animacoes/sucesso.json';
@@ -196,8 +197,8 @@ export function KitLab() {
           </p>
           <CadeadoConjunto />
           {menu === 'estampas' && <GaleriaEstampas />}
-          {menu === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
-          {menu === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
+          {menu === 'nome' && <PainelNomeNumero />}
+          {menu === 'escudo' && <PainelEscudoLogos />}
         </aside>
 
         {/* o menu das áreas flutua SOBRE o cenário, no topo — pedido do
@@ -279,8 +280,8 @@ export function KitLab() {
             {painelMovel === 'estampas' && <GaleriaEstampas />}
             {painelMovel === 'cores'
               && PECAS_KIT.map((peca) => <PainelCores key={peca} peca={peca} />)}
-            {painelMovel === 'nome' && <PainelAplicacoes tipos={['texto', 'numero']} />}
-            {painelMovel === 'escudo' && <PainelAplicacoes tipos={['logo']} />}
+            {painelMovel === 'nome' && <PainelNomeNumero />}
+            {painelMovel === 'escudo' && <PainelEscudoLogos />}
           </div>
         </SheetContent>
       </Sheet>
