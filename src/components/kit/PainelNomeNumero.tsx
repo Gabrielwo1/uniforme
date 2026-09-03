@@ -13,8 +13,12 @@ import { SeletorCor } from './SeletorCor';
  * os seus slots fixos, escolhidos por ÍCONES-miniatura que mostram a
  * configuração (camisola com NOME/10 no sítio), com o check no escolhido.
  *
- *   Camisola: DUAS opções (pedido do cliente, 2026-09-02) — "Frente"
- *   (número no peito) e "Costas" (nome + número, inseridos DE UMA VEZ).
+ *   Camisola: DUAS opções de topo (pedido do cliente, 2026-09-02) —
+ *   "Frente" (número no peito) e "Costas" (nome + número, inseridos DE
+ *   UMA VEZ). As VARIANTES não desapareceram, ORGANIZARAM-SE (pedido de
+ *   2026-09-03): com um lado ativo, a posição escolhe-se dentro do
+ *   Personalizar — frente: peito esquerdo/centro/direito; costas: nome
+ *   por cima ou por baixo do número.
  *   Calção: número numa das coxas.
  *
  * Por baixo, "Personalizar": texto, letra, tamanho e cores (com a borda a
@@ -71,6 +75,13 @@ export function PainelNomeNumero() {
     }
   };
 
+  /** Variante de posição (rádio): muda o local, nunca desliga — desligar
+      é no cartão do lado. */
+  const mover = (atual: Aplicacao, localId: string) => {
+    if (atual.localId !== localId) setAplicacao(atual.id, { localId });
+    setLocalEmFoco(localId);
+  };
+
   /** A opção "Costas" é UMA: nome e número entram (e saem) juntos. */
   const costasAtivas = !!nome || !!numVerso;
   const alternarCostas = () => {
@@ -108,7 +119,9 @@ export function PainelNomeNumero() {
             <div className="flex flex-wrap gap-3">
               <OpcaoSlot
                 ativa={!!numFrente}
-                onClick={() => alternar(numFrente, 'peito-centro', 'numero')}
+                onClick={() =>
+                  numFrente ? removerAplicacao(numFrente.id) : criarNumero('peito-centro')
+                }
                 onFocoLocal={() => setLocalEmFoco('peito-centro')}
                 titulo="Número na frente"
                 legenda="Frente"
@@ -129,6 +142,26 @@ export function PainelNomeNumero() {
 
           {nome && (
             <Seccao titulo="Personalizar nome">
+              {/* variante organizada dentro do lado: por cima ou por
+                  baixo do número */}
+              <div className="flex gap-2">
+                {LOCAIS_NOME.map((localId) => (
+                  <OpcaoSlot
+                    key={localId}
+                    ativa={nome.localId === localId}
+                    onClick={() => mover(nome, localId)}
+                    onFocoLocal={() => setLocalEmFoco(localId)}
+                    titulo={localId === 'nome-costas' ? 'Nome por cima' : 'Nome por baixo'}
+                    legenda={localId === 'nome-costas' ? 'Por cima' : 'Por baixo'}
+                  >
+                    <IconeCamisola
+                      verso
+                      nome={localId === 'nome-costas' ? 'cima' : 'baixo'}
+                      numero="costas"
+                    />
+                  </OpcaoSlot>
+                ))}
+              </div>
               <input
                 value={nome.texto ?? ''}
                 onChange={(e) =>
@@ -171,6 +204,35 @@ export function PainelNomeNumero() {
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Frente
                   </p>
+                  {/* variante organizada dentro do lado: posição no peito */}
+                  <div className="flex gap-2">
+                    {LOCAIS_NUM_FRENTE.map((localId) => (
+                      <OpcaoSlot
+                        key={localId}
+                        ativa={numFrente.localId === localId}
+                        onClick={() => mover(numFrente, localId)}
+                        onFocoLocal={() => setLocalEmFoco(localId)}
+                        titulo={{
+                          'peito-esq': 'Peito esquerdo',
+                          'peito-centro': 'Ao centro',
+                          'peito-dir': 'Peito direito',
+                        }[localId]}
+                        legenda={{
+                          'peito-esq': 'Esquerda',
+                          'peito-centro': 'Centro',
+                          'peito-dir': 'Direita',
+                        }[localId]}
+                      >
+                        <IconeCamisola
+                          numero={{
+                            'peito-esq': 'esq',
+                            'peito-centro': 'centro',
+                            'peito-dir': 'dir',
+                          }[localId] as 'esq' | 'centro' | 'dir'}
+                        />
+                      </OpcaoSlot>
+                    ))}
+                  </div>
                   <LinhaLetraTamanho aplicacao={numFrente} />
                   <div className="flex gap-4">
                     <CorCampo rotulo="Cor núm. frente" aplicacao={numFrente} campo="cor" />
