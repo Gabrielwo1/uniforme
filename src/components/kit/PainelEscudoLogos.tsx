@@ -91,7 +91,9 @@ export function PainelEscudoLogos() {
                   }[localId]}
                 >
                   <CamisolaIcone>
-                    <MarcaEscudo cx={{ 'peito-esq': 21, 'peito-centro': 30, 'peito-dir': 39 }[localId]!} cy={26} />
+                    {/* afastado da borda, como os números do painel de
+                        nome/número — a 21/39 o escudinho tocava a costura */}
+                    <MarcaEscudo cx={{ 'peito-esq': 23, 'peito-centro': 30, 'peito-dir': 37 }[localId]!} cy={26} />
                   </CamisolaIcone>
                 </OpcaoSlot>
               ))}

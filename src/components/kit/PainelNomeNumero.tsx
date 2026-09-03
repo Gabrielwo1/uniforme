@@ -420,9 +420,11 @@ function IconeCamisola({
       {numero === 'costas' && (
         <MarcaTexto x={30} y={nome === 'baixo' ? 39 : 41} corpo="10" tamanho={13} />
       )}
-      {numero === 'esq' && <MarcaTexto x={21} y={30} corpo="10" tamanho={9} />}
+      {/* esq/dir afastados da borda: o corpo da camisolinha vai de x≈18
+          a 42 e o "10" a 21/39 tocava a costura */}
+      {numero === 'esq' && <MarcaTexto x={24} y={30} corpo="10" tamanho={8} />}
       {numero === 'centro' && <MarcaTexto x={30} y={34} corpo="10" tamanho={11} />}
-      {numero === 'dir' && <MarcaTexto x={39} y={30} corpo="10" tamanho={9} />}
+      {numero === 'dir' && <MarcaTexto x={36} y={30} corpo="10" tamanho={8} />}
     </CamisolaIcone>
   );
 }
