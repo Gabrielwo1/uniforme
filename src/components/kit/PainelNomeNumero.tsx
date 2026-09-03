@@ -13,8 +13,8 @@ import { SeletorCor } from './SeletorCor';
  * os seus slots fixos, escolhidos por ÍCONES-miniatura que mostram a
  * configuração (camisola com NOME/10 no sítio), com o check no escolhido.
  *
- *   Camisola: nome nas costas (em cima OU em baixo do número), número nas
- *   costas e, opcionalmente, número na frente (esquerda/centro/direita).
+ *   Camisola: DUAS opções (pedido do cliente, 2026-09-02) — "Frente"
+ *   (número no peito) e "Costas" (nome + número, inseridos DE UMA VEZ).
  *   Calção: número numa das coxas.
  *
  * Por baixo, "Personalizar": texto, letra, tamanho e cores (com a borda a
@@ -71,6 +71,19 @@ export function PainelNomeNumero() {
     }
   };
 
+  /** A opção "Costas" é UMA: nome e número entram (e saem) juntos. */
+  const costasAtivas = !!nome || !!numVerso;
+  const alternarCostas = () => {
+    if (costasAtivas) {
+      if (nome) removerAplicacao(nome.id);
+      if (numVerso) removerAplicacao(numVerso.id);
+      return;
+    }
+    addAplicacao('texto', 'nome-costas');
+    criarNumero('numero-costas');
+    setLocalEmFoco('numero-costas');
+  };
+
   return (
     <div className="space-y-3" onMouseLeave={() => setLocalEmFoco(null)}>
       {/* separador por peça, como o Jersey/Calção do concorrente */}
@@ -91,55 +104,26 @@ export function PainelNomeNumero() {
 
       {peca === 'camisola' ? (
         <>
-          <Seccao titulo="Nome (costas)">
-            <div className="flex flex-wrap gap-2">
-              {LOCAIS_NOME.map((localId) => (
-                <OpcaoSlot
-                  key={localId}
-                  ativa={nome?.localId === localId}
-                  onClick={() => alternar(nome, localId, 'texto')}
-                  onFocoLocal={() => setLocalEmFoco(localId)}
-                  titulo={localId === 'nome-costas' ? 'Nome por cima' : 'Nome por baixo'}
-                >
-                  <IconeCamisola
-                    verso
-                    nome={localId === 'nome-costas' ? 'cima' : 'baixo'}
-                    numero="costas"
-                  />
-                </OpcaoSlot>
-              ))}
-            </div>
-          </Seccao>
-
-          <Seccao titulo="Número">
-            <div className="flex flex-wrap gap-2">
+          <Seccao titulo="Nome e número — escolha os lados">
+            <div className="flex flex-wrap gap-3">
               <OpcaoSlot
-                ativa={!!numVerso}
-                onClick={() => alternar(numVerso, 'numero-costas', 'numero')}
-                onFocoLocal={() => setLocalEmFoco('numero-costas')}
-                titulo="Número nas costas"
+                ativa={!!numFrente}
+                onClick={() => alternar(numFrente, 'peito-centro', 'numero')}
+                onFocoLocal={() => setLocalEmFoco('peito-centro')}
+                titulo="Número na frente"
+                legenda="Frente"
               >
-                <IconeCamisola verso numero="costas" />
+                <IconeCamisola numero="centro" />
               </OpcaoSlot>
-              {LOCAIS_NUM_FRENTE.map((localId) => (
-                <OpcaoSlot
-                  key={localId}
-                  ativa={numFrente?.localId === localId}
-                  onClick={() => alternar(numFrente, localId, 'numero')}
-                  onFocoLocal={() => setLocalEmFoco(localId)}
-                  titulo={{
-                    'peito-esq': 'Número no peito esquerdo',
-                    'peito-centro': 'Número ao centro',
-                    'peito-dir': 'Número no peito direito',
-                  }[localId]}
-                >
-                  <IconeCamisola
-                    numero={{ 'peito-esq': 'esq', 'peito-centro': 'centro', 'peito-dir': 'dir' }[
-                      localId
-                    ] as 'esq' | 'centro' | 'dir'}
-                  />
-                </OpcaoSlot>
-              ))}
+              <OpcaoSlot
+                ativa={costasAtivas}
+                onClick={alternarCostas}
+                onFocoLocal={() => setLocalEmFoco('numero-costas')}
+                titulo="Nome e número nas costas"
+                legenda="Costas"
+              >
+                <IconeCamisola verso nome="cima" numero="costas" />
+              </OpcaoSlot>
             </div>
           </Seccao>
 
@@ -254,12 +238,15 @@ export function OpcaoSlot({
   onClick,
   onFocoLocal,
   titulo,
+  legenda,
   children,
 }: {
   ativa: boolean;
   onClick: () => void;
   onFocoLocal: () => void;
   titulo?: string;
+  /** Rótulo curto por baixo do ícone (ex.: "Frente"). */
+  legenda?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -274,6 +261,16 @@ export function OpcaoSlot({
       )}
     >
       {children}
+      {legenda && (
+        <span
+          className={cn(
+            'block pb-0.5 text-center text-[10px] font-semibold',
+            ativa ? 'text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          {legenda}
+        </span>
+      )}
       {ativa && (
         <span className="absolute -bottom-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground shadow">
           <Check className="h-3 w-3" strokeWidth={3} />
