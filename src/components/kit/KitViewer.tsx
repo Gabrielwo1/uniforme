@@ -27,7 +27,7 @@ import { SeletorCor } from './SeletorCor';
    visualizador ENCOLHE O PAR COMO UM TODO para caber, em vez de deixar as
    colunas transbordar. Nunca amplia: acima de 1 os PNG só perderiam nitidez. */
 const LARGURA_PAR = 380 * 2 + 24;
-const ALTURA_PAR = 615 + 30;
+const ALTURA_PAR = 615;
 /* Em ecrã ESTREITO (telemóvel) o par encolhido ficava ilegível: abaixo
    desta largura o visualizador mostra UM lado de cada vez, grande, com o
    alternador Frente/Verso em pílula — como no concorrente. */
@@ -56,7 +56,7 @@ export function KitViewer({ fundo }: { fundo?: string }) {
   }, []);
 
   const largura = movel ? LARGURA_UM : LARGURA_PAR;
-  const altura = movel ? 615 : ALTURA_PAR;
+  const altura = ALTURA_PAR;
 
   return (
     <div
@@ -115,7 +115,7 @@ export function KitViewer({ fundo }: { fundo?: string }) {
           }}
         >
           {(movel ? [ladoMovel] : LADOS_KIT).map((lado) => (
-            <ConjuntoLado key={lado} lado={lado} rotulo={!movel} />
+            <ConjuntoLado key={lado} lado={lado} />
           ))}
         </div>
       </div>
@@ -123,17 +123,12 @@ export function KitViewer({ fundo }: { fundo?: string }) {
   );
 }
 
-/** Um lado completo do conjunto (camisola + calção + meião empilhados). */
-function ConjuntoLado({ lado, rotulo = true }: { lado: LadoKit; rotulo?: boolean }) {
+/** Um lado completo do conjunto (camisola + calção + meião empilhados).
+    Sem etiqueta FRENTE/VERSO (retirada a pedido do cliente, 2026-09-04):
+    a pose diz o lado sozinha; no telemóvel há o alternador. */
+function ConjuntoLado({ lado }: { lado: LadoKit }) {
   return (
     <div className="flex flex-col items-center">
-      {/* no modo de um lado o alternador já diz o lado — a etiqueta sai */}
-      {rotulo && (
-        <span className="z-40 mb-2 rounded-full bg-black/60 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
-          {LADO_LABEL[lado]}
-        </span>
-      )}
-
       {/* As peças partilham uma tela comum que mapeia a coluna inteira
           (ver scripts/montar-dino2.py): o layout está cosido nos PNG, por
           isso os slots são todos idênticos, sem margens mágicas. */}
