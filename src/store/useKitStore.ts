@@ -69,6 +69,30 @@ function aplicacaoInicial(tipo: TipoAplicacao, localId?: string): Aplicacao {
   };
 }
 
+/* O escudo FOGE do número (pedido do cliente, 2026-09-04): número e logo
+   no mesmo sítio do peito ficavam um por cima do outro ("KY10"). Sempre
+   que uma alteração os deixe no mesmo local, o LOGO salta para o lado
+   oposto — e volta a saltar se o número trocar de lado. O número nunca é
+   mexido: quem manda é o que o utilizador acabou de pôr. */
+const SITIOS_PEITO = ['peito-esq', 'peito-centro', 'peito-dir'];
+const PEITO_OPOSTO: Record<string, string> = {
+  'peito-esq': 'peito-dir',
+  'peito-dir': 'peito-esq',
+  'peito-centro': 'peito-esq',
+};
+
+function desviarLogoDoNumero(aplicacoes: Aplicacao[]): Aplicacao[] {
+  const numero = aplicacoes.find(
+    (a) => a.tipo === 'numero' && SITIOS_PEITO.includes(a.localId),
+  );
+  if (!numero) return aplicacoes;
+  return aplicacoes.map((a) =>
+    a.tipo === 'logo' && a.localId === numero.localId
+      ? { ...a, localId: PEITO_OPOSTO[numero.localId] }
+      : a,
+  );
+}
+
 export interface KitStore {
   design: KitDesign;
   /** Local assinalado com a guia tracejada no visualizador enquanto o
@@ -179,7 +203,10 @@ export const useKitStore = create<KitStore>((set, get) => ({
   addAplicacao: (tipo, localId) => {
     const nova = aplicacaoInicial(tipo, localId);
     set((s) => ({
-      design: { ...s.design, aplicacoes: [...(s.design.aplicacoes ?? []), nova] },
+      design: {
+        ...s.design,
+        aplicacoes: desviarLogoDoNumero([...(s.design.aplicacoes ?? []), nova]),
+      },
     }));
     return nova;
   },
@@ -188,8 +215,8 @@ export const useKitStore = create<KitStore>((set, get) => ({
     set((s) => ({
       design: {
         ...s.design,
-        aplicacoes: (s.design.aplicacoes ?? []).map((a) =>
-          a.id === id ? { ...a, ...mudanca } : a,
+        aplicacoes: desviarLogoDoNumero(
+          (s.design.aplicacoes ?? []).map((a) => (a.id === id ? { ...a, ...mudanca } : a)),
         ),
       },
     })),
