@@ -57,7 +57,9 @@ function aplicacaoInicial(tipo: TipoAplicacao, localId?: string): Aplicacao {
     localId: locaisPara(tipo).some((l) => l.id === local)
       ? local
       : (locaisPara(tipo)[0]?.id ?? local),
-    texto: tipo === 'numero' ? '10' : tipo === 'texto' ? 'JOGADOR' : undefined,
+    // conteúdos FIXOS de mostra: o cliente só muda cores no painel (regra
+    // de 2026-09-04); os nomes/números reais combinam-se no orçamento
+    texto: tipo === 'numero' ? '10' : tipo === 'texto' ? 'NOME' : undefined,
     cor: '#ffffff',
     corContorno: '#111111',
     fonteId: 'anton',

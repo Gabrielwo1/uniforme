@@ -1,29 +1,22 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { useKitStore } from '@/store/useKitStore';
-import { FONTES } from '@/lib/kitLocais';
 import type { Aplicacao } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { CalcaoIcone, CamisolaIcone, MarcaTexto } from './IconesPeca';
 import { SeletorCor } from './SeletorCor';
 
 /**
- * Painel de NOME e NÚMERO, LIMITADO ao formato do concorrente (pedido do
- * cliente, 2026-09-01): nada de lista livre de aplicações — cada peça tem
- * os seus slots fixos, escolhidos por ÍCONES-miniatura que mostram a
- * configuração (camisola com NOME/10 no sítio), com o check no escolhido.
+ * Painel de NOME e NÚMERO — DOIS CARTÕES, Frente e Costas, com todas as
+ * opções À VISTA desde o início (pedido do cliente, 2026-09-04). O
+ * cliente só muda CORES: o texto é a mostra fixa "NOME"/"10" e a letra é
+ * a da casa — nomes, números e tipos reais combinam-se no orçamento.
  *
- *   Camisola: DUAS opções de topo (pedido do cliente, 2026-09-02) —
- *   "Frente" (número no peito) e "Costas" (nome + número, inseridos DE
- *   UMA VEZ). As VARIANTES não desapareceram, ORGANIZARAM-SE (pedido de
- *   2026-09-03): com um lado ativo, a posição escolhe-se dentro do
- *   Personalizar — frente: peito esquerdo/centro/direito; costas: nome
- *   por cima ou por baixo do número.
- *   Calção: número numa das coxas.
- *
- * Por baixo, "Personalizar": texto, letra, tamanho e cores (com a borda a
- * aceitar "sem cor" — o X do concorrente). Os slots continuam a ser
- * aplicações normais do design; só o painel é que ficou fechado.
+ *   FRENTE: número no peito, esquerda/centro/direita (clicar no ativo
+ *   desliga) + cores.
+ *   COSTAS: só número, ou nome por cima/por baixo do número (idem) +
+ *   cores de nome e número.
+ *   Calção: número numa das coxas + cores.
  */
 
 const LOCAIS_NOME = ['nome-costas', 'costas-baixo'];
@@ -46,52 +39,35 @@ export function PainelNomeNumero() {
   const numCalcao = aplicacoes.find(
     (a) => a.tipo === 'numero' && LOCAIS_NUM_CALCAO.includes(a.localId),
   );
-  const numeros = [numVerso, numFrente, numCalcao].filter(Boolean) as Aplicacao[];
-  const numeroTexto = numeros[0]?.texto ?? '10';
 
-  /** O número é UM: escrever num sítio escreve em todos os slots. */
-  const setNumero = (texto: string) => {
-    const limpo = texto.replace(/\D/g, '').slice(0, 3);
-    for (const a of numeros) setAplicacao(a.id, { texto: limpo });
-  };
-
-  const criarNumero = (localId: string) => {
-    const nova = addAplicacao('numero', localId);
-    setAplicacao(nova.id, { texto: numeroTexto });
-    setLocalEmFoco(localId);
-  };
-
-  const alternar = (atual: Aplicacao | undefined, localId: string, tipo: 'texto' | 'numero') => {
+  /** Clicar numa posição: ativa-a; na posição JÁ ativa: desliga. */
+  const escolher = (atual: Aplicacao | undefined, localId: string) => {
     if (atual && atual.localId === localId) {
       removerAplicacao(atual.id);
-    } else if (atual) {
-      setAplicacao(atual.id, { localId });
-      setLocalEmFoco(localId);
-    } else if (tipo === 'numero') {
-      criarNumero(localId);
-    } else {
-      addAplicacao('texto', localId);
-      setLocalEmFoco(localId);
+      return;
     }
-  };
-
-  /** Variante de posição (rádio): muda o local, nunca desliga — desligar
-      é no cartão do lado. */
-  const mover = (atual: Aplicacao, localId: string) => {
-    if (atual.localId !== localId) setAplicacao(atual.id, { localId });
+    if (atual) setAplicacao(atual.id, { localId });
+    else addAplicacao('numero', localId);
     setLocalEmFoco(localId);
   };
 
-  /** A opção "Costas" é UMA: nome e número entram (e saem) juntos. */
-  const costasAtivas = !!nome || !!numVerso;
-  const alternarCostas = () => {
-    if (costasAtivas) {
+  /** As COSTAS são um estado só: sem nada, só número, ou nome+número com
+      o nome por cima ou por baixo. Clicar no ativo desliga tudo. */
+  const estadoCostas = !numVerso && !nome ? null : nome ? nome.localId : 'so-numero';
+  const setCostas = (opcao: 'so-numero' | 'nome-costas' | 'costas-baixo') => {
+    if (opcao === estadoCostas) {
       if (nome) removerAplicacao(nome.id);
       if (numVerso) removerAplicacao(numVerso.id);
       return;
     }
-    addAplicacao('texto', 'nome-costas');
-    criarNumero('numero-costas');
+    if (!numVerso) addAplicacao('numero', 'numero-costas');
+    if (opcao === 'so-numero') {
+      if (nome) removerAplicacao(nome.id);
+    } else if (nome) {
+      setAplicacao(nome.id, { localId: opcao });
+    } else {
+      addAplicacao('texto', opcao);
+    }
     setLocalEmFoco('numero-costas');
   };
 
@@ -115,169 +91,104 @@ export function PainelNomeNumero() {
 
       {peca === 'camisola' ? (
         <>
-          <Seccao titulo="Nome e número — escolha os lados">
-            <div className="flex flex-wrap gap-3">
-              <OpcaoSlot
-                ativa={!!numFrente}
-                onClick={() =>
-                  numFrente ? removerAplicacao(numFrente.id) : criarNumero('peito-centro')
-                }
-                onFocoLocal={() => setLocalEmFoco('peito-centro')}
-                titulo="Número na frente"
-                legenda="Frente"
-              >
-                <IconeCamisola numero="centro" />
-              </OpcaoSlot>
-              <OpcaoSlot
-                ativa={costasAtivas}
-                onClick={alternarCostas}
-                onFocoLocal={() => setLocalEmFoco('numero-costas')}
-                titulo="Nome e número nas costas"
-                legenda="Costas"
-              >
-                <IconeCamisola verso nome="cima" numero="costas" />
-              </OpcaoSlot>
-            </div>
-          </Seccao>
-
-          {nome && (
-            <Seccao titulo="Personalizar nome">
-              {/* variante organizada dentro do lado: por cima ou por
-                  baixo do número */}
-              <div className="flex gap-2">
-                {LOCAIS_NOME.map((localId) => (
-                  <OpcaoSlot
-                    key={localId}
-                    ativa={nome.localId === localId}
-                    onClick={() => mover(nome, localId)}
-                    onFocoLocal={() => setLocalEmFoco(localId)}
-                    titulo={localId === 'nome-costas' ? 'Nome por cima' : 'Nome por baixo'}
-                    legenda={localId === 'nome-costas' ? 'Por cima' : 'Por baixo'}
-                  >
-                    <IconeCamisola
-                      verso
-                      nome={localId === 'nome-costas' ? 'cima' : 'baixo'}
-                      numero="costas"
-                    />
-                  </OpcaoSlot>
-                ))}
-              </div>
-              <input
-                value={nome.texto ?? ''}
-                onChange={(e) =>
-                  setAplicacao(nome.id, { texto: e.target.value.toUpperCase().slice(0, 20) })
-                }
-                placeholder="JOGADOR"
-                className="h-9 w-full rounded-md border bg-background px-2.5 text-sm font-bold tracking-wide outline-none focus:border-foreground"
-              />
-              <LinhaLetraTamanho aplicacao={nome} />
-              <div className="flex gap-4">
-                <CorCampo rotulo="Cor nome" aplicacao={nome} campo="cor" />
-                <CorCampo rotulo="Cor borda" aplicacao={nome} campo="corContorno" />
-              </div>
-            </Seccao>
-          )}
-
-          {numeros.length > 0 && (
-            <Seccao titulo="Personalizar número">
-              <input
-                value={numeroTexto}
-                onChange={(e) => setNumero(e.target.value)}
-                inputMode="numeric"
-                placeholder="10"
-                className="h-9 w-full rounded-md border bg-background px-2.5 text-sm font-bold tracking-wide outline-none focus:border-foreground"
-              />
-              {numVerso && (
-                <>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Costas
-                  </p>
-                  <LinhaLetraTamanho aplicacao={numVerso} />
-                  <div className="flex gap-4">
-                    <CorCampo rotulo="Cor núm. costas" aplicacao={numVerso} campo="cor" />
-                    <CorCampo rotulo="Cor borda" aplicacao={numVerso} campo="corContorno" />
-                  </div>
-                </>
-              )}
-              {numFrente && (
-                <>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Frente
-                  </p>
-                  {/* variante organizada dentro do lado: posição no peito */}
-                  <div className="flex gap-2">
-                    {LOCAIS_NUM_FRENTE.map((localId) => (
-                      <OpcaoSlot
-                        key={localId}
-                        ativa={numFrente.localId === localId}
-                        onClick={() => mover(numFrente, localId)}
-                        onFocoLocal={() => setLocalEmFoco(localId)}
-                        titulo={{
-                          'peito-esq': 'Peito esquerdo',
-                          'peito-centro': 'Ao centro',
-                          'peito-dir': 'Peito direito',
-                        }[localId]}
-                        legenda={{
-                          'peito-esq': 'Esquerda',
-                          'peito-centro': 'Centro',
-                          'peito-dir': 'Direita',
-                        }[localId]}
-                      >
-                        <IconeCamisola
-                          numero={{
-                            'peito-esq': 'esq',
-                            'peito-centro': 'centro',
-                            'peito-dir': 'dir',
-                          }[localId] as 'esq' | 'centro' | 'dir'}
-                        />
-                      </OpcaoSlot>
-                    ))}
-                  </div>
-                  <LinhaLetraTamanho aplicacao={numFrente} />
-                  <div className="flex gap-4">
-                    <CorCampo rotulo="Cor núm. frente" aplicacao={numFrente} campo="cor" />
-                    <CorCampo rotulo="Cor borda" aplicacao={numFrente} campo="corContorno" />
-                  </div>
-                </>
-              )}
-            </Seccao>
-          )}
-        </>
-      ) : (
-        <>
-          <Seccao titulo="Número no calção">
+          <Seccao titulo="Frente — número">
             <div className="flex flex-wrap gap-2">
-              {LOCAIS_NUM_CALCAO.map((localId) => (
+              {LOCAIS_NUM_FRENTE.map((localId) => (
                 <OpcaoSlot
                   key={localId}
-                  ativa={numCalcao?.localId === localId}
-                  onClick={() => alternar(numCalcao, localId, 'numero')}
+                  ativa={numFrente?.localId === localId}
+                  onClick={() => escolher(numFrente, localId)}
                   onFocoLocal={() => setLocalEmFoco(localId)}
-                  titulo={localId === 'coxa-esq' ? 'Coxa esquerda' : 'Coxa direita'}
+                  titulo={{
+                    'peito-esq': 'Peito esquerdo',
+                    'peito-centro': 'Ao centro',
+                    'peito-dir': 'Peito direito',
+                  }[localId]}
+                  legenda={{
+                    'peito-esq': 'Esquerda',
+                    'peito-centro': 'Centro',
+                    'peito-dir': 'Direita',
+                  }[localId]}
                 >
-                  <IconeCalcao perna={localId === 'coxa-esq' ? 'esq' : 'dir'} />
+                  <IconeCamisola
+                    numero={{ 'peito-esq': 'esq', 'peito-centro': 'centro', 'peito-dir': 'dir' }[
+                      localId
+                    ] as 'esq' | 'centro' | 'dir'}
+                  />
                 </OpcaoSlot>
               ))}
             </div>
+            <FilaCores
+              pares={[
+                { rotulo: 'Cor número', aplicacao: numFrente, campo: 'cor' },
+                { rotulo: 'Cor borda', aplicacao: numFrente, campo: 'corContorno' },
+              ]}
+            />
           </Seccao>
 
-          {numCalcao && (
-            <Seccao titulo="Personalizar número">
-              <input
-                value={numeroTexto}
-                onChange={(e) => setNumero(e.target.value)}
-                inputMode="numeric"
-                placeholder="10"
-                className="h-9 w-full rounded-md border bg-background px-2.5 text-sm font-bold tracking-wide outline-none focus:border-foreground"
-              />
-              <LinhaLetraTamanho aplicacao={numCalcao} />
-              <div className="flex gap-4">
-                <CorCampo rotulo="Cor número" aplicacao={numCalcao} campo="cor" />
-                <CorCampo rotulo="Cor borda" aplicacao={numCalcao} campo="corContorno" />
-              </div>
-            </Seccao>
-          )}
+          <Seccao titulo="Costas — nome e número">
+            <div className="flex flex-wrap gap-2">
+              <OpcaoSlot
+                ativa={estadoCostas === 'so-numero'}
+                onClick={() => setCostas('so-numero')}
+                onFocoLocal={() => setLocalEmFoco('numero-costas')}
+                titulo="Só o número"
+                legenda="Só número"
+              >
+                <IconeCamisola verso numero="costas" />
+              </OpcaoSlot>
+              <OpcaoSlot
+                ativa={estadoCostas === 'nome-costas'}
+                onClick={() => setCostas('nome-costas')}
+                onFocoLocal={() => setLocalEmFoco('nome-costas')}
+                titulo="Nome por cima do número"
+                legenda="Nome cima"
+              >
+                <IconeCamisola verso nome="cima" numero="costas" />
+              </OpcaoSlot>
+              <OpcaoSlot
+                ativa={estadoCostas === 'costas-baixo'}
+                onClick={() => setCostas('costas-baixo')}
+                onFocoLocal={() => setLocalEmFoco('costas-baixo')}
+                titulo="Nome por baixo do número"
+                legenda="Nome baixo"
+              >
+                <IconeCamisola verso nome="baixo" numero="costas" />
+              </OpcaoSlot>
+            </div>
+            <FilaCores
+              pares={[
+                { rotulo: 'Cor nome', aplicacao: nome, campo: 'cor' },
+                { rotulo: 'Borda nome', aplicacao: nome, campo: 'corContorno' },
+                { rotulo: 'Cor número', aplicacao: numVerso, campo: 'cor' },
+                { rotulo: 'Borda número', aplicacao: numVerso, campo: 'corContorno' },
+              ]}
+            />
+          </Seccao>
         </>
+      ) : (
+        <Seccao titulo="Número no calção">
+          <div className="flex flex-wrap gap-2">
+            {LOCAIS_NUM_CALCAO.map((localId) => (
+              <OpcaoSlot
+                key={localId}
+                ativa={numCalcao?.localId === localId}
+                onClick={() => escolher(numCalcao, localId)}
+                onFocoLocal={() => setLocalEmFoco(localId)}
+                titulo={localId === 'coxa-esq' ? 'Coxa esquerda' : 'Coxa direita'}
+                legenda={localId === 'coxa-esq' ? 'Esquerda' : 'Direita'}
+              >
+                <IconeCalcao perna={localId === 'coxa-esq' ? 'esq' : 'dir'} />
+              </OpcaoSlot>
+            ))}
+          </div>
+          <FilaCores
+            pares={[
+              { rotulo: 'Cor número', aplicacao: numCalcao, campo: 'cor' },
+              { rotulo: 'Cor borda', aplicacao: numCalcao, campo: 'corContorno' },
+            ]}
+          />
+        </Seccao>
       )}
     </div>
   );
@@ -342,35 +253,25 @@ export function OpcaoSlot({
   );
 }
 
-/** Letra + tamanho (%) de uma aplicação, numa linha. */
-function LinhaLetraTamanho({ aplicacao: a }: { aplicacao: Aplicacao }) {
-  const setAplicacao = useKitStore((s) => s.setAplicacao);
+/** Fila de cores do cartão — TODAS à vista: as de aplicações desligadas
+    aparecem esbatidas e inertes (fantasma), em vez de sumirem. */
+function FilaCores({
+  pares,
+}: {
+  pares: Array<{ rotulo: string; aplicacao?: Aplicacao; campo: 'cor' | 'corContorno' }>;
+}) {
   return (
-    <div className="flex gap-2">
-      <select
-        value={a.fonteId}
-        onChange={(e) => setAplicacao(a.id, { fonteId: e.target.value })}
-        className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs outline-none focus:border-foreground"
-      >
-        {FONTES.map((f) => (
-          <option key={f.id} value={f.id} style={{ fontFamily: f.css }}>
-            {f.nome}
-          </option>
-        ))}
-      </select>
-      <input
-        type="number"
-        min={50}
-        max={150}
-        step={5}
-        value={Math.round(a.escala * 100)}
-        onChange={(e) => {
-          const n = Number(e.target.value) || 100;
-          setAplicacao(a.id, { escala: Math.min(1.5, Math.max(0.5, n / 100)) });
-        }}
-        title="Tamanho (%)"
-        className="h-8 w-16 rounded-md border bg-background px-1.5 text-center text-xs font-bold outline-none focus:border-foreground"
-      />
+    <div className="flex flex-wrap gap-4">
+      {pares.map(({ rotulo, aplicacao, campo }) =>
+        aplicacao ? (
+          <CorCampo key={rotulo} rotulo={rotulo} aplicacao={aplicacao} campo={campo} />
+        ) : (
+          <div key={rotulo} className="flex flex-col items-center gap-1 opacity-35" aria-hidden>
+            <span className="h-9 w-9 rounded-md border-2 border-border bg-muted" />
+            <span className="text-[10px] text-muted-foreground">{rotulo}</span>
+          </div>
+        ),
+      )}
     </div>
   );
 }
