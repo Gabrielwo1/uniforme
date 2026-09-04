@@ -69,11 +69,12 @@ function aplicacaoInicial(tipo: TipoAplicacao, localId?: string): Aplicacao {
   };
 }
 
-/* O escudo FOGE do número (pedido do cliente, 2026-09-04): número e logo
-   no mesmo sítio do peito ficavam um por cima do outro ("KY10"). Sempre
-   que uma alteração os deixe no mesmo local, o LOGO salta para o lado
-   oposto — e volta a saltar se o número trocar de lado. O número nunca é
-   mexido: quem manda é o que o utilizador acabou de pôr. */
+/* Número e logo no mesmo sítio do peito ficavam um por cima do outro
+   ("KY10"). A regra (2026-09-04, afinada no mesmo dia): QUEM O UTILIZADOR
+   ACABOU DE MOVER ganha o lugar, e o OUTRO salta para o canto oposto —
+   pôr o número em cima do escudo empurra o escudo; mover o escudo pelo
+   painel dele para cima do número empurra o número. Vão alternando sem
+   nunca se sobreporem, e nenhum painel fica "bloqueado". */
 const SITIOS_PEITO = ['peito-esq', 'peito-centro', 'peito-dir'];
 const PEITO_OPOSTO: Record<string, string> = {
   'peito-esq': 'peito-dir',
@@ -81,14 +82,15 @@ const PEITO_OPOSTO: Record<string, string> = {
   'peito-centro': 'peito-esq',
 };
 
-function desviarLogoDoNumero(aplicacoes: Aplicacao[]): Aplicacao[] {
-  const numero = aplicacoes.find(
-    (a) => a.tipo === 'numero' && SITIOS_PEITO.includes(a.localId),
-  );
-  if (!numero) return aplicacoes;
+function desviarNoPeito(aplicacoes: Aplicacao[], movidaId: string): Aplicacao[] {
+  const movida = aplicacoes.find((a) => a.id === movidaId);
+  if (!movida || !SITIOS_PEITO.includes(movida.localId)) return aplicacoes;
+  if (movida.tipo !== 'numero' && movida.tipo !== 'logo') return aplicacoes;
   return aplicacoes.map((a) =>
-    a.tipo === 'logo' && a.localId === numero.localId
-      ? { ...a, localId: PEITO_OPOSTO[numero.localId] }
+    a.id !== movida.id
+    && (a.tipo === 'numero' || a.tipo === 'logo')
+    && a.localId === movida.localId
+      ? { ...a, localId: PEITO_OPOSTO[movida.localId] }
       : a,
   );
 }
@@ -205,7 +207,7 @@ export const useKitStore = create<KitStore>((set, get) => ({
     set((s) => ({
       design: {
         ...s.design,
-        aplicacoes: desviarLogoDoNumero([...(s.design.aplicacoes ?? []), nova]),
+        aplicacoes: desviarNoPeito([...(s.design.aplicacoes ?? []), nova], nova.id),
       },
     }));
     return nova;
@@ -215,8 +217,9 @@ export const useKitStore = create<KitStore>((set, get) => ({
     set((s) => ({
       design: {
         ...s.design,
-        aplicacoes: desviarLogoDoNumero(
+        aplicacoes: desviarNoPeito(
           (s.design.aplicacoes ?? []).map((a) => (a.id === id ? { ...a, ...mudanca } : a)),
+          id,
         ),
       },
     })),
