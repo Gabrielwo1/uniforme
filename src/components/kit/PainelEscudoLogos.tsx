@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
+// a variante BRANCA (letras brancas, seta vermelha): a original é preta e
+// desaparecia no peito escuro do tema padrão
+import logoKypzl from '@/assets/kypzl-logo-branca.png';
 import { useKitStore } from '@/store/useKitStore';
 import { localPorId } from '@/lib/kitLocais';
 import type { Aplicacao } from '@/types/kit';
@@ -46,14 +49,20 @@ export function PainelEscudoLogos() {
   const noMeiao = logoEm(LOCAIS_MEIAO);
 
   /** Um clique no slot ativo desliga; noutro slot do grupo, muda; sem
-      nenhum, cria — a mesma regra do painel de nome/número. */
+      nenhum, cria — a mesma regra do painel de nome/número. O slot nasce
+      com a LOGO KYPZL como imagem padrão (pedido do cliente): aparece
+      logo qualquer coisa na peça, e o "Trocar" põe o escudo do clube. */
   const alternar = (atual: Aplicacao | undefined, localId: string) => {
     if (atual && atual.localId === localId) {
       removerAplicacao(atual.id);
       return;
     }
-    if (atual) setAplicacao(atual.id, { localId });
-    else addAplicacao('logo', localId);
+    if (atual) {
+      setAplicacao(atual.id, { localId });
+    } else {
+      const nova = addAplicacao('logo', localId);
+      setAplicacao(nova.id, { imagem: logoKypzl, nomeFicheiro: 'Logo KYPZL (padrão)' });
+    }
     setLocalEmFoco(localId);
   };
 
