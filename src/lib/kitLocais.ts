@@ -46,10 +46,13 @@ const TUDO: TipoAplicacao[] = ['texto', 'numero', 'logo'];
    local à parte, por isso não há ambiguidade a resolver. */
 const DEFS: Def[] = [
   // ------------------------------------------------------------ camisola --
+  /* cy medido na referência do concorrente (2026-09-04): o escudo assenta
+     EM CIMA DO PEITO (~26% da altura da camisola), não no colarinho — a
+     0.19 ficava alto de mais, palavra do cliente. */
   { id: 'peito-esq', nome: 'Peito esquerdo', peca: 'camisola', lado: 'frente',
-    cx: 0.28, cy: 0.19, w: 0.2, h: 0.09, aceita: TUDO },
+    cx: 0.28, cy: 0.26, w: 0.2, h: 0.09, aceita: TUDO },
   { id: 'peito-dir', nome: 'Peito direito', peca: 'camisola', lado: 'frente',
-    cx: 0.72, cy: 0.19, w: 0.2, h: 0.09, aceita: TUDO },
+    cx: 0.72, cy: 0.26, w: 0.2, h: 0.09, aceita: TUDO },
   { id: 'peito-centro', nome: 'Peito ao centro', peca: 'camisola', lado: 'frente',
     cx: 0.5, cy: 0.34, w: 0.6, h: 0.13, aceita: TUDO },
   { id: 'barriga', nome: 'Barriga', peca: 'camisola', lado: 'frente',

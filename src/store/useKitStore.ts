@@ -26,15 +26,16 @@ function designInicial(): KitDesign {
       meiao: configInicial('meiao'),
     },
     sincronizado: true,
-    // o simulador ABRE com o escudo KYPZL ao peito (pedido do cliente,
-    // 2026-09-04): há logo qualquer coisa vestida sem ninguém clicar, e o
-    // "Trocar" no painel põe o escudo do clube
+    // o simulador ABRE como a referência do concorrente (pedido do
+    // cliente, 2026-09-04): escudo KYPZL ao peito E número 10 nas costas,
+    // sem ninguém clicar — o painel permite trocar/tirar os dois
     aplicacoes: [
       {
         ...aplicacaoInicial('logo', 'peito-esq'),
         imagem: logoKypzl,
         nomeFicheiro: 'Logo KYPZL (padrão)',
       },
+      aplicacaoInicial('numero', 'numero-costas'),
     ],
   };
 }
