@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import logoKypzl from '@/assets/kypzl-logo-branca.png';
 import type { Aplicacao, KitDesign, PecaConfig, PecaKit, TipoAplicacao } from '@/types/kit';
 import { PECAS_KIT } from '@/types/kit';
 import { estampaDemoPorId, estampasDemo } from '@/lib/kitDemo';
@@ -25,7 +26,16 @@ function designInicial(): KitDesign {
       meiao: configInicial('meiao'),
     },
     sincronizado: true,
-    aplicacoes: [],
+    // o simulador ABRE com o escudo KYPZL ao peito (pedido do cliente,
+    // 2026-09-04): há logo qualquer coisa vestida sem ninguém clicar, e o
+    // "Trocar" no painel põe o escudo do clube
+    aplicacoes: [
+      {
+        ...aplicacaoInicial('logo', 'peito-esq'),
+        imagem: logoKypzl,
+        nomeFicheiro: 'Logo KYPZL (padrão)',
+      },
+    ],
   };
 }
 
