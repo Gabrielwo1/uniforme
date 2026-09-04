@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react';
 // a variante BRANCA (letras brancas, seta vermelha): a original é preta e
 // desaparecia no peito escuro do tema padrão
 import logoKypzl from '@/assets/kypzl-logo-branca.png';
+import faixaCinza from '@/assets/faixa-patrocinio.png';
 import { useKitStore } from '@/store/useKitStore';
 import { localPorId } from '@/lib/kitLocais';
 import type { Aplicacao } from '@/types/kit';
@@ -28,9 +29,30 @@ import { OpcaoSlot, Seccao } from './PainelNomeNumero';
  */
 
 const LOCAIS_ESCUDO = ['peito-esq', 'peito-centro', 'peito-dir'];
-const LOCAIS_PATROCINIO = ['barriga', 'costas-baixo'];
 const LOCAIS_CALCAO = ['coxa-esq', 'coxa-dir'];
 const LOCAIS_MEIAO = ['meia-esq', 'meia-dir'];
+
+/** As posições de patrocínio do concorrente — cada opção pode cobrir um
+    PAR de locais (topo do peito, mangas): entra tudo de uma vez, com a
+    FAIXA CINZA de mostra até o cliente carregar o ficheiro. */
+const OPCOES_PATROCINIO: {
+  id: string;
+  locais: string[];
+  titulo: string;
+  verso?: boolean;
+  barras: Array<{ cx: number; cy: number; w?: number; h?: number }>;
+}[] = [
+  { id: 'barriga', locais: ['barriga'], titulo: 'Barriga (frente)',
+    barras: [{ cx: 30, cy: 37 }] },
+  { id: 'peito-topo', locais: ['ombro-esq', 'ombro-dir'], titulo: 'Topo do peito (os dois lados)',
+    barras: [{ cx: 23, cy: 17, w: 9, h: 4 }, { cx: 37, cy: 17, w: 9, h: 4 }] },
+  { id: 'mangas', locais: ['manga-esq', 'manga-dir'], titulo: 'Mangas (as duas)',
+    barras: [{ cx: 12, cy: 20, w: 7, h: 4 }, { cx: 48, cy: 20, w: 7, h: 4 }] },
+  { id: 'costas-topo', locais: ['costas-topo'], titulo: 'Costas no topo', verso: true,
+    barras: [{ cx: 30, cy: 19, w: 22, h: 5 }] },
+  { id: 'costas-baixo', locais: ['costas-baixo'], titulo: 'Costas em baixo', verso: true,
+    barras: [{ cx: 30, cy: 46 }] },
+];
 
 export function PainelEscudoLogos() {
   const [peca, setPeca] = useState<'camisola' | 'calcao' | 'meiao'>('camisola');
@@ -44,9 +66,26 @@ export function PainelEscudoLogos() {
     aplicacoes.find((a) => a.tipo === 'logo' && locais.includes(a.localId));
 
   const escudo = logoEm(LOCAIS_ESCUDO);
-  const patrocinios = LOCAIS_PATROCINIO.map((l) => logoEm([l]));
   const noCalcao = logoEm(LOCAIS_CALCAO);
   const noMeiao = logoEm(LOCAIS_MEIAO);
+
+  const doPatrocinio = (locais: string[]) =>
+    aplicacoes.filter((a) => a.tipo === 'logo' && locais.includes(a.localId));
+
+  /** Liga/desliga uma opção de patrocínio — TODOS os locais dela de uma
+      vez, com a faixa cinza de mostra (igual à referência). */
+  const alternarPatrocinio = (locais: string[]) => {
+    const atuais = doPatrocinio(locais);
+    if (atuais.length > 0) {
+      for (const a of atuais) removerAplicacao(a.id);
+      return;
+    }
+    for (const localId of locais) {
+      const nova = addAplicacao('logo', localId);
+      setAplicacao(nova.id, { imagem: faixaCinza, nomeFicheiro: 'Faixa de mostra' });
+    }
+    setLocalEmFoco(locais[0]);
+  };
 
   /** Um clique no slot ativo desliga; noutro slot do grupo, muda; sem
       nenhum, cria — a mesma regra do painel de nome/número. O slot nasce
@@ -107,39 +146,32 @@ export function PainelEscudoLogos() {
                 </OpcaoSlot>
               ))}
             </div>
-            {escudo && <LinhaImagem aplicacao={escudo} rotulo="Ficheiro do escudo" />}
+            {escudo && <LinhaImagem aplicacoes={[escudo]} rotulo="Ficheiro do escudo" />}
           </Seccao>
 
           <Seccao titulo="Patrocínio — defina as posições">
             <div className="flex flex-wrap gap-2">
-              {LOCAIS_PATROCINIO.map((localId, i) => (
+              {OPCOES_PATROCINIO.map(({ id, locais, titulo, verso, barras }) => (
                 <OpcaoSlot
-                  key={localId}
-                  ativa={!!patrocinios[i]}
-                  onClick={() => alternar(patrocinios[i], localId)}
-                  onFocoLocal={() => setLocalEmFoco(localId)}
-                  titulo={localId === 'barriga' ? 'Barriga (frente)' : 'Costas em baixo'}
+                  key={id}
+                  ativa={doPatrocinio(locais).length > 0}
+                  onClick={() => alternarPatrocinio(locais)}
+                  onFocoLocal={() => setLocalEmFoco(locais[0])}
+                  titulo={titulo}
                 >
-                  <CamisolaIcone verso={localId === 'costas-baixo'}>
-                    <MarcaBarra cx={30} cy={localId === 'barriga' ? 37 : 46} />
+                  <CamisolaIcone verso={verso}>
+                    {barras.map((b, i) => (
+                      <MarcaBarra key={i} {...b} />
+                    ))}
                   </CamisolaIcone>
                 </OpcaoSlot>
               ))}
             </div>
-            {patrocinios.map(
-              (a, i) =>
-                a && (
-                  <LinhaImagem
-                    key={a.id}
-                    aplicacao={a}
-                    rotulo={
-                      LOCAIS_PATROCINIO[i] === 'barriga'
-                        ? 'Patrocínio da frente'
-                        : 'Patrocínio das costas'
-                    }
-                  />
-                ),
-            )}
+            {OPCOES_PATROCINIO.map(({ id, locais, titulo }) => {
+              const atuais = doPatrocinio(locais);
+              if (atuais.length === 0) return null;
+              return <LinhaImagem key={id} aplicacoes={atuais} rotulo={titulo} />;
+            })}
           </Seccao>
         </>
       )}
@@ -161,7 +193,7 @@ export function PainelEscudoLogos() {
               </OpcaoSlot>
             ))}
           </div>
-          {noCalcao && <LinhaImagem aplicacao={noCalcao} rotulo="Ficheiro do logo" />}
+          {noCalcao && <LinhaImagem aplicacoes={[noCalcao]} rotulo="Ficheiro do logo" />}
         </Seccao>
       )}
 
@@ -182,7 +214,7 @@ export function PainelEscudoLogos() {
               </OpcaoSlot>
             ))}
           </div>
-          {noMeiao && <LinhaImagem aplicacao={noMeiao} rotulo="Ficheiro do logo" />}
+          {noMeiao && <LinhaImagem aplicacoes={[noMeiao]} rotulo="Ficheiro do logo" />}
         </Seccao>
       )}
     </div>
@@ -191,15 +223,21 @@ export function PainelEscudoLogos() {
 
 /** Ficheiro + tamanho de um logo ativo. A imagem fica em data URL — nunca
     sai do browser antes de haver pedido. */
-function LinhaImagem({ aplicacao: a, rotulo }: { aplicacao: Aplicacao; rotulo: string }) {
+function LinhaImagem({ aplicacoes, rotulo }: { aplicacoes: Aplicacao[]; rotulo: string }) {
   const setAplicacao = useKitStore((s) => s.setAplicacao);
   const ficheiro = useRef<HTMLInputElement>(null);
+  // as opções aos pares (mangas, topo do peito) partilham o ficheiro e o
+  // tamanho: o que se muda aqui muda em TODAS as posições da opção
+  const a = aplicacoes[0];
 
   const carregar = (f: File | undefined) => {
     if (!f) return;
     const leitor = new FileReader();
-    leitor.onload = () =>
-      setAplicacao(a.id, { imagem: String(leitor.result), nomeFicheiro: f.name });
+    leitor.onload = () => {
+      for (const ap of aplicacoes) {
+        setAplicacao(ap.id, { imagem: String(leitor.result), nomeFicheiro: f.name });
+      }
+    };
     leitor.readAsDataURL(f);
   };
 
@@ -241,7 +279,8 @@ function LinhaImagem({ aplicacao: a, rotulo }: { aplicacao: Aplicacao; rotulo: s
             value={Math.round(a.escala * 100)}
             onChange={(e) => {
               const n = Number(e.target.value) || 100;
-              setAplicacao(a.id, { escala: Math.min(1.5, Math.max(0.5, n / 100)) });
+              const escala = Math.min(1.5, Math.max(0.5, n / 100));
+              for (const ap of aplicacoes) setAplicacao(ap.id, { escala });
             }}
             title="Tamanho (%)"
             className="h-7 w-14 rounded-md border bg-background px-1 text-center text-xs font-bold outline-none focus:border-foreground"

@@ -58,6 +58,19 @@ const DEFS: Def[] = [
   { id: 'barriga', nome: 'Barriga', peca: 'camisola', lado: 'frente',
     cx: 0.5, cy: 0.66, w: 0.5, h: 0.11, aceita: TUDO },
 
+  /* posições de PATROCÍNIO (2026-09-04, espelho do concorrente): topo do
+     peito e mangas andam aos PARES — o painel cria as duas de uma vez */
+  { id: 'ombro-esq', nome: 'Peito topo esquerdo', peca: 'camisola', lado: 'frente',
+    cx: 0.28, cy: 0.1, w: 0.17, h: 0.05, aceita: ['logo'] },
+  { id: 'ombro-dir', nome: 'Peito topo direito', peca: 'camisola', lado: 'frente',
+    cx: 0.72, cy: 0.1, w: 0.17, h: 0.05, aceita: ['logo'] },
+  { id: 'manga-esq', nome: 'Manga esquerda', peca: 'camisola', lado: 'frente',
+    cx: 0.08, cy: 0.24, w: 0.12, h: 0.055, aceita: ['logo'] },
+  { id: 'manga-dir', nome: 'Manga direita', peca: 'camisola', lado: 'frente',
+    cx: 0.92, cy: 0.24, w: 0.12, h: 0.055, aceita: ['logo'] },
+  { id: 'costas-topo', nome: 'Costas no topo', peca: 'camisola', lado: 'verso',
+    cx: 0.5, cy: 0.06, w: 0.5, h: 0.05, aceita: ['logo'] },
+
   { id: 'nome-costas', nome: 'Nome (costas)', peca: 'camisola', lado: 'verso',
     cx: 0.5, cy: 0.13, w: 0.72, h: 0.08, aceita: ['texto'] },
   { id: 'numero-costas', nome: 'Número (costas)', peca: 'camisola', lado: 'verso',
