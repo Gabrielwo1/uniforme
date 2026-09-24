@@ -144,12 +144,15 @@ export const useKitStore = create<KitStore>((set, get) => ({
           estampaId: equivalente.id,
           // troca de estampa reinicia as cores das camadas (os ids mudam) e
           // adota a cor de fundo do tema no corpo — senão a peça não fica
-          // como a miniatura da galeria promete. Gola, mangas e restantes
-          // zonas ficam como estavam: não dependem do tema.
+          // como a miniatura da galeria promete. Gola e punhos ficam como
+          // estavam, EXCETO quando o modelo traz cor própria para a zona
+          // (coresZonasPadrao): é o que faz as variantes "gola verde"/"gola
+          // branca" abrirem como o cliente as desenhou.
           cores: {},
           coresZonas: {
             ...pecas[peca].coresZonas,
             corpo: equivalente.corBasePadrao,
+            ...equivalente.coresZonasPadrao,
           },
         };
       }

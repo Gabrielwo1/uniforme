@@ -197,6 +197,9 @@ export interface KitTemplateRow {
   lado: 'frente' | 'verso';
   quadro: { x: number; y: number; w: number; h: number };
   cor_fundo: string | null;
+  /** Cores por omissão das ZONAS (gola, punhos) ao escolher este modelo —
+      distingue variantes tipo "gola verde" que partilham a mesma arte. */
+  cores_zonas: Record<string, string> | null;
   camadas: { id: string; cor: string; svg: string }[];
   enabled: boolean;
   created_at: string;

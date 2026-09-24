@@ -24,6 +24,8 @@ interface DadosTema {
   QUADRO: { x: number; y: number; w: number; h: number };
   COR_FUNDO: string | null;
   CAMADAS: { id: string; cor: string; svg: string }[];
+  /** Cores por omissão das zonas da peça (gola, punhos) — ver `Estampa`. */
+  CORES_ZONAS?: Record<string, string> | null;
 }
 
 interface Tema {
@@ -34,8 +36,9 @@ interface Tema {
   dados?: DadosTema;
   /** Arte DESENHADA POR PEÇA, dentro do molde de cada uma — o formato que
       o cliente usa (ver scripts/converter-molde.py). Uma peça sem arte
-      própria fica com a cor base. */
-  porPeca?: Partial<Record<PecaKit, DadosTema>>;
+      própria fica com a cor base; um lado sem arte própria repete a da
+      frente (foi o comportamento de sempre, até haver fotos de costas). */
+  porPeca?: Partial<Record<PecaKit, Partial<Record<LadoKit, DadosTema>>>>;
   /** Cor da peça por baixo da arte, quando o molde não traz fundo próprio
       (o Aston Vila desenha o corpo em vez de o preencher). */
   corBase?: string;
@@ -69,7 +72,9 @@ function letraDaCamada(i: number): string {
 function fundoDe(tema: Tema, dados?: DadosTema): string {
   const doTema =
     tema.dados?.COR_FUNDO ??
-    Object.values(tema.porPeca ?? {}).find((d) => d?.COR_FUNDO)?.COR_FUNDO;
+    Object.values(tema.porPeca ?? {})
+      .flatMap((lados) => Object.values(lados ?? {}))
+      .find((d) => d?.COR_FUNDO)?.COR_FUNDO;
   return dados?.COR_FUNDO ?? doTema ?? tema.corBase ?? '#221f20';
 }
 
@@ -103,24 +108,41 @@ function naCaixa(dados: DadosTema, svg: string, c: Caixa, lado: LadoKit, peca: P
 function registar(tema: Tema) {
   registarEstampas(
     (['camisola', 'calcao', 'meiao'] as PecaKit[]).map((peca) => {
-      // arte por peça quando o tema a tem; senão a arte única do tema
-      const dados = tema.porPeca ? tema.porPeca[peca] : tema.dados;
+      // arte por peça e por LADO quando o tema a tem; senão a arte única
+      // do tema serve os dois lados (temas planos, tipo riscas)
+      const porLado = tema.porPeca
+        ? tema.porPeca[peca]
+        : tema.dados && { frente: tema.dados, verso: tema.dados };
+      const frente = porLado?.frente;
+      const verso = porLado?.verso ?? frente;
+      // as famílias de cor são POSICIONAIS e partilhadas entre os lados:
+      // a camada i pinta a frente E as costas com o mesmo controlo
+      const n = Math.max(frente?.CAMADAS.length ?? 0, verso?.CAMADAS.length ?? 0);
       return {
         id: `${tema.id}-${peca}`,
         codModelo: tema.codModelo,
         nome: tema.nome,
         peca,
-        corBasePadrao: fundoDe(tema, dados),
+        corBasePadrao: fundoDe(tema, frente),
+        coresZonasPadrao: frente?.CORES_ZONAS ?? undefined,
         amostraViewBox: AMOSTRAS[peca],
-        camadas: (dados?.CAMADAS ?? []).map((c, i) => ({
-          id: c.id,
-          nome: `Camada ${letraDaCamada(i)}`,
-          corPadrao: c.cor,
-          desenho: {
-            frente: naCaixa(dados!, c.svg, CAIXAS[peca].frente, 'frente', peca),
-            verso: naCaixa(dados!, c.svg, CAIXAS[peca].verso, 'verso', peca),
-          },
-        })),
+        camadas: Array.from({ length: n }, (_, i) => {
+          const cf = frente?.CAMADAS[i];
+          const cv = verso?.CAMADAS[i];
+          return {
+            id: (cf ?? cv)!.id,
+            nome: `Camada ${letraDaCamada(i)}`,
+            corPadrao: (cf ?? cv)!.cor,
+            desenho: {
+              ...(cf && {
+                frente: naCaixa(frente!, cf.svg, CAIXAS[peca].frente, 'frente', peca),
+              }),
+              ...(cv && {
+                verso: naCaixa(verso!, cv.svg, CAIXAS[peca].verso, 'verso', peca),
+              }),
+            },
+          };
+        }),
       };
     }),
   );
@@ -153,12 +175,13 @@ export async function registarDaBaseDeDados(): Promise<number> {
   }
 
   for (const [cod, pecas] of porCodigo) {
-    const porPeca: Partial<Record<PecaKit, DadosTema>> = {};
+    const porPeca: NonNullable<Tema['porPeca']> = {};
     for (const p of pecas) {
-      porPeca[p.peca] = {
+      (porPeca[p.peca] ??= {})[p.lado] = {
         QUADRO: p.quadro,
         COR_FUNDO: p.cor_fundo,
         CAMADAS: p.camadas,
+        CORES_ZONAS: p.cores_zonas,
       };
     }
     registar({ id: `bd-${cod}`, nome: pecas[0].nome, codModelo: cod, porPeca });
