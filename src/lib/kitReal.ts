@@ -26,8 +26,6 @@ interface DadosTema {
   CAMADAS: { id: string; cor: string; svg: string }[];
   /** Cores por omissão das zonas da peça (gola, punhos) — ver `Estampa`. */
   CORES_ZONAS?: Record<string, string> | null;
-  /** Estilo físico da gola no palco (ex. "bico") — ver `moldeDemo`. */
-  GOLA_ESTILO?: string | null;
 }
 
 interface Tema {
@@ -127,7 +125,6 @@ function registar(tema: Tema) {
         peca,
         corBasePadrao: fundoDe(tema, frente),
         coresZonasPadrao: frente?.CORES_ZONAS ?? undefined,
-        golaEstilo: frente?.GOLA_ESTILO ?? undefined,
         amostraViewBox: AMOSTRAS[peca],
         camadas: Array.from({ length: n }, (_, i) => {
           const cf = frente?.CAMADAS[i];
@@ -185,7 +182,6 @@ export async function registarDaBaseDeDados(): Promise<number> {
         COR_FUNDO: p.cor_fundo,
         CAMADAS: p.camadas,
         CORES_ZONAS: p.cores_zonas,
-        GOLA_ESTILO: p.gola_estilo,
       };
     }
     registar({ id: `bd-${cod}`, nome: pecas[0].nome, codModelo: cod, porPeca });

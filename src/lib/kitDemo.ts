@@ -42,22 +42,7 @@ export function registarEstampas(lista: Estampa[]) {
 
 const RAIZ_MOLDES = '/moldes/jog';
 
-/**
- * Estilos FÍSICOS de gola no palco, além da redonda do mockup do designer.
- *
- * Cada estilo é um par de imagens derivado da PRÓPRIA gola do designer
- * (scripts, ver memória: a banda é deslocada coluna a coluna — nunca se
- * recria o boneco): `gola-<estilo>-frente.png` substitui a zona da gola, e
- * `gola-<estilo>-pele-frente.png` (quando `pele`) é pele do pescoço clonada
- * para o vão que a gola nova abre — vai em `detalhes` para NUNCA ser
- * recolorida. Por agora os estilos só mudam a frente; o verso fica com a
- * banda redonda, como nas fotos de costas do cliente.
- */
-const GOLA_ESTILOS: Record<string, { pele?: boolean }> = {
-  bico: { pele: true },
-};
-
-function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] {
+function zonasDe(peca: PecaKit, lado: LadoKit): ZonaPeca[] {
   const corpo: ZonaPeca = {
     id: 'corpo', nome: 'Cor base', imagem: `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
     corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true,
@@ -68,33 +53,22 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
   // terceiro envio a camisa vem inteira (a estampa corre pela manga) e a
   // camada "mangas" é só a TIRA do punho — o id mantém-se pelo nome dos
   // ficheiros, o rótulo é que diz a verdade.
-  const estilo = lado === 'frente' && golaEstilo && GOLA_ESTILOS[golaEstilo] ? golaEstilo : null;
   return [
     corpo,
-    { id: 'gola', nome: 'Gola',
-      imagem: estilo
-        ? `${RAIZ_MOLDES}/gola-${estilo}-${lado}.png`
-        : `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
+    { id: 'gola', nome: 'Gola', imagem: `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
       corPadrao: '#151515' },
     { id: 'mangas', nome: 'Punhos', imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`,
       corPadrao: '#151515' },
   ];
 }
 
-export function moldeDemo(peca: PecaKit, lado: LadoKit, golaEstilo?: string): MoldePeca {
+export function moldeDemo(peca: PecaKit, lado: LadoKit): MoldePeca {
   const tela = TELAS[peca];
-  const comPele =
-    peca === 'camisola' && lado === 'frente' && golaEstilo && GOLA_ESTILOS[golaEstilo]?.pele;
   return {
     peca,
     lado,
     viewBox: `0 0 ${tela.w} ${tela.h}`,
-    zonas: zonasDe(peca, lado, golaEstilo),
-    // a pele clonada do vão da gola vai nos detalhes: composta por cima,
-    // mas NUNCA recolorida — pele não é tecido
-    detalhes: comPele
-      ? `<image href="${RAIZ_MOLDES}/gola-${golaEstilo}-pele-${lado}.png" x="0" y="0" width="${tela.w}" height="${tela.h}"/>`
-      : undefined,
+    zonas: zonasDe(peca, lado),
   };
 }
 
