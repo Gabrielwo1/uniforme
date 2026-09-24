@@ -38,12 +38,13 @@ export function KitPreview({
       {PECAS_KIT.map((peca, i) => {
         const config = design.pecas[peca];
         if (!config) return null;
-        const molde = moldeDemo(peca, lado);
+        const estampa = estampaDemoPorId(peca, config.estampaId);
+        const molde = moldeDemo(peca, lado, estampa.golaEstilo);
         return (
           <PecaMockup
             key={peca}
             molde={molde}
-            estampa={estampaDemoPorId(peca, config.estampaId)}
+            estampa={estampa}
             config={config}
             className="absolute inset-0"
             style={{ zIndex: 30 - i * 10 }}

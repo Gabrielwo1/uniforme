@@ -93,6 +93,8 @@ export interface Estampa {
       estampa — é o que faz uma variante "gola verde" da mesma arte. As
       zonas sem entrada ficam como estavam. */
   coresZonasPadrao?: Record<string, string>;
+  /** Estilo físico da gola no palco (ex. "bico") — ver `moldeDemo`. */
+  golaEstilo?: string;
   camadas: CamadaEstampa[];
   /** Janela (viewBox) do desenho para a miniatura quadrada da galeria —
       mostra o padrão flat, como na referência, e não a peça vestida. */
