@@ -87,6 +87,9 @@ export function GestorModelos() {
           quadro: estado.molde.quadro,
           cor_fundo: estado.molde.corFundo,
           camadas: estado.molde.camadas,
+          // o conversor de moldes não conhece zonas — as cores de gola/punhos
+          // por omissão entram por dados (pipeline) ou à mão na base
+          cores_zonas: null,
         });
       }
       toast.success(
