@@ -200,6 +200,9 @@ export interface KitTemplateRow {
   /** Cores por omissão das ZONAS (gola, punhos) ao escolher este modelo —
       distingue variantes tipo "gola verde" que partilham a mesma arte. */
   cores_zonas: Record<string, string> | null;
+  /** Estilo FÍSICO da gola no palco (ex. "bico") — troca a imagem da zona
+      gola do boneco. Ausente/null = gola redonda padrão do mockup. */
+  gola_estilo?: string | null;
   camadas: { id: string; cor: string; svg: string }[];
   enabled: boolean;
   created_at: string;

@@ -170,7 +170,7 @@ function PecaSlot({
   const aplicacoes = useKitStore((s) => s.design.aplicacoes);
   const localEmFoco = useKitStore((s) => s.localEmFoco);
   const estampa = estampaDemoPorId(peca, config.estampaId);
-  const molde = moldeDemo(peca, lado);
+  const molde = moldeDemo(peca, lado, estampa.golaEstilo);
 
   return (
     <PecaMockup
