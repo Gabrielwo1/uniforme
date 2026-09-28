@@ -100,7 +100,9 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         d_pele, (py, px) = distance_transform_edt(fonte[..., 3] <= 128, return_indices=True)
         d_cam, (cy, cx) = distance_transform_edt(cam[..., 3] <= 128, return_indices=True)
         ys, xs = np.where(vazio)
-        e_pele = d_pele[ys, xs] <= d_cam[ys, xs]
+        # pele só quando CLARAMENTE mais perto: no empate vai para tecido —
+        # uma lasca de pele por cima de estampa escura grita, tecido não
+        e_pele = d_pele[ys, xs] * 1.8 <= d_cam[ys, xs]
         yp, xp = ys[e_pele], xs[e_pele]
         p[yp, xp, :3] = (fonte[py[yp, xp], px[yp, xp], :3] * 0.88).astype(np.uint8)
         p[yp, xp, 3] = 255
