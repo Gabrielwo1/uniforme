@@ -54,14 +54,21 @@ const RAIZ_MOLDES = '/moldes/jog';
  * da banda atrás do pescoço, e o recorte dela acaba onde a banda da frente
  * começa.
  */
-const GOLA_ESTILOS: Record<string, { pele?: boolean; verso?: boolean }> = {
-  cruzada: { pele: true, verso: true },
-  social: { pele: true, verso: true },
+const GOLA_ESTILOS: Record<string, { pele?: boolean; verso?: boolean; corpo?: boolean }> = {
+  // `corpo`: o estilo traz um corpo-<estilo>-frente.png — a camisola do
+  // designer MAIS o clone de tecido que fecha o anel que a gola antiga
+  // (larga) cobria e a nova (fina) deixa à vista. Recolore com o corpo.
+  cruzada: { pele: true, verso: true, corpo: true },
+  social: { pele: true, verso: true, corpo: true },
 };
 
 function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] {
+  const defEstilo = peca === 'camisola' && golaEstilo ? GOLA_ESTILOS[golaEstilo] : undefined;
   const corpo: ZonaPeca = {
-    id: 'corpo', nome: 'Cor base', imagem: `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
+    id: 'corpo', nome: 'Cor base',
+    imagem: defEstilo?.corpo && lado === 'frente'
+      ? `${RAIZ_MOLDES}/corpo-${golaEstilo}-${lado}.png`
+      : `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
     corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true,
   };
   if (peca !== 'camisola') return [corpo];
