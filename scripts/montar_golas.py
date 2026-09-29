@@ -71,6 +71,45 @@ def na_tela(caminho: str, escala: float, canto: tuple[int, int]) -> Image.Image:
     return tela
 
 
+def so_pele(cabeca: Image.Image) -> Image.Image:
+    """Recorta o COLARINHO BRANCO que o designer deixou pintado na base das
+    peças de cabeça/pescoço. A cabeça compõe por `detalhes` (nunca recolore):
+    qualquer branco dela fica por cima da gola recolorida como um "segundo
+    colarinho" — foi o defeito apontado pelo cliente a 2026-09-29. Branco =
+    claro e dessaturado, e só na METADE DE BAIXO da peça (para não comer
+    dentes, brilhos de pele ou olhos)."""
+    a = np.array(cabeca)
+    rgb = a[..., :3].astype(int)
+    v = rgb.max(axis=2)
+    s = v - rgb.min(axis=2)
+    # apanha também o colarinho À SOMBRA (v desce até ~125 mas continua
+    # dessaturado); a pele, mesmo à sombra, é quente (s alto) e escapa
+    branco = (v > 125) & (s < 42)
+    ys = np.where(a[..., 3] > 8)[0]
+    if len(ys):
+        branco[: ys.min() + (ys.max() - ys.min()) * 55 // 100] = False
+    a[..., 3][branco] = 0
+    # a peça DESVANECE em alfa na base do pescoço (fica pele a ~46% por
+    # cima da estampa escura = faixa lamacenta). O RGB do desvanecido é
+    # pele legítima: SOLIDIFICA-SE o alfa na metade de baixo — ou é pele
+    # opaca, ou não é nada
+    if len(ys):
+        from scipy.ndimage import binary_closing, binary_opening, gaussian_filter
+
+        baixo = np.zeros(a.shape[:2], bool)
+        baixo[ys.min() + (ys.max() - ys.min()) * 55 // 100 :] = True
+        # binariza, fecha os buracos do corte do branco e tira as ilhas
+        solido = binary_opening(binary_closing((a[..., 3] >= 60) & baixo, iterations=2), iterations=2)
+        novo = a[..., 3].astype(float)
+        novo[baixo] = np.where(solido[baixo], 255.0, 0.0)
+        # orla suave sem desfazer o interior
+        novo = gaussian_filter(novo, 0.8)
+        novo[~baixo] = a[..., 3][~baixo]
+        a[..., 3] = novo.clip(0, 255).astype(np.uint8)
+    print(f'    colarinho branco removido: {int(branco.sum())}px; alfa da base solidificado')
+    return Image.fromarray(a)
+
+
 def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.Image:
     """Clona pele para os arcos do palco que sobram dentro da abertura.
 
@@ -100,9 +139,18 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         d_pele, (py, px) = distance_transform_edt(fonte[..., 3] <= 128, return_indices=True)
         d_cam, (cy, cx) = distance_transform_edt(cam[..., 3] <= 128, return_indices=True)
         ys, xs = np.where(vazio)
-        # pele só quando CLARAMENTE mais perto: no empate vai para tecido —
-        # uma lasca de pele por cima de estampa escura grita, tecido não
-        e_pele = d_pele[ys, xs] * 1.8 <= d_cam[ys, xs]
+        # regra POR COLUNA primeiro: acima da banda é abertura → PELE;
+        # abaixo é camisola → TECIDO. Onde não há banda na coluna, decide a
+        # distância, com o empate para tecido — pele em cima de estampa
+        # escura grita, tecido não.
+        ga = np.array(gola)[..., 3] > 40
+        e_pele = np.zeros(len(ys), bool)
+        for i, (y, x) in enumerate(zip(ys, xs)):
+            col = np.where(ga[:, x])[0]
+            if len(col):
+                e_pele[i] = y < col.min()
+            else:
+                e_pele[i] = d_pele[y, x] * 1.8 <= d_cam[y, x]
         yp, xp = ys[e_pele], xs[e_pele]
         p[yp, xp, :3] = (fonte[py[yp, xp], px[yp, xp], :3] * 0.88).astype(np.uint8)
         p[yp, xp, 3] = 255
@@ -121,7 +169,7 @@ def main() -> None:
         gola = na_tela(gola_f, s, canto)
         gola.save(f'{SAIDA}/gola-{estilo}-{lado}.png')
         cab_f, canto_c = c['cabeca']
-        pele, corpo = preencher_vazios(na_tela(cab_f, ESC_CABECA, canto_c), gola, lado)
+        pele, corpo = preencher_vazios(so_pele(na_tela(cab_f, ESC_CABECA, canto_c)), gola, lado)
         pele.save(f'{SAIDA}/gola-{estilo}-pele-{lado}.png')
         if corpo is not None:
             corpo.save(f'{SAIDA}/corpo-{estilo}-{lado}.png')
