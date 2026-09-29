@@ -66,7 +66,7 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
   const defEstilo = peca === 'camisola' && golaEstilo ? GOLA_ESTILOS[golaEstilo] : undefined;
   const corpo: ZonaPeca = {
     id: 'corpo', nome: 'Cor base',
-    imagem: defEstilo?.corpo && lado === 'frente'
+    imagem: defEstilo?.corpo
       ? `${RAIZ_MOLDES}/corpo-${golaEstilo}-${lado}.png`
       : `${RAIZ_MOLDES}/vestida-${peca}-${lado}.png`,
     corPadrao: peca === 'camisola' ? '#221f20' : '#ffffff', recebeEstampa: true,

@@ -131,8 +131,11 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
     fonte = np.array(Image.alpha_composite(jog, pele))  # pele real: jogador + cabeça nova
     p = np.array(pele)
     corpo = cam.copy()
+    # gola/pele contam como "tapar" só quando quase opacas: debaixo do
+    # antisserrilhado das pontas da banda também tem de haver tecido,
+    # senão o fundo do palco espreita numa cunha clara (cliente, 2026-09-29)
     vazio = (
-        (velha > 40) & (p[..., 3] <= 40) & (np.array(gola)[..., 3] <= 40)
+        (velha > 40) & (p[..., 3] <= 200) & (np.array(gola)[..., 3] <= 200)
         & (cam[..., 3] <= 40) & (np.array(jog)[..., 3] <= 40)
     )
     if vazio.any():
@@ -160,7 +163,24 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         print(f'    vazios: {int(vazio.sum())}px ({int(e_pele.sum())} pele, {len(yc)} tecido)')
     else:
         print('    vazios: 0px')
-    return Image.fromarray(p), (Image.fromarray(corpo) if vazio.any() else None)
+
+    # a orla ANTISSERRILHADA do decote da camisola (alfa 25..230) deixava o
+    # fundo do palco espreitar num rebordo claro serrilhado quando a banda
+    # fina não a tapa (a gola antiga larga tapava): dentro da pegada da gola
+    # antiga, solidifica-se com o clone do tecido OPACO mais próximo. Onde
+    # devia ser pele, o png da pele (que compõe por cima) tapa este clone.
+    from scipy.ndimage import distance_transform_edt as _edt
+
+    semi = (velha > 40) & (cam[..., 3] > 25) & (cam[..., 3] < 230)
+    if semi.any():
+        _, (oy, ox) = _edt(cam[..., 3] < 230, return_indices=True)
+        ys2, xs2 = np.where(semi)
+        corpo[ys2, xs2, :3] = cam[oy[ys2, xs2], ox[ys2, xs2], :3]
+        corpo[ys2, xs2, 3] = 255
+        print(f'    orla do decote solidificada: {int(semi.sum())}px')
+    # o corpo sai SEMPRE (mesmo igual à camisola): o motor troca a imagem
+    # da zona corpo nos dois lados quando o estilo está ativo
+    return Image.fromarray(p), Image.fromarray(corpo)
 
 
 def main() -> None:
@@ -171,9 +191,8 @@ def main() -> None:
         cab_f, canto_c = c['cabeca']
         pele, corpo = preencher_vazios(so_pele(na_tela(cab_f, ESC_CABECA, canto_c)), gola, lado)
         pele.save(f'{SAIDA}/gola-{estilo}-pele-{lado}.png')
-        if corpo is not None:
-            corpo.save(f'{SAIDA}/corpo-{estilo}-{lado}.png')
-        print(f'gola-{estilo}-{lado}.png + pele{" + corpo" if corpo is not None else ""}  ok')
+        corpo.save(f'{SAIDA}/corpo-{estilo}-{lado}.png')
+        print(f'gola-{estilo}-{lado}.png + pele + corpo  ok')
 
 
 if __name__ == '__main__':
