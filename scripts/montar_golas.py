@@ -178,6 +178,29 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         corpo[ys2, xs2, :3] = cam[oy[ys2, xs2], ox[ys2, xs2], :3]
         corpo[ys2, xs2, 3] = 255
         print(f'    orla do decote solidificada: {int(semi.sum())}px')
+    # OCLUSÃO por coluna (cliente, 2026-09-29: a ponta direita da banda
+    # ficava tapada): a peça da cabeça traz um pouco de OMBRO, e a pele
+    # compõe por cima da gola — certo no PESCOÇO (a banda passa por trás),
+    # errado nos OMBROS (a banda passa à frente). Nas colunas fora do
+    # pescoço (medido no jogador à altura do topo da banda), a pele sai
+    # de cima da banda.
+    banda = np.array(gola)[..., 3] > 180
+    if banda.any():
+        topo = int(np.where(banda.any(axis=1))[0].min())
+        ja = np.array(jog)[..., 3]
+        xs_pescoco = np.where(ja[topo + 8] > 128)[0]
+        if len(xs_pescoco):
+            fora = np.ones(banda.shape[1], bool)
+            fora[max(0, xs_pescoco.min() - 2) : xs_pescoco.max() + 3] = False
+            # fora do pescoço, a peça da cabeça só DUPLICA (às vezes mal) a
+            # pele que o avatar já tem por baixo: sai toda na metade de
+            # baixo, e o jogador original aparece — sempre certo
+            baixo = np.zeros(banda.shape, bool)
+            baixo[max(0, topo - 40) :] = True
+            tapa = (p[..., 3] > 0) & fora[None, :] & baixo
+            p[..., 3][tapa] = 0
+            print(f'    pele dos ombros removida (fica o avatar): {int(tapa.sum())}px')
+
     # o corpo sai SEMPRE (mesmo igual à camisola): o motor troca a imagem
     # da zona corpo nos dois lados quando o estilo está ativo
     return Image.fromarray(p), Image.fromarray(corpo)
