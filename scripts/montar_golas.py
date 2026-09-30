@@ -43,6 +43,20 @@ SAIDA = 'public/moldes/jog'
 TELA = (1520, 2460)
 ESC_CABECA = 0.300  # escala da prancheta do designer, confirmada por correlação
 
+# Estilos com peças extra (2026-09-30, envios "GOLA 2 PARTE V" e "gola v
+# Linha"):
+#  - `partes`: gola PINTADA pelo designer (cores fixas, p.ex. o bico
+#    bicolor do Canarinho) — vai composta no png da PELE e o estilo fica
+#    SEM zona de gola (flag semGola no kitDemo): recolorir por multiply
+#    corromperia as cores pintadas;
+#  - `linha`: segunda zona recolorível da gola (debrum fino por cima da
+#    banda) — sai como linha-<estilo>-<lado>.png;
+#  - `neutralizar`: as peças recoloríveis vieram PINTADAS (verde/preto) —
+#    dessatura-se e realça-se a p98≈245 (regra antiga do multiply), senão
+#    o recolor tinge tudo com a cor de fábrica.
+FONTE2 = '/Users/syntax/Downloads/GOLA 2 PARTE V'
+FONTE3 = '/Users/syntax/Downloads/gola v Linha'
+
 PECAS = {
     ('cruzada', 'frente'): dict(
         gola=('GOLA REDONDA CRUZADA/FRENTE GOLA REDONDA CRUZADA/GOLA COM EFEITO REDONDA CRUZADA PNG.png', 0.300, (615, 386)),
@@ -60,18 +74,47 @@ PECAS = {
         gola=('GOLA ESTILO SOCIAL/GOLA SOCIAL/GOLAS COSTAS SOCIAL/GOLA COM EFEITO COSTA PNG.png', 0.281, (547, 365)),
         cabeca=('GOLA ESTILO SOCIAL/GOLA SOCIAL/GOLAS COSTAS SOCIAL/CABEÇA COSTA PNG.png', (394, 24)),
     ),
+    # bico bicolor PINTADO do Canarinho (só frente; verso fica a redonda)
+    ('bico2', 'frente'): dict(
+        # cantos MANUAIS: o otimizador centrava as duas partes num X de
+        # bandoleira; o certo é ponta de cima em cada lado do pescoço e o
+        # cruzamento em baixo ao centro (1.ª da lista fica POR BAIXO)
+        # pontas na COSTURA do decote (sobre a gola redonda), não no pescoço
+        partes=[(f'{FONTE2}/GOLA WEBP LADO DIREITO V.webp', 0.300, (694, 392)),
+                (f'{FONTE2}/GOLA WEBP LADO ESQUERDO V.webp', 0.300, (630, 394))],
+        cabeca=(f'{FONTE2}/CABEÇA FRENTE GOLA V 2 PARTE.webp', (514, 25)),
+        # a camiseta-referência tem decote redondo FECHADO: o colar pousa
+        # por cima da camisola normal COM a gola redonda padrão — sem
+        # vãos, sem preenchimentos; a cabeça serve só para as pontas se
+        # enfiarem atrás do pescoço (cortada na base do pescoço)
+        sobre_camisa=True,
+    ),
+    # V com banda grossa + linha, recoloríveis (neutralizadas)
+    ('vlinha', 'frente'): dict(
+        gola=(f'{FONTE3}/frente/Gola grossa frente linha.webp', 0.300, None),
+        linha=(f'{FONTE3}/frente/Linha gola parte cima encaixe.webp', 0.300, None),
+        cabeca=(f'{FONTE3}/frente/cabeça pescoço frente gola v linha.webp', (518, 23)),
+        neutralizar=True,
+    ),
+    ('vlinha', 'verso'): dict(
+        gola=(f'{FONTE3}/costas/gola grossa encaixe costa gola v linha.webp', 0.300, None),
+        linha=(f'{FONTE3}/costas/GOLA LINHA ENCAIXE GOLA V LINHA COSTA.webp', 0.300, None),
+        cabeca=(f'{FONTE3}/costas/cabeça e pescoço costas gola v linha.webp', (428, 25)),
+        neutralizar=True,
+    ),
 }
 
 
 def na_tela(caminho: str, escala: float, canto: tuple[int, int]) -> Image.Image:
-    im = Image.open(f'{FONTE}/{caminho}').convert('RGBA')
+    p = caminho if caminho.startswith('/') else f'{FONTE}/{caminho}'
+    im = Image.open(p).convert('RGBA')
     im = im.resize((round(im.width * escala), round(im.height * escala)), Image.LANCZOS)
     tela = Image.new('RGBA', TELA, (0, 0, 0, 0))
     tela.alpha_composite(im, canto)
     return tela
 
 
-def so_pele(cabeca: Image.Image) -> Image.Image:
+def so_pele(cabeca: Image.Image, solidificar: bool = True) -> Image.Image:
     """Recorta o COLARINHO BRANCO que o designer deixou pintado na base das
     peças de cabeça/pescoço. A cabeça compõe por `detalhes` (nunca recolore):
     qualquer branco dela fica por cima da gola recolorida como um "segundo
@@ -93,7 +136,14 @@ def so_pele(cabeca: Image.Image) -> Image.Image:
     # cima da estampa escura = faixa lamacenta). O RGB do desvanecido é
     # pele legítima: SOLIDIFICA-SE o alfa na metade de baixo — ou é pele
     # opaca, ou não é nada
-    if len(ys):
+    if len(ys) and not solidificar:
+        # estilo sobre_camisa: o desvanecimento do peito DESCARTA-SE em vez
+        # de solidificar — fica só cabeça+pescoço opacos com a borda curva
+        # natural, que é quem oculta as pontas do colar
+        baixo = np.zeros(a.shape[:2], bool)
+        baixo[ys.min() + (ys.max() - ys.min()) * 55 // 100 :] = True
+        a[..., 3][baixo & (a[..., 3] < 230)] = 0
+    if len(ys) and solidificar:
         from scipy.ndimage import binary_closing, binary_opening, gaussian_filter
 
         baixo = np.zeros(a.shape[:2], bool)
@@ -206,16 +256,111 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
     return Image.fromarray(p), Image.fromarray(corpo)
 
 
+def neutralizar(im: Image.Image) -> Image.Image:
+    """Peças recoloríveis que vieram PINTADAS (verde/preto) viram neutro
+    claro: só a luminância, realçada a p98≈245 (regra do multiply — uma
+    camada escura devolve fração da cor escolhida e um branco sai cinza)."""
+    a = np.array(im).astype(float)
+    L = a[..., :3] @ np.array([0.2126, 0.7152, 0.0722])
+    op = a[..., 3] > 128
+    p98 = np.percentile(L[op], 98) if op.any() else 255
+    L = (L * (245.0 / max(p98, 1))).clip(0, 255)
+    a[..., 0] = a[..., 1] = a[..., 2] = L
+    return Image.fromarray(a.astype(np.uint8))
+
+
+def colocar(caminho: str, escala: float, lado: str) -> tuple[int, int]:
+    """Canto ótimo de uma peça de gola SEM gabarito do designer: cobre a
+    pegada da gola antiga, com peso 8× nos píxeis que ficariam em VAZIO
+    (a receita que acertou a cruzada/social antes do gabarito chegar)."""
+    p = caminho if caminho.startswith('/') else f'{FONTE}/{caminho}'
+    im = Image.open(p).convert('RGBA')
+    im = im.resize((round(im.width * escala), round(im.height * escala)), Image.LANCZOS)
+    ga = np.array(im)[..., 3]
+    velha = np.array(Image.open(f'{SAIDA}/vestida-gola-{lado}.png').convert('RGBA'))[..., 3] > 40
+    jog = np.array(Image.open(f'{SAIDA}/jogador-{lado}.png').convert('RGBA'))[..., 3] > 40
+    cam = np.array(Image.open(f'{SAIDA}/vestida-camisola-{lado}.png').convert('RGBA'))[..., 3] > 40
+    vazio = velha & ~cam & ~jog
+    resto = velha & ~vazio
+    cyx = np.where(velha)
+    cx0, cy0 = int(cyx[1].mean()) - im.width // 2, int(cyx[0].mean()) - im.height // 2
+
+    def alfa_em(canto):
+        a = np.zeros(velha.shape, bool)
+        x, y = canto
+        a[max(0, y) : y + im.height, max(0, x) : x + im.width] = (
+            ga[max(0, y) - y :, max(0, x) - x :] > 40
+        )
+        return a
+
+    melhor = (1e18, (cx0, cy0))
+    for dy in range(-16, 26, 2):
+        for dx in range(-16, 18, 2):
+            at = alfa_em((cx0 + dx, cy0 + dy))
+            custo = int((vazio & ~at).sum()) * 8 + int((resto & ~at).sum())
+            if custo < melhor[0]:
+                melhor = (custo, (cx0 + dx, cy0 + dy))
+    return melhor[1]
+
+
+def camada(c, chave, lado, neutro):
+    if chave not in c:
+        return None
+    caminho, esc, canto = c[chave]
+    if canto is None:
+        canto = colocar(caminho, esc, lado)
+        print(f'    {chave}: canto otimizado {canto}')
+    im = na_tela(caminho, esc, canto)
+    return neutralizar(im) if neutro else im
+
+
 def main() -> None:
     for (estilo, lado), c in PECAS.items():
-        gola_f, s, canto = c['gola']
-        gola = na_tela(gola_f, s, canto)
-        gola.save(f'{SAIDA}/gola-{estilo}-{lado}.png')
+        neutro = bool(c.get('neutralizar'))
+        gola = camada(c, 'gola', lado, neutro)
+        partes = None
+        if 'partes' in c:
+            # gola PINTADA em partes: compõe-se (1.ª por baixo) e serve de
+            # geometria de banda para as regras; vai para o png da PELE e
+            # NÃO há zona de gola recolorível (semGola no kitDemo)
+            partes = Image.new('RGBA', TELA, (0, 0, 0, 0))
+            for caminho, esc, canto in c['partes']:
+                if canto is None:
+                    canto = colocar(caminho, esc, lado)
+                    print(f'    parte: canto otimizado {canto}')
+                partes.alpha_composite(na_tela(caminho, esc, canto))
+        geo = gola if gola is not None else partes
+        if gola is not None:
+            gola.save(f'{SAIDA}/gola-{estilo}-{lado}.png')
+        linha = camada(c, 'linha', lado, neutro)
+        if linha is not None:
+            linha.save(f'{SAIDA}/linha-{estilo}-{lado}.png')
         cab_f, canto_c = c['cabeca']
-        pele, corpo = preencher_vazios(so_pele(na_tela(cab_f, ESC_CABECA, canto_c)), gola, lado)
+        cabeca = so_pele(na_tela(cab_f, ESC_CABECA, canto_c),
+                         solidificar=not c.get('sobre_camisa'))
+        if c.get('sobre_camisa'):
+            # colar de pendurar: prende na costura do decote e fica à
+            # frente — SÓ as pontas se enfiam atrás do pescoço: apagam-se
+            # as partes onde há pescoço do avatar (colunas do pescoço,
+            # acima da linha do trapézio)
+            velha = np.array(Image.open(f'{SAIDA}/vestida-gola-{lado}.png').convert('RGBA'))[..., 3]
+            topo_g = int(np.where((velha > 40).any(axis=1))[0].min())
+            ja = np.array(Image.open(f'{SAIDA}/jogador-{lado}.png').convert('RGBA'))[..., 3]
+            xs_p = np.where(ja[topo_g + 8] > 128)[0]
+            pa = np.array(partes)
+            if len(xs_p):
+                zona_pescoco = np.zeros(pa.shape[:2], bool)
+                zona_pescoco[: topo_g + 30, xs_p.min() - 4 : xs_p.max() + 5] = True
+                pa[..., 3][zona_pescoco & (ja > 128)] = 0
+            pele = Image.fromarray(pa)
+            corpo = Image.open(f'{SAIDA}/vestida-camisola-{lado}.png').convert('RGBA')
+        else:
+            pele, corpo = preencher_vazios(cabeca, geo, lado)
+            if partes is not None:
+                pele = Image.alpha_composite(pele, partes)
         pele.save(f'{SAIDA}/gola-{estilo}-pele-{lado}.png')
         corpo.save(f'{SAIDA}/corpo-{estilo}-{lado}.png')
-        print(f'gola-{estilo}-{lado}.png + pele + corpo  ok')
+        print(f'{estilo}-{lado}  ok')
 
 
 if __name__ == '__main__':

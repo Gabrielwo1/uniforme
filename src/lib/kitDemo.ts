@@ -54,12 +54,23 @@ const RAIZ_MOLDES = '/moldes/jog';
  * da banda atrás do pescoço, e o recorte dela acaba onde a banda da frente
  * começa.
  */
-const GOLA_ESTILOS: Record<string, { pele?: boolean; verso?: boolean; corpo?: boolean }> = {
-  // `corpo`: o estilo traz um corpo-<estilo>-frente.png — a camisola do
+const GOLA_ESTILOS: Record<
+  string,
+  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean }
+> = {
+  // `corpo`: o estilo traz um corpo-<estilo>-<lado>.png — a camisola do
   // designer MAIS o clone de tecido que fecha o anel que a gola antiga
   // (larga) cobria e a nova (fina) deixa à vista. Recolore com o corpo.
   cruzada: { pele: true, verso: true, corpo: true },
   social: { pele: true, verso: true, corpo: true },
+  // colar PINTADO em duas partes (bico bicolor do Canarinho, 2026-09-30):
+  // pendura POR CIMA da camisola com a gola redonda de sempre (golaPadrao)
+  // — as cores são fixas do designer, por isso vive no png da "pele", que
+  // nunca recolore. Só frente; o verso fica como está.
+  bico2: { pele: true, golaPadrao: true },
+  // bico em V com DUAS zonas recoloríveis: a banda grossa (zona gola) e a
+  // `linha` de debrum por cima (zona própria, linha-<estilo>-<lado>.png)
+  vlinha: { pele: true, verso: true, corpo: true, linha: true },
 };
 
 function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] {
@@ -78,17 +89,26 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
   // camada "mangas" é só a TIRA do punho — o id mantém-se pelo nome dos
   // ficheiros, o rótulo é que diz a verdade.
   const def = golaEstilo ? GOLA_ESTILOS[golaEstilo] : undefined;
-  const estilo = def && (lado === 'frente' || def.verso) ? golaEstilo : null;
-  return [
+  const estilo = def && !def.golaPadrao && (lado === 'frente' || def.verso) ? golaEstilo : null;
+  const zonas: ZonaPeca[] = [
     corpo,
     { id: 'gola', nome: 'Gola',
       imagem: estilo
         ? `${RAIZ_MOLDES}/gola-${estilo}-${lado}.png`
         : `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
       corPadrao: '#151515' },
-    { id: 'mangas', nome: 'Punhos', imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`,
-      corPadrao: '#151515' },
   ];
+  if (estilo && def?.linha) {
+    zonas.push({
+      id: 'linha', nome: 'Linha da gola',
+      imagem: `${RAIZ_MOLDES}/linha-${estilo}-${lado}.png`,
+      corPadrao: '#1F2A44',
+    });
+  }
+  zonas.push({
+    id: 'mangas', nome: 'Punhos', imagem: `${RAIZ_MOLDES}/vestida-mangas-${lado}.png`,
+    corPadrao: '#151515' });
+  return zonas;
 }
 
 export function moldeDemo(peca: PecaKit, lado: LadoKit, golaEstilo?: string): MoldePeca {
