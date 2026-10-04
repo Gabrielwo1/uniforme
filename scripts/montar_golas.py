@@ -82,8 +82,10 @@ PECAS = {
     # 2 CORES V (reenvio 0210): cruzado em duas ZONAS recoloríveis —
     # parte direita = zona gola, parte esquerda = zona linha
     ('bico2', 'frente'): dict(
-        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.300, (692, 390)),
-        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.300, (630, 394)),
+        # 2026-10-04, pedido do cliente: as partes PRENDEM na costura do
+        # decote — subidas e fechadas até encaixarem na gola
+        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.300, (690, 392)),
+        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.300, (640, 398)),
         cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
         esc_cabeca=0.295,
         neutralizar=True,
@@ -351,6 +353,20 @@ def main() -> None:
             # as regras de cobertura/oclusão contam com a GOLA INTEIRA:
             # banda + linha (senão o anel enche por baixo da segunda cor)
             geo = Image.alpha_composite(gola, linha_im)
+        if c.get('corredor') and lado == 'frente':
+            # ENCAIXE NA COSTURA (cliente 2026-10-04): a banda vive no
+            # corredor do decote — pegada da gola antiga dilatada; fora
+            # dele é cortada, morrendo na costura como se cosida
+            from scipy.ndimage import binary_dilation, gaussian_filter as _gf
+            velha_c = np.array(Image.open(f'{SAIDA}/vestida-gola-{lado}.png').convert('RGBA'))[..., 3] > 40
+            corredor = binary_dilation(velha_c, iterations=int(c['corredor']))
+            borda = _gf(corredor.astype(float), 3)
+            for im_ in (gola, linha_im):
+                if im_ is None:
+                    continue
+                a_ = np.array(im_)
+                a_[..., 3] = (a_[..., 3] * borda.clip(0, 1)).astype(np.uint8)
+                im_.paste(Image.fromarray(a_))
         if c.get('pontas_atras') and lado == 'frente':
             # as pontas do colar enfiam-se ATRÁS do pescoço: apagam-se as
             # bandas onde há pescoço do avatar (colunas do pescoço, zona alta)
