@@ -86,12 +86,14 @@ PECAS = {
         # decote — subidas e fechadas até encaixarem na gola
         # colocação ARTESANAL (tabuleiros de rotação×posição, 2026-10-04):
         # cada parte VESTE o arco do decote; junção cruzada ao centro
-        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.300, (700, 374), -18),
-        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.300, (620, 378), 18),
+        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.335, (692, 370), -18),
+        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.335, (610, 372), 18),
         cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
         esc_cabeca=0.295,
         neutralizar=True,
-        pontas_atras=True,
+        # SEM pontas_atras: no encaixe abraçado (tabuleiros 2026-10-04) a
+        # banda vive À FRENTE da base do pescoço — a máscara comia-lhe o topo
+        fundo_banda=True,
     ),
     ('bico2', 'verso'): dict(
         gola=(f'{F0210}/GOLA 2 CORES  V/COSTAS/GOLA PARTE 1 LADO ENCAIXE DIREITO COSTAS.webp', 0.300, None),
@@ -175,7 +177,7 @@ def so_pele(cabeca: Image.Image, solidificar: bool = True) -> Image.Image:
     return Image.fromarray(a)
 
 
-def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.Image:
+def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str, fundo_banda: bool = False) -> Image.Image:
     """Clona pele para os arcos do palco que sobram dentro da abertura.
 
     O vazio = pegada da gola redonda ANTIGA sem nada por baixo (nem gola
@@ -233,6 +235,10 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         (interno | (velha > 40)) & (p[..., 3] <= 200) & (ga_n <= 200)
         & (cam[..., 3] <= 40) & (np.array(jog)[..., 3] <= 40)
     )
+    if fundo_banda:
+        # com o fundo de banda cosido no corpo, a área dele já é tecido:
+        # fora do cálculo de vazios (senão a pele enche por cima)
+        vazio &= ~(velha > 20)
     if vazio.any():
         d_pele, (py, px) = distance_transform_edt(fonte[..., 3] <= 128, return_indices=True)
         d_cam, (cy, cx) = distance_transform_edt(cam[..., 3] <= 128, return_indices=True)
@@ -258,6 +264,16 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         print(f'    vazios: {int(vazio.sum())}px ({int(e_pele.sum())} pele, {len(yc)} tecido)')
     else:
         print('    vazios: 0px')
+
+    # FUNDO DE BANDA (lição cgsports, flag fundo_banda): a gola redonda
+    # antiga entra no CORPO-do-estilo como tecido — por baixo das partes,
+    # recolore com a camisola e fecha todos os vãos do anel de uma vez
+    if fundo_banda:
+        vg = np.array(Image.open(f'{SAIDA}/vestida-gola-{lado}.png').convert('RGBA'))
+        m = vg[..., 3] > 20
+        corpo[..., :3][m] = vg[..., :3][m]
+        corpo[..., 3][m] = np.maximum(corpo[..., 3][m], vg[..., 3][m])
+        print(f'    fundo de banda cosido no corpo: {int(m.sum())}px')
 
     # a orla ANTISSERRILHADA do decote da camisola (alfa 25..230) deixava o
     # fundo do palco espreitar num rebordo claro serrilhado quando a banda
@@ -413,7 +429,7 @@ def main() -> None:
             pele = Image.fromarray(pa)
             corpo = Image.open(f'{SAIDA}/vestida-camisola-{lado}.png').convert('RGBA')
         else:
-            pele, corpo = preencher_vazios(cabeca, geo, lado)
+            pele, corpo = preencher_vazios(cabeca, geo, lado, fundo_banda=bool(c.get('fundo_banda')))
             if partes is not None:
                 pele = Image.alpha_composite(pele, partes)
         pele.save(f'{SAIDA}/gola-{estilo}-pele-{lado}.png')
