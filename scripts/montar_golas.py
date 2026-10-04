@@ -84,8 +84,10 @@ PECAS = {
     ('bico2', 'frente'): dict(
         # 2026-10-04, pedido do cliente: as partes PRENDEM na costura do
         # decote — subidas e fechadas até encaixarem na gola
-        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.300, (690, 392)),
-        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.300, (640, 398)),
+        # colocação ARTESANAL (tabuleiros de rotação×posição, 2026-10-04):
+        # cada parte VESTE o arco do decote; junção cruzada ao centro
+        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.300, (700, 374), -18),
+        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.300, (620, 378), 18),
         cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
         esc_cabeca=0.295,
         neutralizar=True,
@@ -116,10 +118,12 @@ PECAS = {
 
 
 
-def na_tela(caminho: str, escala: float, canto: tuple[int, int]) -> Image.Image:
+def na_tela(caminho: str, escala: float, canto: tuple[int, int], rot: float = 0) -> Image.Image:
     p = caminho if caminho.startswith('/') else f'{FONTE}/{caminho}'
     im = Image.open(p).convert('RGBA')
     im = im.resize((round(im.width * escala), round(im.height * escala)), Image.LANCZOS)
+    if rot:
+        im = im.rotate(rot, expand=True, resample=Image.BICUBIC)
     tela = Image.new('RGBA', TELA, (0, 0, 0, 0))
     tela.alpha_composite(im, canto)
     return tela
@@ -324,11 +328,13 @@ def colocar(caminho: str, escala: float, lado: str) -> tuple[int, int]:
 def camada(c, chave, lado, neutro):
     if chave not in c:
         return None
-    caminho, esc, canto = c[chave]
+    spec = c[chave]
+    caminho, esc, canto = spec[:3]
+    rot = spec[3] if len(spec) > 3 else 0
     if canto is None:
         canto = colocar(caminho, esc, lado)
         print(f'    {chave}: canto otimizado {canto}')
-    im = na_tela(caminho, esc, canto)
+    im = na_tela(caminho, esc, canto, rot)
     return neutralizar(im) if neutro else im
 
 
