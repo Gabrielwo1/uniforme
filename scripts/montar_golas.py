@@ -56,6 +56,11 @@ ESC_CABECA = 0.300  # escala da prancheta do designer, confirmada por correlaç�
 #    o recolor tinge tudo com a cor de fábrica.
 FONTE2 = '/Users/syntax/Downloads/GOLA 2 PARTE V'
 FONTE3 = '/Users/syntax/Downloads/gola v Linha'
+# Reenvio 2026-10-04 ("SIMULADOR DINO TESTE 0210"): bandas NEUTRAS
+# (recoloríveis), PESCOÇO dedicado só-pele (recorte do próprio avatar —
+# correlaciona a 0,999 e dá a âncora exata) e costas de ambos os estilos.
+# O 2 CORES deixou de ser pintado: são DUAS zonas de cor (gola + linha).
+F0210 = '/Users/syntax/Downloads/SIMULADOR DINO TESTE 0210'
 
 PECAS = {
     ('cruzada', 'frente'): dict(
@@ -74,35 +79,39 @@ PECAS = {
         gola=('GOLA ESTILO SOCIAL/GOLA SOCIAL/GOLAS COSTAS SOCIAL/GOLA COM EFEITO COSTA PNG.png', 0.281, (547, 365)),
         cabeca=('GOLA ESTILO SOCIAL/GOLA SOCIAL/GOLAS COSTAS SOCIAL/CABEÇA COSTA PNG.png', (394, 24)),
     ),
-    # bico bicolor PINTADO do Canarinho (só frente; verso fica a redonda)
+    # 2 CORES V (reenvio 0210): cruzado em duas ZONAS recoloríveis —
+    # parte direita = zona gola, parte esquerda = zona linha
     ('bico2', 'frente'): dict(
-        # cantos MANUAIS: o otimizador centrava as duas partes num X de
-        # bandoleira; o certo é ponta de cima em cada lado do pescoço e o
-        # cruzamento em baixo ao centro (1.ª da lista fica POR BAIXO)
-        # pontas na COSTURA do decote (sobre a gola redonda), não no pescoço
-        partes=[(f'{FONTE2}/GOLA WEBP LADO DIREITO V.webp', 0.300, (694, 392)),
-                (f'{FONTE2}/GOLA WEBP LADO ESQUERDO V.webp', 0.300, (630, 394))],
-        cabeca=(f'{FONTE2}/CABEÇA FRENTE GOLA V 2 PARTE.webp', (514, 25)),
-        # a camiseta-referência tem decote redondo FECHADO: o colar pousa
-        # por cima da camisola normal COM a gola redonda padrão — sem
-        # vãos, sem preenchimentos; a cabeça serve só para as pontas se
-        # enfiarem atrás do pescoço (cortada na base do pescoço)
-        sobre_camisa=True,
+        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.300, (692, 390)),
+        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.300, (630, 394)),
+        cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
+        esc_cabeca=0.295,
+        neutralizar=True,
+        pontas_atras=True,
     ),
-    # V com banda grossa + linha, recoloríveis (neutralizadas)
+    ('bico2', 'verso'): dict(
+        gola=(f'{F0210}/GOLA 2 CORES  V/COSTAS/GOLA PARTE 1 LADO ENCAIXE DIREITO COSTAS.webp', 0.300, None),
+        linha=(f'{F0210}/GOLA 2 CORES  V/COSTAS/GOLA PARTE 2 LADO ENCAIXE ESQUERDO COSTA.webp', 0.300, None),
+        cabeca=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/PARTE PESCOÇO COSTAS PELE.webp', (573, 344)),
+        esc_cabeca=0.275,
+        neutralizar=True,
+    ),
     ('vlinha', 'frente'): dict(
-        gola=(f'{FONTE3}/frente/Gola grossa frente linha.webp', 0.300, None),
-        linha=(f'{FONTE3}/frente/Linha gola parte cima encaixe.webp', 0.300, None),
-        cabeca=(f'{FONTE3}/frente/cabeça pescoço frente gola v linha.webp', (518, 23)),
+        gola=(f'{F0210}/GOLA V COM LINHA ENCIMA/FRENTE/GOLA FRENTE PRIMEIRA PARTE.webp', 0.300, None),
+        linha=(f'{F0210}/GOLA V COM LINHA ENCIMA/FRENTE/GOLA FRENTE PARTE LINHA SEGUNDA PARTE ENCAIXE.webp', 0.300, None),
+        cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
+        esc_cabeca=0.295,
         neutralizar=True,
     ),
     ('vlinha', 'verso'): dict(
-        gola=(f'{FONTE3}/costas/gola grossa encaixe costa gola v linha.webp', 0.300, None),
-        linha=(f'{FONTE3}/costas/GOLA LINHA ENCAIXE GOLA V LINHA COSTA.webp', 0.300, None),
-        cabeca=(f'{FONTE3}/costas/cabeça e pescoço costas gola v linha.webp', (428, 25)),
+        gola=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/GOLA PARTE 1 COSTAS.webp', 0.300, None),
+        linha=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/GOLA LINHA PARTE 2 ENCAIXE COSTAS.webp', 0.300, None),
+        cabeca=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/PARTE PESCOÇO COSTAS PELE.webp', (573, 344)),
+        esc_cabeca=0.275,
         neutralizar=True,
     ),
 }
+
 
 
 def na_tela(caminho: str, escala: float, canto: tuple[int, int]) -> Image.Image:
@@ -181,11 +190,41 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
     fonte = np.array(Image.alpha_composite(jog, pele))  # pele real: jogador + cabeça nova
     p = np.array(pele)
     corpo = cam.copy()
+    # OCLUSÃO por coluna (cliente, 2026-09-29: a ponta direita da banda
+    # ficava tapada): a peça da cabeça traz um pouco de OMBRO, e a pele
+    # compõe por cima da gola — certo no PESCOÇO (a banda passa por trás),
+    # errado nos OMBROS (a banda passa à frente). Nas colunas fora do
+    # pescoço (medido no jogador à altura do topo da banda), a pele sai
+    # de cima da banda.
+    banda = np.array(gola)[..., 3] > 180
+    if banda.any():
+        topo = int(np.where(banda.any(axis=1))[0].min())
+        ja = np.array(jog)[..., 3]
+        xs_pescoco = np.where(ja[topo + 8] > 128)[0]
+        if len(xs_pescoco):
+            fora = np.ones(banda.shape[1], bool)
+            fora[max(0, xs_pescoco.min() - 2) : xs_pescoco.max() + 3] = False
+            # fora do pescoço, a peça da cabeça só DUPLICA (às vezes mal) a
+            # pele que o avatar já tem por baixo: sai toda na metade de
+            # baixo, e o jogador original aparece — sempre certo
+            baixo = np.zeros(banda.shape, bool)
+            baixo[max(0, topo - 40) :] = True
+            tapa = (p[..., 3] > 0) & fora[None, :] & baixo
+            p[..., 3][tapa] = 0
+            print(f'    pele dos ombros removida (fica o avatar): {int(tapa.sum())}px')
+
     # gola/pele contam como "tapar" só quando quase opacas: debaixo do
     # antisserrilhado das pontas da banda também tem de haver tecido,
     # senão o fundo do palco espreita numa cunha clara (cliente, 2026-09-29)
+    from scipy.ndimage import binary_closing, binary_fill_holes
+    ga_n = np.array(gola)[..., 3]
+    uniao = (cam[..., 3] > 40) | (np.array(jog)[..., 3] > 40) | (ga_n > 200) | (p[..., 3] > 200)
+    # fecha bolsos semi-abertos junto aos ombros antes de procurar buracos
+    interno = binary_fill_holes(binary_closing(uniao, iterations=8)) & ~uniao
+    # buracos internos da união (a banda liga o anel e fecha a topologia)
+    # OU a pegada da gola antiga — o que apanhar mais
     vazio = (
-        (velha > 40) & (p[..., 3] <= 200) & (np.array(gola)[..., 3] <= 200)
+        (interno | (velha > 40)) & (p[..., 3] <= 200) & (ga_n <= 200)
         & (cam[..., 3] <= 40) & (np.array(jog)[..., 3] <= 40)
     )
     if vazio.any():
@@ -228,29 +267,6 @@ def preencher_vazios(pele: Image.Image, gola: Image.Image, lado: str) -> Image.I
         corpo[ys2, xs2, :3] = cam[oy[ys2, xs2], ox[ys2, xs2], :3]
         corpo[ys2, xs2, 3] = 255
         print(f'    orla do decote solidificada: {int(semi.sum())}px')
-    # OCLUSÃO por coluna (cliente, 2026-09-29: a ponta direita da banda
-    # ficava tapada): a peça da cabeça traz um pouco de OMBRO, e a pele
-    # compõe por cima da gola — certo no PESCOÇO (a banda passa por trás),
-    # errado nos OMBROS (a banda passa à frente). Nas colunas fora do
-    # pescoço (medido no jogador à altura do topo da banda), a pele sai
-    # de cima da banda.
-    banda = np.array(gola)[..., 3] > 180
-    if banda.any():
-        topo = int(np.where(banda.any(axis=1))[0].min())
-        ja = np.array(jog)[..., 3]
-        xs_pescoco = np.where(ja[topo + 8] > 128)[0]
-        if len(xs_pescoco):
-            fora = np.ones(banda.shape[1], bool)
-            fora[max(0, xs_pescoco.min() - 2) : xs_pescoco.max() + 3] = False
-            # fora do pescoço, a peça da cabeça só DUPLICA (às vezes mal) a
-            # pele que o avatar já tem por baixo: sai toda na metade de
-            # baixo, e o jogador original aparece — sempre certo
-            baixo = np.zeros(banda.shape, bool)
-            baixo[max(0, topo - 40) :] = True
-            tapa = (p[..., 3] > 0) & fora[None, :] & baixo
-            p[..., 3][tapa] = 0
-            print(f'    pele dos ombros removida (fica o avatar): {int(tapa.sum())}px')
-
     # o corpo sai SEMPRE (mesmo igual à camisola): o motor troca a imagem
     # da zona corpo nos dois lados quando o estilo está ativo
     return Image.fromarray(p), Image.fromarray(corpo)
@@ -329,14 +345,34 @@ def main() -> None:
                     canto = colocar(caminho, esc, lado)
                     print(f'    parte: canto otimizado {canto}')
                 partes.alpha_composite(na_tela(caminho, esc, canto))
+        linha_im = camada(c, 'linha', lado, neutro)
         geo = gola if gola is not None else partes
+        if gola is not None and linha_im is not None:
+            # as regras de cobertura/oclusão contam com a GOLA INTEIRA:
+            # banda + linha (senão o anel enche por baixo da segunda cor)
+            geo = Image.alpha_composite(gola, linha_im)
+        if c.get('pontas_atras') and lado == 'frente':
+            # as pontas do colar enfiam-se ATRÁS do pescoço: apagam-se as
+            # bandas onde há pescoço do avatar (colunas do pescoço, zona alta)
+            velha_a = np.array(Image.open(f'{SAIDA}/vestida-gola-{lado}.png').convert('RGBA'))[..., 3]
+            topo_g = int(np.where((velha_a > 40).any(axis=1))[0].min())
+            ja_a = np.array(Image.open(f'{SAIDA}/jogador-{lado}.png').convert('RGBA'))[..., 3]
+            xs_p = np.where(ja_a[topo_g + 8] > 128)[0]
+            if len(xs_p):
+                zona_p = np.zeros(ja_a.shape, bool)
+                zona_p[: topo_g + 30, xs_p.min() - 4 : xs_p.max() + 5] = True
+                for im_ in (gola, linha_im):
+                    if im_ is None:
+                        continue
+                    a_ = np.array(im_)
+                    a_[..., 3][zona_p & (ja_a > 128)] = 0
+                    im_.paste(Image.fromarray(a_))
         if gola is not None:
             gola.save(f'{SAIDA}/gola-{estilo}-{lado}.png')
-        linha = camada(c, 'linha', lado, neutro)
-        if linha is not None:
-            linha.save(f'{SAIDA}/linha-{estilo}-{lado}.png')
+        if linha_im is not None:
+            linha_im.save(f'{SAIDA}/linha-{estilo}-{lado}.png')
         cab_f, canto_c = c['cabeca']
-        cabeca = so_pele(na_tela(cab_f, ESC_CABECA, canto_c),
+        cabeca = so_pele(na_tela(cab_f, c.get('esc_cabeca', ESC_CABECA), canto_c),
                          solidificar=not c.get('sobre_camisa'))
         if c.get('sobre_camisa'):
             # colar de pendurar: prende na costura do decote e fica à

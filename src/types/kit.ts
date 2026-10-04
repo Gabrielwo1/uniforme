@@ -68,6 +68,9 @@ export interface MoldePeca {
   zonas: ZonaPeca[];
   /** Costuras e vivos que não mudam de cor — SVG interno, por cima de tudo. */
   detalhes?: string;
+  /** Compõe os `detalhes` ENTRE o corpo e as restantes zonas (por baixo da
+      gola): para estilos em que o colar pendura à frente do pescoço. */
+  detalhesSob?: boolean;
 }
 
 /**

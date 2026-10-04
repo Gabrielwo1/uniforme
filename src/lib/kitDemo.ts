@@ -56,18 +56,17 @@ const RAIZ_MOLDES = '/moldes/jog';
  */
 const GOLA_ESTILOS: Record<
   string,
-  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean }
+  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean; peleSob?: boolean }
 > = {
   // `corpo`: o estilo traz um corpo-<estilo>-<lado>.png — a camisola do
   // designer MAIS o clone de tecido que fecha o anel que a gola antiga
   // (larga) cobria e a nova (fina) deixa à vista. Recolore com o corpo.
   cruzada: { pele: true, verso: true, corpo: true },
   social: { pele: true, verso: true, corpo: true },
-  // colar PINTADO em duas partes (bico bicolor do Canarinho, 2026-09-30):
-  // pendura POR CIMA da camisola com a gola redonda de sempre (golaPadrao)
-  // — as cores são fixas do designer, por isso vive no png da "pele", que
-  // nunca recolore. Só frente; o verso fica como está.
-  bico2: { pele: true, golaPadrao: true },
+  // 2 CORES V (reenvio 2026-10-04): colar cruzado em DUAS zonas
+  // recoloríveis (parte direita = gola, parte esquerda = linha); o colar
+  // pendura À FRENTE do pescoço → a pele compõe SOB as zonas (peleSob)
+  bico2: { pele: true, verso: true, corpo: true, linha: true, peleSob: true },
   // bico em V com DUAS zonas recoloríveis: a banda grossa (zona gola) e a
   // `linha` de debrum por cima (zona própria, linha-<estilo>-<lado>.png)
   vlinha: { pele: true, verso: true, corpo: true, linha: true },
@@ -126,6 +125,7 @@ export function moldeDemo(peca: PecaKit, lado: LadoKit, golaEstilo?: string): Mo
     detalhes: comPele
       ? `<image href="${RAIZ_MOLDES}/gola-${golaEstilo}-pele-${lado}.png" x="0" y="0" width="${tela.w}" height="${tela.h}"/>`
       : undefined,
+    detalhesSob: comPele ? def?.peleSob : undefined,
   };
 }
 

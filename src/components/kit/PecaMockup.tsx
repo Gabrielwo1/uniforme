@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { Fragment, useId } from 'react';
 import type {
   CamadaEstampa,
   Estampa,
@@ -39,25 +39,26 @@ export function PecaMockup({
   /** Camada de personalização (nome/número/logos) sobreposta à peça. */
   children?: React.ReactNode;
 }) {
+  const detalhes = molde.detalhes && (
+    <svg
+      viewBox={molde.viewBox}
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      dangerouslySetInnerHTML={{ __html: molde.detalhes }}
+    />
+  );
+
   return (
     <div className={cn('relative', className)} style={style}>
-      {molde.zonas.map((zona) => (
-        <Zona
-          key={zona.id}
-          zona={zona}
-          molde={molde}
-          estampa={estampa}
-          config={config}
-        />
+      {molde.zonas.map((zona, i) => (
+        <Fragment key={zona.id}>
+          <Zona zona={zona} molde={molde} estampa={estampa} config={config} />
+          {/* colar que pendura À FRENTE do pescoço: a pele (detalhes) entra
+              entre o corpo e as zonas da gola, em vez de por cima de tudo */}
+          {i === 0 && molde.detalhesSob && detalhes}
+        </Fragment>
       ))}
 
-      {molde.detalhes && (
-        <svg
-          viewBox={molde.viewBox}
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          dangerouslySetInnerHTML={{ __html: molde.detalhes }}
-        />
-      )}
+      {!molde.detalhesSob && detalhes}
 
       {children}
     </div>
