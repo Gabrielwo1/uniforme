@@ -61,6 +61,11 @@ FONTE3 = '/Users/syntax/Downloads/gola v Linha'
 # correlaciona a 0,999 e dá a âncora exata) e costas de ambos os estilos.
 # O 2 CORES deixou de ser pintado: são DUAS zonas de cor (gola + linha).
 F0210 = '/Users/syntax/Downloads/SIMULADOR DINO TESTE 0210'
+# Reenvio 0210-2 (2026-10-05): GOLA JUNTA COMPLETA — as duas partes
+# compostas PELO DESIGNER (o encaixe do V vem cozido no ficheiro), com
+# laranja/claro como cores de identificação; separar_junta divide em
+# zonas (claro=gola, laranja=linha) e neutraliza cada uma.
+F02102 = '/Users/syntax/Downloads/SIMULADOR DINO TESTE 0210-2'
 
 PECAS = {
     ('cruzada', 'frente'): dict(
@@ -79,44 +84,30 @@ PECAS = {
         gola=('GOLA ESTILO SOCIAL/GOLA SOCIAL/GOLAS COSTAS SOCIAL/GOLA COM EFEITO COSTA PNG.png', 0.281, (547, 365)),
         cabeca=('GOLA ESTILO SOCIAL/GOLA SOCIAL/GOLAS COSTAS SOCIAL/CABEÇA COSTA PNG.png', (394, 24)),
     ),
-    # 2 CORES V (reenvio 0210): cruzado em duas ZONAS recoloríveis —
-    # parte direita = zona gola, parte esquerda = zona linha
     ('bico2', 'frente'): dict(
-        # 2026-10-04, pedido do cliente: as partes PRENDEM na costura do
-        # decote — subidas e fechadas até encaixarem na gola
-        # colocação ARTESANAL (tabuleiros de rotação×posição, 2026-10-04):
-        # cada parte VESTE o arco do decote; junção cruzada ao centro
-        gola=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE DIREITO FRENTE.webp', 0.335, (692, 370), -18),
-        linha=(f'{F0210}/GOLA 2 CORES  V/FRENTE/GOLA PARTE 1 LADO ENCAIXE ESQUERDO FRENTE.webp', 0.335, (610, 372), 18),
+        junta=(f'{F02102}/GOLA 2 CORES  V/FRENTE/GOLA JUNTA COMPLETA COM CORES DIFERENTES FRENTE.webp', 0.300, None),
         cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
         esc_cabeca=0.295,
-        neutralizar=True,
-        # SEM pontas_atras: no encaixe abraçado (tabuleiros 2026-10-04) a
-        # banda vive À FRENTE da base do pescoço — a máscara comia-lhe o topo
         fundo_banda=True,
     ),
     ('bico2', 'verso'): dict(
-        gola=(f'{F0210}/GOLA 2 CORES  V/COSTAS/GOLA PARTE 1 LADO ENCAIXE DIREITO COSTAS.webp', 0.300, None),
-        linha=(f'{F0210}/GOLA 2 CORES  V/COSTAS/GOLA PARTE 2 LADO ENCAIXE ESQUERDO COSTA.webp', 0.300, None),
+        junta=(f'{F02102}/GOLA 2 CORES  V/COSTAS/GOLA JUNTA COMPLETA COM CORES DIFERENTES COSTAS.webp', 0.300, None),
         cabeca=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/PARTE PESCOÇO COSTAS PELE.webp', (573, 344)),
         esc_cabeca=0.275,
-        neutralizar=True,
     ),
     ('vlinha', 'frente'): dict(
-        gola=(f'{F0210}/GOLA V COM LINHA ENCIMA/FRENTE/GOLA FRENTE PRIMEIRA PARTE.webp', 0.300, None),
-        linha=(f'{F0210}/GOLA V COM LINHA ENCIMA/FRENTE/GOLA FRENTE PARTE LINHA SEGUNDA PARTE ENCAIXE.webp', 0.300, None),
+        # a junta da FRENTE veio guardada na pasta COSTAS (nome sem sufixo)
+        junta=(f'{F02102}/GOLA V COM LINHA ENCIMA/COSTAS/GOLA JUNTA COMPLETA COM CORES DIFERENTES.webp', 0.300, None),
         cabeca=(f'{F0210}/GOLA 2 CORES  V/FRENTE/PELE PESCOÇO FRENTE.webp', (601, 386)),
         esc_cabeca=0.295,
-        neutralizar=True,
     ),
     ('vlinha', 'verso'): dict(
-        gola=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/GOLA PARTE 1 COSTAS.webp', 0.300, None),
-        linha=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/GOLA LINHA PARTE 2 ENCAIXE COSTAS.webp', 0.300, None),
+        junta=(f'{F02102}/GOLA V COM LINHA ENCIMA/COSTAS/GOLA JUNTA COMPLETA COM CORES DIFERENTES COSTA.webp', 0.300, None),
         cabeca=(f'{F0210}/GOLA V COM LINHA ENCIMA/COSTAS/PARTE PESCOÇO COSTAS PELE.webp', (573, 344)),
         esc_cabeca=0.275,
-        neutralizar=True,
     ),
 }
+
 
 
 
@@ -341,6 +332,24 @@ def colocar(caminho: str, escala: float, lado: str) -> tuple[int, int]:
     return melhor[1]
 
 
+def separar_junta(im: Image.Image):
+    """Separa a GOLA JUNTA do designer (reenvio 0210-2) nas duas zonas:
+    LARANJA = zona linha (2.ª cor / debrum), CLARO = zona gola. As cores
+    são de identificação — cada metade sai neutralizada para recolorir.
+    A relação entre as partes (o encaixe do V) vem COZIDA no ficheiro."""
+    a = np.array(im).astype(int)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    v = np.maximum(np.maximum(r, g), b)
+    sat = v - np.minimum(np.minimum(r, g), b)
+    laranja = (a[..., 3] > 8) & (sat > 50) & (r > g) & (g > b)
+    partes = []
+    for mascara in (~laranja, laranja):  # [claro=gola, laranja=linha]
+        p = a.copy()
+        p[..., 3] = np.where(mascara, p[..., 3], 0)
+        partes.append(neutralizar(Image.fromarray(p.astype(np.uint8))))
+    return partes
+
+
 def camada(c, chave, lado, neutro):
     if chave not in c:
         return None
@@ -357,7 +366,18 @@ def camada(c, chave, lado, neutro):
 def main() -> None:
     for (estilo, lado), c in PECAS.items():
         neutro = bool(c.get('neutralizar'))
-        gola = camada(c, 'gola', lado, neutro)
+        if 'junta' in c:
+            spec = c['junta']
+            caminho, esc, canto = spec[:3]
+            if canto is None:
+                canto = colocar(caminho, esc, lado)
+                print(f'    junta: canto otimizado {canto}')
+            gola, linha_j = separar_junta(na_tela(caminho, esc, canto))
+            c = dict(c)
+            c.pop('gola', None); c.pop('linha', None)
+        else:
+            linha_j = None
+            gola = camada(c, 'gola', lado, neutro)
         partes = None
         if 'partes' in c:
             # gola PINTADA em partes: compõe-se (1.ª por baixo) e serve de
@@ -369,7 +389,7 @@ def main() -> None:
                     canto = colocar(caminho, esc, lado)
                     print(f'    parte: canto otimizado {canto}')
                 partes.alpha_composite(na_tela(caminho, esc, canto))
-        linha_im = camada(c, 'linha', lado, neutro)
+        linha_im = linha_j if linha_j is not None else camada(c, 'linha', lado, neutro)
         geo = gola if gola is not None else partes
         if gola is not None and linha_im is not None:
             # as regras de cobertura/oclusão contam com a GOLA INTEIRA:
