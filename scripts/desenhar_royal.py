@@ -121,6 +121,42 @@ def pontos(g, regioes, cor, rmax=4.0, passo=10.5):
     return f'<path fill="{cor}" d="{"".join(ds)}"/>' if ds else '<g/>'
 
 
+CAIXAS = {'frente': (384, 410, 710, 824), 'verso': (292, 396, 733, 878)}
+RAIZ_MOLDES = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'moldes', 'jog')
+
+
+def bainha(lado, espessura=11.0):
+    """Faixa branca EXATAMENTE no rebordo inferior da camisola.
+
+    O contorno vem da máscara real da peça (vestida-camisola-<lado>.png): para
+    cada coluna, a última linha opaca. A faixa vai de (contorno - espessura)
+    para fora do tecido — a máscara da peça recorta o excesso, por isso o
+    branco fica rente à orla, seguindo-lhe a curva natural. (Pedido do
+    cliente 2026-10-05: nada de "U" desenhado por dentro.)
+    """
+    import numpy as np
+    from PIL import Image
+
+    cx, cy, cw, ch = CAIXAS[lado]
+    a = np.array(Image.open(os.path.join(RAIZ_MOLDES, f'vestida-camisola-{lado}.png')).convert('RGBA'))[..., 3]
+    sub = a[cy:cy + ch + 40, cx:cx + cw] > 128
+    # só o corpo da camisola: ignora a faixa das mangas (acima da axila)
+    base = []
+    for x in range(cw):
+        col = np.where(sub[:, x])[0]
+        if len(col) and col.max() > ch * 0.6:
+            base.append((x, float(col.max())))
+    if not base:
+        return '<g/>'
+    xs = [p[0] for p in base]
+    ys = np.array([p[1] for p in base])
+    k = 5  # suaviza a serrilha da máscara sem mexer na curva
+    ys_s = np.convolve(np.pad(ys, (k, k), mode='edge'), np.ones(2 * k + 1) / (2 * k + 1), mode='valid')
+    topo = [(x, y - espessura) for x, y in zip(xs, ys_s)]
+    fundo = [(x, y + 40) for x, y in zip(xs[::-1], ys_s[::-1])]
+    return poligono(topo + fundo, BRANCO)
+
+
 def desenhar(lado):
     g = LADOS[lado]
     cw, ch, C, H, yE, yC = g['cw'], g['ch'], g['C'], g['H'], g['yE'], g['yC']
@@ -166,11 +202,6 @@ def desenhar(lado):
             d += f' C{f1(c1[0])} {f1(c1[1])} {f1(c2[0])} {f1(c2[1])} {p2[0]} {p2[1]}'
         return f'<path fill="none" stroke="{BRANCO}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" d="{d}"/>'
     tracos += [curva(g['ombro_e']), curva(g['ombro_d'])]
-    # hem: curva a 10 px da bainha, sobe nos lados (como a foto)
-    hem = (f'M{f1(xL + 16)} {f1(ch - 88)} C{f1(xL + 14)} {f1(ch - 34)} {f1(xL + 46)} {f1(ch - 14)} '
-           f'{f1(xL + 130)} {f1(ch - 11)} L{f1(xR - 130)} {f1(ch - 11)} '
-           f'C{f1(xR - 46)} {f1(ch - 14)} {f1(xR - 14)} {f1(ch - 34)} {f1(xR - 16)} {f1(ch - 88)}')
-    tracos.append(f'<path fill="none" stroke="{BRANCO}" stroke-width="5.5" stroke-linecap="round" d="{hem}"/>')
     # riscos brancos afilados PARALELOS à banda (como a foto): o k-ésimo corre
     # a dk px acima/abaixo da linha central, afilando para o centro
     def paralelo(x0, x1, dk, t0, curva=0):
@@ -185,7 +216,7 @@ def desenhar(lado):
         paralelo(xR - 8, xR - 64, -34, 3.8, 1),
     ]
     brancos.append(((xR - 8, yE + 120), (xR - 40, yE + 220), 3, 2))
-    cor3 = ''.join(partes) + ''.join(tracos) + riscos(brancos, BRANCO)
+    cor3 = ''.join(partes) + ''.join(tracos) + bainha(lado) + riscos(brancos, BRANCO)
 
     # --- cor4 pontos no marinho ----------------------------------------------
     regs4 = [
