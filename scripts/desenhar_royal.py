@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Template do Cod. 011 "Azul Royal" (e 012) DESENHADO À RÉGUA — frente e verso.
+"""Template do Cod. 012 "Azul Royal" DESENHADO À RÉGUA — frente e verso.
+
+(O Cod. 011 foi APAGADO a 2026-10-06 por decisão do cliente — tinha bugs no
+jogador; o 012 ficou com a mesma arte e a gola V `vlinha` branca. As linhas
+do 011 estão no scratchpad da sessão como BACKUP-011-linhas.json.)
 
 Porquê (2026-10-05, cliente: "o topo azul não está igual, o nosso está escuro
 com manchas"): a arte antiga era um TRACE do mockup gerado por IA. (1) a camada
@@ -23,7 +27,7 @@ Geometria medida nas silhuetas do palco (vestida-camisola-*.png):
   verso : torso 150..585 (C=367,5), armpit y≈410,       caixa 733×878
 O V é desenhado entre os bordos do torso; a máscara da peça faz o recorte.
 
-Uso: python3 scripts/desenhar_royal.py <saida_dir>  → pedido-011-<lado>.json
+Uso: python3 scripts/desenhar_royal.py <saida_dir>  → pedido-012-<lado>.json
 """
 
 import json
@@ -280,14 +284,15 @@ def main():
     for lado in ('frente', 'verso'):
         camadas, g = desenhar(lado)
         dados = {
-            'cod_modelo': '011', 'nome': 'Azul Royal', 'peca': 'camisola', 'lado': lado,
+            'cod_modelo': '012', 'nome': 'Azul Royal', 'peca': 'camisola', 'lado': lado,
             'quadro': {'x': 0, 'y': 0, 'w': g['cw'], 'h': g['ch']},
             'cor_fundo': PALETA_ROYAL,
-            'cores_zonas': {'gola': '#FFFFFF', 'mangas': '#FFFFFF'},
+            'gola_estilo': 'vlinha' if lado == 'frente' else None,
+            'cores_zonas': {'gola': '#FFFFFF', 'linha': '#FFFFFF', 'mangas': '#FFFFFF'},
             'camadas': [{'id': i, 'cor': c, 'svg': s} for i, c, s in camadas],
         }
         json.dump({'codigo': '4554', 'acao': 'guardar-modelo', 'dados': dados},
-                  open(f'{saida}/pedido-011-{lado}.json', 'w'), separators=(',', ':'))
+                  open(f'{saida}/pedido-012-{lado}.json', 'w'), separators=(',', ':'))
         print(lado, [(i, len(s)) for i, _, s in camadas])
 
 
