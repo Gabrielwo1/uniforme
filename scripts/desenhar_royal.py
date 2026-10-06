@@ -231,10 +231,9 @@ def desenhar(lado):
         if x >= C and abaixo2(x, y) > 14 else 0,
     ]
     cor4 = pontos(g, regs4, PONTOS_NAVY, rmax=3.9, passo=10.5)
-    # três pontos soltos sobre o marinho (como a foto)
-    soltos = [(C - 10, yC2 + 170, 3.4), (C + 66, yC2 + 212, 3.4), (C + 104, yC2 + 198, 3.8)]
-    solt = ''.join(f'<circle fill="{PONTOS_NAVY}" cx="{f1(x)}" cy="{f1(y)}" r="{f1(r)}"/>' for x, y, r in soltos)
-    cor4 = (cor4 if cor4 != '<g/>' else '') + solt
+    # (os 3 pontos soltos da barra foram retirados a pedido do cliente,
+    # 2026-10-06: "só a camada azul" — os riscos — na parte de baixo)
+    cor4 = cor4 if cor4 != '<g/>' else '<g/>'
 
     # --- cor5 riscos azuis (finos, no marinho) --------------------------------
     azuis = [
