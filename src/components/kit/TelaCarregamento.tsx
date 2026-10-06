@@ -1,4 +1,5 @@
 import logoUrl from '@/assets/kypzl-logo.png';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Tela de carregamento do simulador: a logo da KYPZL ESTÁTICA sobre o
@@ -18,6 +19,7 @@ import logoUrl from '@/assets/kypzl-logo.png';
 const SETAS = 5;
 
 export function TelaCarregamento() {
+  const t = useT();
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-background">
       {/* o mesmo campo do simulador, esbatido: a tela é um antegosto do
@@ -52,7 +54,7 @@ export function TelaCarregamento() {
         </div>
 
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          A preparar o simulador…
+          {t('A preparar o simulador…')}
         </p>
       </div>
     </div>

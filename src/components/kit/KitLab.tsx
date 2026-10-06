@@ -17,6 +17,8 @@ import { PainelEscudoLogos } from './PainelEscudoLogos';
 import { PainelNomeNumero } from './PainelNomeNumero';
 import { TelaCarregamento } from './TelaCarregamento';
 import { Animacao } from '../ui/animacao';
+import { MenuIdioma } from '../SeletorIdioma';
+import { useT } from '@/i18n/useIdioma';
 import sucesso from '@/assets/animacoes/sucesso.json';
 
 /**
@@ -55,6 +57,7 @@ const TITULO_MOVEL: Record<PainelMovel, string> = {
 };
 
 export function KitLab() {
+  const t = useT();
   const reset = useKitStore((s) => s.reset);
   const design = useKitStore((s) => s.design);
   const adicionar = useKitOrderStore((s) => s.adicionar);
@@ -78,10 +81,10 @@ export function KitLab() {
     const estampa = estampaDemoPorId('camisola', design.pecas.camisola.estampaId);
     const nome = `${estampa.nome} · ${estampa.codModelo}`;
     adicionar(design, nome);
-    toast.success(`${nome} adicionado ao orçamento`, {
-      description: 'Camisola, calção e meião. Continue a personalizar ou peça o orçamento.',
+    toast.success(t('{nome} adicionado ao orçamento', { nome }), {
+      description: t('Camisola, calção e meião. Continue a personalizar ou peça o orçamento.'),
       icon: <Animacao dados={sucesso} className="h-6 w-6" />,
-      action: { label: 'Ver orçamento', onClick: () => useFlowStore.getState().goToKitCheckout() },
+      action: { label: t('Ver orçamento'), onClick: () => useFlowStore.getState().goToKitCheckout() },
     });
   };
 
@@ -130,7 +133,7 @@ export function KitLab() {
         <Button
           variant="ghost"
           size="icon"
-          title="Voltar ao site"
+          title={t('Voltar ao site')}
           onClick={() => useFlowStore.getState().goToSite()}
         >
           <ArrowLeft />
@@ -155,29 +158,30 @@ export function KitLab() {
 
         <span className="ml-auto" />
 
+        <MenuIdioma />
         <Button
           variant="outline"
           size="sm"
           onClick={alternarTema}
-          title={escuro ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          title={escuro ? t('Mudar para tema claro') : t('Mudar para tema escuro')}
         >
           {escuro ? <Sun /> : <Moon />}
         </Button>
-        <Button variant="outline" size="sm" onClick={reset} title="Repor cores e temas">
+        <Button variant="outline" size="sm" onClick={reset} title={t('Repor cores e temas')}>
           <RotateCcw />
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={adicionarAoCarrinho}
-          title="Guardar este conjunto e continuar a personalizar"
+          title={t('Guardar este conjunto e continuar a personalizar')}
         >
           <Plus />
-          <span className="hidden sm:inline">Adicionar outro</span>
+          <span className="hidden sm:inline">{t('Adicionar outro')}</span>
         </Button>
         <Button size="sm" onClick={orcamento} className="relative">
           <ClipboardList />
-          <span className="hidden sm:inline">Orçamento</span>
+          <span className="hidden sm:inline">{t('Orçamento')}</span>
           {noOrcamento > 0 && (
             <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary-foreground px-1 text-[10px] font-bold text-primary">
               {noOrcamento}
@@ -193,7 +197,7 @@ export function KitLab() {
             No telemóvel os painéis vivem na barra de baixo. */}
         <aside className="hidden space-y-3 lg:block">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            {MENU.find((m) => m.id === menu)?.rotulo}
+            {t(MENU.find((m) => m.id === menu)?.rotulo ?? '')}
           </p>
           <CadeadoConjunto />
           {menu === 'estampas' && <GaleriaEstampas />}
@@ -222,7 +226,7 @@ export function KitLab() {
                 )}
               >
                 <Icone className="h-3.5 w-3.5" />
-                {rotulo}
+                {t(rotulo)}
                 {contagem[id] > 0 && (
                   <span
                     className={cn(
@@ -244,7 +248,7 @@ export function KitLab() {
         {/* DIREITA: só cores, por peça */}
         <aside className="hidden space-y-3 lg:block">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Cores
+            {t('Cores')}
           </p>
           {PECAS_KIT.map((peca) => (
             <PainelCores key={peca} peca={peca} />
@@ -265,7 +269,7 @@ export function KitLab() {
             className="flex flex-col items-center gap-0.5 py-2 text-muted-foreground transition active:bg-accent"
           >
             <Icone className="h-5 w-5" />
-            <span className="text-[10px] font-semibold">{rotulo}</span>
+            <span className="text-[10px] font-semibold">{t(rotulo)}</span>
           </button>
         ))}
       </nav>
@@ -273,7 +277,7 @@ export function KitLab() {
       <Sheet open={painelMovel !== null} onOpenChange={(o) => !o && setPainelMovel(null)}>
         <SheetContent lado="baixo">
           <SheetHeader>
-            <SheetTitle>{painelMovel ? TITULO_MOVEL[painelMovel] : ''}</SheetTitle>
+            <SheetTitle>{painelMovel ? t(TITULO_MOVEL[painelMovel]) : ''}</SheetTitle>
           </SheetHeader>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
             {(painelMovel === 'estampas' || painelMovel === 'cores') && <CadeadoConjunto />}

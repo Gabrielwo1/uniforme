@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { CalcaoIcone, CamisolaIcone, MarcaBarra, MarcaEscudo, MeiaoIcone } from './IconesPeca';
 import { OpcaoSlot, Seccao } from './PainelNomeNumero';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Painel de ESCUDO e PATROCÍNIO, no MESMO formato fechado do de
@@ -55,6 +56,7 @@ const OPCOES_PATROCINIO: {
 ];
 
 export function PainelEscudoLogos() {
+  const t = useT();
   const [peca, setPeca] = useState<'camisola' | 'calcao' | 'meiao'>('camisola');
   const aplicacoes = useKitStore((s) => s.design.aplicacoes) ?? [];
   const addAplicacao = useKitStore((s) => s.addAplicacao);
@@ -117,7 +119,7 @@ export function PainelEscudoLogos() {
               peca === p ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent',
             )}
           >
-            {{ camisola: 'Camisola', calcao: 'Calção', meiao: 'Meião' }[p]}
+            {t({ camisola: 'Camisola', calcao: 'Calção', meiao: 'Meião' }[p])}
           </button>
         ))}
       </div>
@@ -224,6 +226,7 @@ export function PainelEscudoLogos() {
 /** Ficheiro + tamanho de um logo ativo. A imagem fica em data URL — nunca
     sai do browser antes de haver pedido. */
 function LinhaImagem({ aplicacoes, rotulo }: { aplicacoes: Aplicacao[]; rotulo: string }) {
+  const t = useT();
   const setAplicacao = useKitStore((s) => s.setAplicacao);
   const ficheiro = useRef<HTMLInputElement>(null);
   // as opções aos pares (mangas, topo do peito) partilham o ficheiro e o
@@ -252,7 +255,7 @@ function LinhaImagem({ aplicacoes, rotulo }: { aplicacoes: Aplicacao[]; rotulo: 
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <p className="truncate text-[10px] font-semibold text-muted-foreground">
-          {rotulo} · {localPorId(a.localId)?.nome ?? ''}
+          {t(rotulo)} · {t(localPorId(a.localId)?.nome ?? '')}
         </p>
         <div className="flex gap-1.5">
           <input
@@ -269,7 +272,7 @@ function LinhaImagem({ aplicacoes, rotulo }: { aplicacoes: Aplicacao[]; rotulo: 
             onClick={() => ficheiro.current?.click()}
           >
             <Upload />
-            {a.imagem ? 'Trocar' : 'Carregar imagem'}
+            {a.imagem ? t('Trocar') : t('Carregar imagem')}
           </Button>
           <input
             type="number"
@@ -282,7 +285,7 @@ function LinhaImagem({ aplicacoes, rotulo }: { aplicacoes: Aplicacao[]; rotulo: 
               const escala = Math.min(1.5, Math.max(0.5, n / 100));
               for (const ap of aplicacoes) setAplicacao(ap.id, { escala });
             }}
-            title="Tamanho (%)"
+            title={t('Tamanho (%)')}
             className="h-7 w-14 rounded-md border bg-background px-1 text-center text-xs font-bold outline-none focus:border-foreground"
           />
         </div>

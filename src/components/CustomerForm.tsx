@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Formulário de contacto do pedido — partilhado entre o passo 'form' do
@@ -32,6 +33,7 @@ export function CustomerForm({
   className?: string;
   autoFocus?: boolean;
 }) {
+  const t = useT();
   const set =
     (k: keyof OrderCustomer) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -40,17 +42,17 @@ export function CustomerForm({
   return (
     <div className={cn('space-y-4', className)}>
       <div className="space-y-1.5">
-        <Label htmlFor={`${idPrefix}-name`}>Nome *</Label>
+        <Label htmlFor={`${idPrefix}-name`}>{t('Nome')} *</Label>
         <Input
           id={`${idPrefix}-name`}
           value={value.name}
           onChange={set('name')}
-          placeholder="O seu nome"
+          placeholder={t('O seu nome')}
           autoFocus={autoFocus}
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor={`${idPrefix}-email`}>E-mail *</Label>
+        <Label htmlFor={`${idPrefix}-email`}>{t('E-mail')} *</Label>
         <Input
           id={`${idPrefix}-email`}
           type="email"
@@ -61,7 +63,7 @@ export function CustomerForm({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-phone`}>Telefone</Label>
+          <Label htmlFor={`${idPrefix}-phone`}>{t('Telefone')}</Label>
           <Input
             id={`${idPrefix}-phone`}
             value={value.phone ?? ''}
@@ -70,22 +72,22 @@ export function CustomerForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-club`}>Clube / Equipa</Label>
+          <Label htmlFor={`${idPrefix}-club`}>{t('Clube / Equipa')}</Label>
           <Input
             id={`${idPrefix}-club`}
             value={value.club ?? ''}
             onChange={set('club')}
-            placeholder="Opcional"
+            placeholder={t('Opcional')}
           />
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor={`${idPrefix}-notes`}>Observações</Label>
+        <Label htmlFor={`${idPrefix}-notes`}>{t('Observações')}</Label>
         <Textarea
           id={`${idPrefix}-notes`}
           value={value.notes ?? ''}
           onChange={set('notes')}
-          placeholder="Quantidades, tamanhos, prazos…"
+          placeholder={t('Quantidades, tamanhos, prazos…')}
         />
       </div>
     </div>

@@ -5,6 +5,7 @@ import type { Aplicacao } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { CalcaoIcone, CamisolaIcone, MarcaTexto } from './IconesPeca';
 import { SeletorCor } from './SeletorCor';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Painel de NOME e NÚMERO — DOIS CARTÕES, Frente e Costas, com todas as
@@ -24,6 +25,7 @@ const LOCAIS_NUM_FRENTE = ['peito-esq', 'peito-centro', 'peito-dir'];
 const LOCAIS_NUM_CALCAO = ['coxa-esq', 'coxa-dir'];
 
 export function PainelNomeNumero() {
+  const t = useT();
   const [peca, setPeca] = useState<'camisola' | 'calcao'>('camisola');
   const aplicacoes = useKitStore((s) => s.design.aplicacoes) ?? [];
   const addAplicacao = useKitStore((s) => s.addAplicacao);
@@ -84,7 +86,7 @@ export function PainelNomeNumero() {
               peca === p ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent',
             )}
           >
-            {p === 'camisola' ? 'Camisola' : 'Calção'}
+            {p === 'camisola' ? t('Camisola') : t('Calção')}
           </button>
         ))}
       </div>
@@ -195,10 +197,11 @@ export function PainelNomeNumero() {
 }
 
 export function Seccao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  const t = useT();
   return (
     <div className="space-y-2.5 rounded-lg border bg-card p-3 shadow-sm">
       <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-        {titulo}
+        {t(titulo)}
       </p>
       {children}
     </div>
@@ -222,12 +225,13 @@ export function OpcaoSlot({
   legenda?: string;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <button
       onClick={onClick}
       onMouseEnter={onFocoLocal}
       onFocus={onFocoLocal}
-      title={titulo}
+      title={titulo ? t(titulo) : undefined}
       className={cn(
         'relative rounded-lg border-2 bg-background p-1.5 transition hover:border-muted-foreground/50',
         ativa ? 'border-primary' : 'border-border',
@@ -241,7 +245,7 @@ export function OpcaoSlot({
             ativa ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          {legenda}
+          {t(legenda)}
         </span>
       )}
       {ativa && (
@@ -260,6 +264,7 @@ function FilaCores({
 }: {
   pares: Array<{ rotulo: string; aplicacao?: Aplicacao; campo: 'cor' | 'corContorno' }>;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap gap-4">
       {pares.map(({ rotulo, aplicacao, campo }) =>
@@ -268,7 +273,7 @@ function FilaCores({
         ) : (
           <div key={rotulo} className="flex flex-col items-center gap-1 opacity-35" aria-hidden>
             <span className="h-9 w-9 rounded-md border-2 border-border bg-muted" />
-            <span className="text-[10px] text-muted-foreground">{rotulo}</span>
+            <span className="text-[10px] text-muted-foreground">{t(rotulo)}</span>
           </div>
         ),
       )}
@@ -286,6 +291,7 @@ function CorCampo({
   aplicacao: Aplicacao;
   campo: 'cor' | 'corContorno';
 }) {
+  const t = useT();
   const setAplicacao = useKitStore((s) => s.setAplicacao);
   return (
     <div className="flex flex-col items-center gap-1">
@@ -294,10 +300,10 @@ function CorCampo({
         onChange={(cor) => setAplicacao(a.id, { [campo]: cor })}
         podeLimpar={campo === 'corContorno'}
         alinhar="esquerda"
-        title={rotulo}
+        title={t(rotulo)}
         className="h-9 w-9"
       />
-      <span className="text-[10px] text-muted-foreground">{rotulo}</span>
+      <span className="text-[10px] text-muted-foreground">{t(rotulo)}</span>
     </div>
   );
 }

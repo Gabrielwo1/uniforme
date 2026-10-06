@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { PALETA } from '@/lib/kitCores';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Seletor de cor em BLOCOS — a grelha fechada da paleta, como no
@@ -29,6 +30,7 @@ export function SeletorCor({
       "Cor Borda" do concorrente) e o gatilho mostra o X quando vazio. */
   podeLimpar?: boolean;
 }) {
+  const t = useT();
   const [aberto, setAberto] = useState(false);
 
   const escolher = (hex: string) => {
@@ -70,7 +72,7 @@ export function SeletorCor({
               {podeLimpar && (
                 <button
                   type="button"
-                  title="Sem cor"
+                  title={t('Sem cor')}
                   onClick={() => escolher('')}
                   className={cn(
                     'relative h-6 w-6 overflow-hidden rounded border border-border bg-white transition hover:scale-110',
@@ -84,7 +86,7 @@ export function SeletorCor({
                 <button
                   key={hex}
                   type="button"
-                  title={nome}
+                  title={t(nome)}
                   onClick={() => escolher(hex)}
                   style={{ backgroundColor: hex }}
                   className={cn(

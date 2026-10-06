@@ -17,6 +17,7 @@ import { PecaMockup } from './PecaMockup';
 import { AMOSTRAS } from '@/lib/kitCaixas';
 import { CamadaAplicacoes } from './CamadaAplicacoes';
 import { SeletorCor } from './SeletorCor';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Visualizador do conjunto: frente e verso lado a lado, vestidos no
@@ -35,6 +36,7 @@ const LARGURA_UM = 380;
 const LIMIAR_MOVEL = 560;
 
 export function KitViewer({ fundo }: { fundo?: string }) {
+  const t = useT();
   const caixa = useRef<HTMLDivElement>(null);
   const [escala, setEscala] = useState(1);
   const [movel, setMovel] = useState(false);
@@ -93,7 +95,7 @@ export function KitViewer({ fundo }: { fundo?: string }) {
                 ladoMovel === lado ? 'bg-white text-black' : 'text-white/80',
               )}
             >
-              {LADO_LABEL[lado]}
+              {t(LADO_LABEL[lado])}
             </button>
           ))}
         </div>
@@ -197,6 +199,7 @@ function PecaSlot({
  * peça). Com o cadeado fechado, escolher aqui muda as três peças.
  */
 export function GaleriaEstampas() {
+  const t = useT();
   const [peca, setPeca] = useState<PecaKit>('camisola');
   const config = useKitStore((s) => s.design.pecas[peca]);
   const setEstampa = useKitStore((s) => s.setEstampa);
@@ -215,7 +218,7 @@ export function GaleriaEstampas() {
                 : 'text-muted-foreground hover:bg-accent',
             )}
           >
-            {PECA_LABEL[p]}
+            {t(PECA_LABEL[p])}
           </button>
         ))}
       </div>
@@ -255,6 +258,7 @@ function MiniaturaEstampa({
   ativa: boolean;
   onEscolher: () => void;
 }) {
+  const t = useT();
   const molde = moldeDemo(peca, 'frente');
   const [ax, ay, aw, ah] = (estampa.amostraViewBox ?? AMOSTRAS[peca])
     .split(' ')
@@ -272,7 +276,7 @@ function MiniaturaEstampa({
   return (
     <button
       onClick={onEscolher}
-      title={`${estampa.nome} · Cod. ${estampa.codModelo}`}
+      title={`${t(estampa.nome)} · ${t('Cod.')} ${estampa.codModelo}`}
       className="group flex flex-col items-center gap-1"
     >
       <div
@@ -309,7 +313,7 @@ function MiniaturaEstampa({
           ativa ? 'bg-foreground text-background' : 'bg-muted text-foreground',
         )}
       >
-        Cod. {estampa.codModelo}
+        {t('Cod.')} {estampa.codModelo}
       </span>
     </button>
   );
@@ -325,6 +329,7 @@ function MiniaturaEstampa({
  * nada no painel o mostrasse.
  */
 export function CadeadoConjunto() {
+  const t = useT();
   const sincronizado = useKitStore((s) => s.design.sincronizado);
   const toggle = useKitStore((s) => s.toggleSincronizar);
 
@@ -348,12 +353,12 @@ export function CadeadoConjunto() {
       </span>
       <span className="min-w-0">
         <span className="block text-xs font-bold leading-tight">
-          {sincronizado ? 'Peças sincronizadas' : 'Peças independentes'}
+          {sincronizado ? t('Peças sincronizadas') : t('Peças independentes')}
         </span>
         <span className="block text-[11px] leading-tight opacity-80">
           {sincronizado
-            ? 'Cores e estampa acompanham nas três'
-            : 'Cada peça muda sozinha'}
+            ? t('Cores e estampa acompanham nas três')
+            : t('Cada peça muda sozinha')}
         </span>
       </span>
     </button>
@@ -362,6 +367,7 @@ export function CadeadoConjunto() {
 
 /** Painel de cores: zonas da peça + uma entrada por camada da estampa. */
 export function PainelCores({ peca }: { peca: PecaKit }) {
+  const t = useT();
   const config = useKitStore((s) => s.design.pecas[peca]);
   const setCorZona = useKitStore((s) => s.setCorZona);
   const setCorCamada = useKitStore((s) => s.setCorCamada);
@@ -370,14 +376,14 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm">
       <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-        Cores {PECA_LABEL[peca]}
+        {t('Cores')} {t(PECA_LABEL[peca])}
       </p>
 
       <div className="mt-2.5 flex flex-wrap gap-3">
         {moldeDemo(peca, 'frente', estampa.golaEstilo).zonas.map((zona) => (
           <Swatch
             key={zona.id}
-            label={zona.nome}
+            label={t(zona.nome)}
             cor={config.coresZonas[zona.id] ?? zona.corPadrao}
             onChange={(cor) => setCorZona(peca, zona.id, cor)}
           />
@@ -385,7 +391,7 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
         {estampa.camadas.map((camada) => (
           <Swatch
             key={camada.id}
-            label={camada.nome}
+            label={t('Camada {letra}', { letra: camada.nome.replace('Camada ', '') })}
             /* o crachá repete a letra do rótulo: é o que distingue, de
                relance, uma camada da estampa de uma zona da peça */
             marca={camada.nome.replace('Camada ', '')}

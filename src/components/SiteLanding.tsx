@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
 import { useFlowStore } from '@/store/useFlowStore';
+import { BandeirasIdioma } from './SeletorIdioma';
+import { useT } from '@/i18n/useIdioma';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
@@ -44,6 +46,20 @@ const CTA_LIGHT = 'rounded-full bg-white text-[#0e0e0e] hover:bg-white/90';
 /** Botão escuro (pílula preta) — usado sobre fundos claros. */
 const CTA_DARK = 'rounded-full bg-[#0e0e0e] text-white hover:bg-[#0e0e0e]/85';
 
+/** Título com palavras a NEGRITO marcadas `**assim**` na própria frase —
+    a chave de tradução leva os marcadores, por isso cada língua põe o
+    negrito onde a sua ordem de palavras pede. */
+function Rico({ texto }: { texto: string }) {
+  const t = useT();
+  return (
+    <>
+      {t(texto)
+        .split('**')
+        .map((parte, i) => (i % 2 ? <span key={i} className="font-bold">{parte}</span> : parte))}
+    </>
+  );
+}
+
 const NAV_LINKS = [
   { label: 'Equipamentos', id: 'equipamentos' },
   { label: 'Personalização', id: 'processo' },
@@ -51,86 +67,6 @@ const NAV_LINKS = [
   { label: 'Como Funciona', id: 'como-funciona' },
   { label: 'Contacto', id: 'contacto' },
 ];
-
-/**
- * Seletor de idioma — por agora é SÓ visual: marca a bandeira escolhida mas
- * não traduz nada (o site continua em PT). As traduções entram depois.
- *
- * Bandeiras em SVG inline em vez de emoji, que nem todos os sistemas
- * (Windows) desenham.
- */
-const LANGUAGES = [
-  { code: 'pt', label: 'Português' },
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
-  { code: 'en', label: 'English' },
-] as const;
-
-function Flag({ code }: { code: (typeof LANGUAGES)[number]['code'] }) {
-  // viewBox quadrado + slice: a bandeira preenche o círculo sem deformar.
-  const common = {
-    viewBox: '0 0 6 4',
-    preserveAspectRatio: 'xMidYMid slice',
-    className: 'h-full w-full',
-  } as const;
-  if (code === 'pt')
-    return (
-      <svg {...common}>
-        <rect width="6" height="4" fill="#da291c" />
-        <rect width="2.4" height="4" fill="#046a38" />
-        <circle cx="2.4" cy="2" r="0.82" fill="#ffe900" stroke="#046a38" strokeWidth="0.12" />
-      </svg>
-    );
-  if (code === 'es')
-    return (
-      <svg {...common}>
-        <rect width="6" height="4" fill="#c60b1e" />
-        <rect y="1" width="6" height="2" fill="#ffc400" />
-      </svg>
-    );
-  if (code === 'fr')
-    return (
-      <svg {...common}>
-        <rect width="6" height="4" fill="#fff" />
-        <rect width="2" height="4" fill="#002395" />
-        <rect x="4" width="2" height="4" fill="#ed2939" />
-      </svg>
-    );
-  return (
-    <svg {...common}>
-      <rect width="6" height="4" fill="#012169" />
-      <path d="M0,0 L6,4 M6,0 L0,4" stroke="#fff" strokeWidth="0.8" />
-      <path d="M0,0 L6,4 M6,0 L0,4" stroke="#c8102e" strokeWidth="0.45" />
-      <path d="M3,0 V4 M0,2 H6" stroke="#fff" strokeWidth="1.3" />
-      <path d="M3,0 V4 M0,2 H6" stroke="#c8102e" strokeWidth="0.78" />
-    </svg>
-  );
-}
-
-function LanguagePicker() {
-  const [lang, setLang] = useState<string>('pt');
-  return (
-    <div className="hidden items-center gap-1.5 sm:flex">
-      {LANGUAGES.map((l) => (
-        <button
-          key={l.code}
-          onClick={() => setLang(l.code)}
-          title={l.label}
-          aria-label={l.label}
-          aria-pressed={lang === l.code}
-          className={cn(
-            'h-6 w-6 overflow-hidden rounded-full ring-1 transition',
-            lang === l.code
-              ? 'opacity-100 ring-2 ring-white'
-              : 'opacity-55 ring-white/25 hover:opacity-90',
-          )}
-        >
-          <Flag code={l.code} />
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function SiteLanding() {
   return (
@@ -153,6 +89,7 @@ export function SiteLanding() {
 
 /* ------------------------------------------------------------- header */
 function Header() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <header className="sticky top-0 z-30 bg-[#131313] text-white">
@@ -166,24 +103,24 @@ function Header() {
               onClick={() => scrollTo(l.id)}
               className="text-sm font-medium text-white/75 transition hover:text-white"
             >
-              {l.label}
+              {t(l.label)}
             </button>
           ))}
         </nav>
 
         <div className="flex items-center gap-3">
-          <LanguagePicker />
+          <BandeirasIdioma />
           <Button
             size="sm"
             className="hidden rounded-full sm:inline-flex"
             onClick={enterSimulator}
           >
-            Entrar no simulador
+            {t('Entrar no simulador')}
           </Button>
           <button
             className="text-white lg:hidden"
             onClick={() => setOpen((o) => !o)}
-            aria-label="Menu"
+            aria-label={t('Menu')}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -201,11 +138,11 @@ function Header() {
               }}
               className="rounded-md px-2 py-2.5 text-left text-sm font-medium text-white/80 hover:bg-white/5"
             >
-              {l.label}
+              {t(l.label)}
             </button>
           ))}
           <Button className="mt-2 rounded-full" onClick={enterSimulator}>
-            Entrar no simulador
+            {t('Entrar no simulador')}
           </Button>
         </div>
       )}
@@ -215,6 +152,7 @@ function Header() {
 
 /* --------------------------------------------------------------- hero */
 function Hero() {
+  const t = useT();
   return (
     <section className="relative overflow-hidden bg-[#0a0a0a] text-white">
       <div className="absolute inset-0">
@@ -225,7 +163,7 @@ function Hero() {
 
       <div className="relative mx-auto flex max-w-[1360px] flex-col gap-10 px-5 pb-16 pt-14 sm:px-8 lg:pb-24 lg:pt-20">
         <h1 className="max-w-xl text-3xl font-bold leading-tight sm:text-4xl lg:text-[44px]">
-          Equipamentos desportivos personalizados para clubes, equipas e atletas
+          {t('Equipamentos desportivos personalizados para clubes, equipas e atletas')}
         </h1>
 
         <div className="grid gap-10 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-end">
@@ -238,7 +176,7 @@ function Hero() {
             ].map((item) => (
               <li key={item} className="flex items-center gap-2.5 border-b border-white/10 pb-3 text-sm font-medium">
                 <ArrowUpRight className="h-4 w-4 shrink-0 -rotate-45 text-primary" />
-                {item}
+                {t(item)}
               </li>
             ))}
           </ul>
@@ -258,18 +196,16 @@ function Hero() {
               <p className="text-sm font-semibold">
                 + 8000
                 <span className="ml-1 block text-[11px] font-normal text-white/55 sm:inline sm:ml-1">
-                  unidades produzidas
+                  {t('unidades produzidas')}
                 </span>
               </p>
             </div>
             <p className="text-sm leading-relaxed text-white/65">
-              Concebemos equipamentos técnicos que combinam desempenho, conforto e identidade. Da
-              primeira ideia à produção final, acompanhamos todo o processo para criar soluções
-              totalmente personalizadas para a sua equipa.
+              {t('Concebemos equipamentos técnicos que combinam desempenho, conforto e identidade. Da primeira ideia à produção final, acompanhamos todo o processo para criar soluções totalmente personalizadas para a sua equipa.')}
             </p>
             <div className="flex flex-wrap gap-3">
               <Button size="lg" className={CTA_LIGHT} onClick={enterSimulator}>
-                Entrar no simulador <ArrowUpRight />
+                {t('Entrar no simulador')} <ArrowUpRight />
               </Button>
               <Button
                 size="lg"
@@ -277,7 +213,7 @@ function Hero() {
                 className="rounded-full border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 onClick={() => scrollTo('contacto')}
               >
-                Contato
+                {t('Contato')}
               </Button>
             </div>
           </div>
@@ -289,16 +225,15 @@ function Hero() {
 
 /* -------------------------------------------------- processo/qualidade */
 function ProcessSection() {
+  const t = useT();
   return (
     <section id="processo" className="mx-auto max-w-[1360px] px-5 py-16 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-2xl sm:text-3xl">
-          Todo o processo. <span className="font-bold">Sob o mesmo compromisso</span> de qualidade.
+          <Rico texto="Todo o processo. **Sob o mesmo compromisso** de qualidade." />
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Na KYPZL controlamos todas as etapas da produção, desde o design até à confeção. Este
-          modelo permite-nos garantir maior controlo, qualidade consistente e um acompanhamento
-          mais próximo em cada projeto.
+          {t('Na KYPZL controlamos todas as etapas da produção, desde o design até à confeção. Este modelo permite-nos garantir maior controlo, qualidade consistente e um acompanhamento mais próximo em cada projeto.')}
         </p>
       </div>
 
@@ -319,7 +254,7 @@ function ProcessSection() {
 
       <div className="mt-10 flex justify-center">
         <Button size="lg" className={CTA_DARK} onClick={enterSimulator}>
-          Entrar no simulador <ArrowUpRight />
+          {t('Entrar no simulador')} <ArrowUpRight />
         </Button>
       </div>
     </section>
@@ -337,18 +272,19 @@ function ProcessCard({
   title: string;
   desc: string;
 }) {
+  const t = useT();
   return (
     <div className="group relative h-72 overflow-hidden rounded-2xl">
       <img
         src={image}
-        alt={title}
+        alt={t(title)}
         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-6">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tag}</p>
-        <p className="mt-1.5 text-lg font-bold text-white">{title}</p>
-        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-white/70">{desc}</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{t(tag)}</p>
+        <p className="mt-1.5 text-lg font-bold text-white">{t(title)}</p>
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-white/70">{t(desc)}</p>
       </div>
     </div>
   );
@@ -395,21 +331,20 @@ const STEPS = [
 ];
 
 function HowItWorks() {
+  const t = useT();
   return (
     <section id="como-funciona" className="bg-muted/40 py-16 lg:py-24">
       <div className="mx-auto max-w-[1360px] px-5 sm:px-8">
         <div className="grid gap-6 lg:grid-cols-2 lg:items-end">
           <h2 className="text-2xl sm:text-3xl">
-            Desenvolvemos equipamentos que <span className="font-bold">representam a identidade</span> da sua equipa.
+            <Rico texto="Desenvolvemos equipamentos que **representam a identidade** da sua equipa." />
           </h2>
           <div>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Cada projeto é único. Trabalhamos consigo para criar equipamentos totalmente
-              personalizados através de tecnologia de sublimação, materiais técnicos e
-              acabamentos de elevada qualidade.
+              {t('Cada projeto é único. Trabalhamos consigo para criar equipamentos totalmente personalizados através de tecnologia de sublimação, materiais técnicos e acabamentos de elevada qualidade.')}
             </p>
             <Button className={cn(CTA_DARK, 'mt-5')} onClick={() => scrollTo('contacto')}>
-              Contato
+              {t('Contato')}
             </Button>
           </div>
         </div>
@@ -417,12 +352,12 @@ function HowItWorks() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {STEPS.map((s) => (
             <div key={s.n} className="rounded-xl border border-b-2 border-b-primary bg-card p-4 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Passo {s.n}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{t('Passo')} {s.n}</p>
               <div className="mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground">
                 <s.icon className="h-4 w-4" />
               </div>
-              <p className="mt-4 text-sm font-bold leading-snug">{s.title}</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{s.desc}</p>
+              <p className="mt-4 text-sm font-bold leading-snug">{t(s.title)}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{t(s.desc)}</p>
             </div>
           ))}
         </div>
@@ -446,6 +381,7 @@ const MODALITIES_ROW2 = [
 ];
 
 function ModalitiesSection() {
+  const t = useT();
   return (
     <section id="modalidades" className="bg-[#0a0a0a] py-16 text-white lg:py-24">
       <div className="mx-auto max-w-[1360px] px-5 sm:px-8">
@@ -457,10 +393,10 @@ function ModalitiesSection() {
           </div>
           <div className="flex flex-col justify-center">
             <h2 className="text-2xl sm:text-3xl">
-              Soluções para <span className="font-bold">qualquer modalidade</span> desportiva
+              <Rico texto="Soluções para **qualquer modalidade** desportiva" />
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/60">
-              Produzimos equipamentos personalizados adaptados às exigências de cada modalidade.
+              {t('Produzimos equipamentos personalizados adaptados às exigências de cada modalidade.')}
             </p>
           </div>
         </div>
@@ -476,17 +412,18 @@ function ModalitiesSection() {
 }
 
 function ModalityCard({ label, image }: { label: string; image: string }) {
+  const t = useT();
   return (
     <div className="group relative aspect-[3/4] overflow-hidden rounded-xl">
       <span className="absolute inset-x-0 top-0 z-10 h-0.5 bg-primary" />
       <img
         src={image}
-        alt={label}
+        alt={t(label)}
         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
       <span className="absolute bottom-3 left-3 text-sm font-bold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
-        {label}
+        {t(label)}
       </span>
     </div>
   );
@@ -501,44 +438,44 @@ const PREMIUM_ITEMS = [
 ];
 
 function PremiumSection() {
+  const t = useT();
   return (
     <section id="equipamentos" className="mx-auto max-w-[1360px] px-5 py-16 sm:px-8 lg:py-24">
       {/* Cabeçalho da secção (era uma <section> à parte, o que somava o
           padding vertical das duas e abria um vão enorme até às imagens). */}
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-2xl sm:text-3xl">
-          Concebidos para competir ao <span className="font-bold">mais alto nível</span>.
+          <Rico texto="Concebidos para competir ao **mais alto nível**." />
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Equipamentos desenvolvidos para proporcionar conforto, resistência e total liberdade de
-          movimentos.
+          {t('Equipamentos desenvolvidos para proporcionar conforto, resistência e total liberdade de movimentos.')}
         </p>
       </div>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2">
         <div className="relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl">
-          <img src="/site/premium.jpg" alt="Linha Premium" className="absolute inset-0 h-full w-full object-cover" />
+          <img src="/site/premium.jpg" alt={`${t('Linha')} Premium`} className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
           <div className="relative p-7">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary">Linha</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-primary">{t('Linha')}</p>
             <p className="text-4xl font-extrabold text-white">Premium</p>
-            <p className="mt-1 text-sm font-medium text-white/70">Desempenho de Elite</p>
+            <p className="mt-1 text-sm font-medium text-white/70">{t('Desempenho de Elite')}</p>
             <ul className="mt-4 space-y-2">
               {PREMIUM_ITEMS.map(({ label, Icon }) => (
                 <li key={label} className="flex items-center gap-2 text-sm text-white/85">
                   <Icon className="h-4 w-4 text-primary" />
-                  {label}
+                  {t(label)}
                 </li>
               ))}
             </ul>
             <Button className={cn(CTA_LIGHT, 'mt-5')} onClick={enterSimulator}>
-              Entrar no simulador <ArrowUpRight />
+              {t('Entrar no simulador')} <ArrowUpRight />
             </Button>
           </div>
         </div>
 
         <div className="relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl">
-          <img src="/site/champion.jpg" alt="Linha Champion" className="absolute inset-0 h-full w-full object-cover" />
+          <img src="/site/champion.jpg" alt={`${t('Linha')} Champion`} className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
           <p className="relative p-7 text-3xl font-extrabold text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.6)]">
             Champion
@@ -560,6 +497,7 @@ const TREINO_TAGS = [
 ];
 
 function TrainingBanner() {
+  const t = useT();
   return (
     <section className="relative overflow-hidden bg-[#0a0a0a] py-16 text-white lg:py-24">
       <img src="/site/treino-banner.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
@@ -568,24 +506,23 @@ function TrainingBanner() {
       <div className="relative mx-auto max-w-[1360px] px-5 sm:px-8">
         <div className="max-w-md">
           <h2 className="text-2xl sm:text-3xl">
-            <span className="font-bold">Preparados</span> para acompanhar cada treino.
+            <Rico texto="**Preparados** para acompanhar cada treino." />
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-white/65">
-            A coleção de treino KYPZL combina conforto, respirabilidade e durabilidade para
-            responder às exigências do dia a dia.
+            {t('A coleção de treino KYPZL combina conforto, respirabilidade e durabilidade para responder às exigências do dia a dia.')}
           </p>
           <Button className={cn(CTA_LIGHT, 'mt-5')} onClick={enterSimulator}>
-            Entrar no simulador <ArrowUpRight />
+            {t('Entrar no simulador')} <ArrowUpRight />
           </Button>
         </div>
 
         <div className="mt-10 flex flex-wrap gap-2.5 lg:mt-0 lg:max-w-sm lg:justify-end lg:absolute lg:right-8 lg:top-1/2 lg:-translate-y-1/2">
-          {TREINO_TAGS.map((t) => (
+          {TREINO_TAGS.map((tag) => (
             <span
-              key={t}
+              key={tag}
               className="rounded-full border border-white/20 bg-black/40 px-3.5 py-1.5 text-xs font-semibold backdrop-blur"
             >
-              {t}
+              {t(tag)}
             </span>
           ))}
         </div>
@@ -598,23 +535,23 @@ function TrainingBanner() {
 const LIFESTYLE_ITEMS = ['Kits', 'Casacos', 'Blusões', 'Polos', 'Calças', 'Bermudas', 'Coletes'];
 
 function LifestyleSection() {
+  const t = useT();
   return (
     <section className="mx-auto max-w-[1360px] px-5 py-16 sm:px-8 lg:py-24">
       <div className="grid gap-10 lg:grid-cols-[420px_minmax(0,1fr)] lg:items-center">
         <div className="relative h-[480px] overflow-hidden rounded-2xl">
-          <img src="/site/lifestyle.jpg" alt="Lifestyle & Viagem" className="h-full w-full object-cover" />
+          <img src="/site/lifestyle.jpg" alt={t('Lifestyle & Viagem')} className="h-full w-full object-cover" />
           <span className="absolute left-4 top-4 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur">
-            Lifestyle &amp; Viagem
+            {t('Lifestyle & Viagem')}
           </span>
         </div>
 
         <div>
           <h2 className="text-2xl sm:text-3xl">
-            Uma imagem <span className="font-bold">profissional dentro e fora</span> da competição.
+            <Rico texto="Uma imagem **profissional dentro e fora** da competição." />
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Coleção desenvolvida para deslocações, eventos e representação institucional,
-            mantendo o conforto e a identidade visual da equipa.
+            {t('Coleção desenvolvida para deslocações, eventos e representação institucional, mantendo o conforto e a identidade visual da equipa.')}
           </p>
 
           <div className="mt-6 divide-y rounded-xl border">
@@ -624,14 +561,14 @@ function LifestyleSection() {
                 onClick={enterSimulator}
                 className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium transition hover:bg-muted/60"
               >
-                {item}
+                {t(item)}
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
               </button>
             ))}
           </div>
 
           <Button className={cn(CTA_DARK, 'mt-6')} onClick={() => scrollTo('contacto')}>
-            Contato
+            {t('Contato')}
           </Button>
         </div>
       </div>
@@ -641,16 +578,16 @@ function LifestyleSection() {
 
 /* ----------------------------------------------------------- acessórios */
 function AccessoriesSection() {
+  const t = useT();
   return (
     <section className="bg-muted/40 py-16 lg:py-24">
       <div className="mx-auto max-w-[1360px] px-5 sm:px-8">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="text-2xl sm:text-3xl">
-            Tudo o que a sua equipa precisa <span className="font-bold">num só lugar</span>.
+            <Rico texto="Tudo o que a sua equipa precisa **num só lugar**." />
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Complete o equipamento com acessórios desenvolvidos para facilitar o transporte, a
-            organização e a utilização diária.
+            {t('Complete o equipamento com acessórios desenvolvidos para facilitar o transporte, a organização e a utilização diária.')}
           </p>
         </div>
 
@@ -684,18 +621,19 @@ function AccessoryCard({
   desc?: string;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div className={cn('group relative overflow-hidden rounded-2xl', className)}>
       <img
         src={image}
-        alt={title}
+        alt={t(title)}
         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-5">
         <div>
-          <p className="text-base font-bold text-white">{title}</p>
-          {desc && <p className="mt-1 max-w-[220px] text-xs leading-relaxed text-white/70">{desc}</p>}
+          <p className="text-base font-bold text-white">{t(title)}</p>
+          {desc && <p className="mt-1 max-w-[220px] text-xs leading-relaxed text-white/70">{t(desc)}</p>}
         </div>
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-white backdrop-blur">
           <ArrowUpRight className="h-4 w-4" />
@@ -738,26 +676,27 @@ const TESTIMONIALS = [
 ];
 
 function Testimonials() {
+  const t = useT();
   return (
     <section className="mx-auto max-w-[1360px] px-5 py-16 sm:px-8 lg:py-24">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {TESTIMONIALS.map((t) => (
-          <div key={t.name} className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
+        {TESTIMONIALS.map((dep) => (
+          <div key={dep.name} className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
             <div className="flex gap-0.5 text-amber-400">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="h-3.5 w-3.5 fill-current" />
               ))}
             </div>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-              &ldquo;{t.quote}&rdquo;
+              &ldquo;{t(dep.quote)}&rdquo;
             </p>
             <div className="mt-4 flex items-center gap-2.5">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                {t.initials}
+                {dep.initials}
               </span>
               <div>
-                <p className="text-sm font-semibold leading-tight">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
+                <p className="text-sm font-semibold leading-tight">{dep.name}</p>
+                <p className="text-xs text-muted-foreground">{t(dep.role)}</p>
               </div>
             </div>
           </div>
@@ -769,11 +708,12 @@ function Testimonials() {
 
 /* ----------------------------------------------------------- newsletter */
 function NewsletterBanner() {
+  const t = useT();
   return (
     <section className="border-t bg-[#0a0a0a] py-10 text-white">
       <div className="mx-auto flex max-w-[1360px] flex-col items-center gap-4 px-5 text-center sm:flex-row sm:justify-between sm:text-left sm:px-8">
         <p className="text-sm font-medium text-white/80">
-          Siga a KYPZL e acompanhe os nossos projetos mais recentes
+          {t('Siga a KYPZL e acompanhe os nossos projetos mais recentes')}
         </p>
         <Button
           asChild
@@ -781,7 +721,7 @@ function NewsletterBanner() {
           className="rounded-full"
         >
           <a href="https://instagram.com/kypzl_" target="_blank" rel="noreferrer">
-            Seguir no Instagram <ArrowUpRight />
+            {t('Seguir no Instagram')} <ArrowUpRight />
           </a>
         </Button>
       </div>
@@ -791,13 +731,14 @@ function NewsletterBanner() {
 
 /* ---------------------------------------------------------------- footer */
 function Footer() {
+  const t = useT();
   return (
     <footer id="contacto" className="bg-[#0a0a0a] pt-14 text-white">
       <div className="mx-auto grid max-w-[1360px] gap-10 px-5 pb-10 sm:px-8 lg:grid-cols-[280px_1fr_1fr]">
         <div>
           <img src={logoUrl} alt="KYPZL" className="h-7 w-auto brightness-0 invert" />
           <p className="mt-3 max-w-[240px] text-sm leading-relaxed text-white/55">
-            Siga a KYPZL e acompanhe os nossos projetos mais recentes.
+            {t('Siga a KYPZL e acompanhe os nossos projetos mais recentes.')}
           </p>
           <div className="mt-4 flex gap-2.5">
             <a
@@ -822,7 +763,7 @@ function Footer() {
         </div>
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Navegação</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">{t('Navegação')}</p>
           <ul className="mt-4 space-y-2.5 text-sm text-white/65">
             {[
               { label: 'Equipamentos de Jogo', action: enterSimulator },
@@ -835,7 +776,7 @@ function Footer() {
             ].map((l) => (
               <li key={l.label}>
                 <button onClick={l.action} className="transition hover:text-white">
-                  {l.label}
+                  {t(l.label)}
                 </button>
               </li>
             ))}
@@ -843,12 +784,12 @@ function Footer() {
         </div>
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Contactos</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">{t('Contactos')}</p>
           <ul className="mt-4 space-y-4 text-sm">
             <li className="flex gap-2.5">
               <Phone className="h-4 w-4 shrink-0 text-white/40" />
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-white/40">Telefone</p>
+                <p className="text-[11px] uppercase tracking-wide text-white/40">{t('Telefone')}</p>
                 <a href="tel:+351912300289" className="font-medium text-white/85 hover:text-white">
                   +351 912 300 289
                 </a>
@@ -857,7 +798,7 @@ function Footer() {
             <li className="flex gap-2.5">
               <Mail className="h-4 w-4 shrink-0 text-white/40" />
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-white/40">E-mail</p>
+                <p className="text-[11px] uppercase tracking-wide text-white/40">{t('E-mail')}</p>
                 <a href="mailto:info@kypzl.pt" className="font-medium text-white/85 hover:text-white">
                   info@kypzl.pt
                 </a>
@@ -866,7 +807,7 @@ function Footer() {
             <li className="flex gap-2.5">
               <MapPin className="h-4 w-4 shrink-0 text-white/40" />
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-white/40">Morada</p>
+                <p className="text-[11px] uppercase tracking-wide text-white/40">{t('Morada')}</p>
                 <p className="font-medium text-white/85">
                   Rua Padre Cruz 22, 4765-383 Oliveira São Mateus, Portugal
                 </p>
@@ -875,8 +816,8 @@ function Footer() {
             <li className="flex gap-2.5">
               <Clock className="h-4 w-4 shrink-0 text-white/40" />
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-white/40">Horário</p>
-                <p className="font-medium text-white/85">Seg - Sex: 09h00 às 18h00</p>
+                <p className="text-[11px] uppercase tracking-wide text-white/40">{t('Horário')}</p>
+                <p className="font-medium text-white/85">{t('Seg - Sex: 09h00 às 18h00')}</p>
               </div>
             </li>
           </ul>
@@ -885,8 +826,8 @@ function Footer() {
 
       <div className="border-t border-white/10 py-5">
         <div className="mx-auto flex max-w-[1360px] flex-col items-center justify-between gap-2 px-5 text-xs text-white/40 sm:flex-row sm:px-8">
-          <p>© {new Date().getFullYear()} KYPZL. Todos os direitos reservados.</p>
-          <p>Feito com sublimação de alta qualidade</p>
+          <p>© {new Date().getFullYear()} KYPZL. {t('Todos os direitos reservados.')}</p>
+          <p>{t('Feito com sublimação de alta qualidade')}</p>
         </div>
       </div>
     </footer>

@@ -2,6 +2,7 @@ import type { SVGProps } from 'react';
 import { ArrowRight, Shirt, Volleyball } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/useIdioma';
 
 /**
  * Os segmentos do simulador, no cabeçalho — como no concorrente: a
@@ -58,16 +59,17 @@ const SEGMENTOS = [
 ];
 
 export function OutrosSimuladores({ className }: { className?: string }) {
+  const t = useT();
   return (
     <div className={cn('items-center gap-1.5', className)}>
       {SEGMENTOS.map(({ nome, ativo, Icone }) => (
         <button
           key={nome}
-          title={ativo ? `${nome} — está aqui` : `${nome} — brevemente`}
+          title={ativo ? `${t(nome)} — ${t('está aqui')}` : `${t(nome)} — ${t('brevemente')}`}
           onClick={() =>
             !ativo
-            && toast.info(`${nome} — brevemente`, {
-              description: 'Este segmento do simulador está a caminho.',
+            && toast.info(`${t(nome)} — ${t('brevemente')}`, {
+              description: t('Este segmento do simulador está a caminho.'),
             })
           }
           className={cn(
@@ -85,14 +87,15 @@ export function OutrosSimuladores({ className }: { className?: string }) {
           segmentos, responde com o que está disponível e o que vem aí */}
       <button
         onClick={() =>
-          toast.info('Todos os simuladores', {
-            description:
+          toast.info(t('Todos os simuladores'), {
+            description: t(
               'Futebol já está disponível. Basquetebol, voleibol e treino/pólos estão a caminho.',
+            ),
           })
         }
         className="ml-1 flex h-7 items-center gap-1 rounded-md border px-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground transition hover:bg-accent hover:text-foreground"
       >
-        Ver todos
+        {t('Ver todos')}
         <ArrowRight className="h-3 w-3" />
       </button>
     </div>
