@@ -11,13 +11,12 @@ a partir da foto do cliente (143751 frente / 143809 costas): V grosso, linha
 fina, debrum, hem, meio-tom de pontos e riscos, tudo em COORDENADAS DA CAIXA
 da peça (quadro = caixa → escala 1), uma camada por cor editável.
 
-Esquema de camadas (mesmo nos dois lados; cores por omissão = blocos da PALETA):
+Esquema de camadas (5; mesmo nos dois lados; cores por omissão = blocos da PALETA):
   cor1  base royal            #4DA3E8  (Azul-claro)
-  cor2  painel marinho em V   #1F2A44  (Azul-marinho)
-  cor3  brancos (V, linha fina, debrum, hem, riscos)  #FFFFFF
+  cor2  painel marinho em V + os RISCOS AZUIS (mistura screen)  #1F2A44
+  cor3  brancos (V, linha fina, debrum, bainha, riscos)  #FFFFFF
   cor4  pontos no marinho     #4DA3E8
-  cor5  riscos azuis          #2563EB  (Azul)
-  cor6  pontos no royal       #87CEEB  (Azul-celeste)
+  cor5  pontos no royal       #87CEEB  (Azul-celeste)
 
 Geometria medida nas silhuetas do palco (vestida-camisola-*.png):
   frente: torso 139..574 (C=356,5), sleeve/armpit y≈385, caixa 710×824
@@ -245,7 +244,16 @@ def desenhar(lado):
         ((C + 20, yC2 + 236), (xR - 24, yC2 + 134), 3.0, -9),
         ((C + 30, yC2 + 252), (xR - 70, yC2 + 190), 2.0, 5),
     ]
-    cor5 = riscos(azuis, RISCOS)
+    # Os riscos azuis NÃO são camada própria (cliente 2026-10-06: "a E deve ser
+    # junto à B"): vivem dentro da camada B do painel, em mistura SCREEN com a
+    # cor da própria camada — o motor repinta tudo com a cor de B, e o screen
+    # sobre ela dá sempre um tom mais claro da MESMA cor, por isso os riscos
+    # seguem a B e continuam visíveis. Desenhados 3x = clareamento mais forte.
+    d_riscos = ' '.join(sliver(p0, p1, t0 * 1.45, cv) for p0, p1, t0, cv in azuis)
+    riscos_b = ('<g style="mix-blend-mode:screen">'
+                + ''.join(f'<path fill="{PALETA_MARINHO}" d="{d_riscos}"/>' for _ in range(3))
+                + '</g>')
+    cor2 = cor2 + riscos_b
 
     # --- cor6 pontos no royal (acima da banda grossa) --------------------------
     r1x, r1y = g['ponto_r1']
@@ -263,8 +271,7 @@ def desenhar(lado):
         ('cor2', PALETA_MARINHO, cor2),
         ('cor3', BRANCO, cor3),
         ('cor4', PONTOS_NAVY, cor4),
-        ('cor5', RISCOS, cor5),
-        ('cor6', PONTOS_ROYAL, cor6),
+        ('cor5', PONTOS_ROYAL, cor6),
     ], g
 
 
