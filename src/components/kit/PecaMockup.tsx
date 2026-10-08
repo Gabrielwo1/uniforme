@@ -98,26 +98,29 @@ function Zona({
       maskPosition: 'center',
     };
 
+    // TUDO (cor, estampa e sombreado) dentro de UM grupo isolado e recortado
+    // pela máscara. Antes o multiply do sombreado ficava de fora e fundia-se com
+    // o que estivesse por baixo: na orla da peça, onde o fundo ainda é só
+    // semitransparente, o multiply devolve a cor da própria textura (clara) e
+    // nascia uma linha branca à volta de calções/meiões ESCUROS (013, 2026-10-08).
     return (
-      <>
-        <div className="absolute inset-0" style={{ ...mascara, backgroundColor: cor }} />
+      <div className="absolute inset-0 isolate" style={mascara}>
+        <div className="absolute inset-0" style={{ backgroundColor: cor }} />
 
         {camadas.length > 0 && (
-          <div className="absolute inset-0" style={mascara}>
-            <svg viewBox={molde.viewBox} className="h-full w-full">
-              {camadas.map((camada) => (
-                <g
-                  key={camada.id}
-                  dangerouslySetInnerHTML={{
-                    __html: instanciar(
-                      forcarCor(camada.desenho[molde.lado]!, corDaCamada(camada)),
-                      uid,
-                    ),
-                  }}
-                />
-              ))}
-            </svg>
-          </div>
+          <svg viewBox={molde.viewBox} className="absolute inset-0 h-full w-full">
+            {camadas.map((camada) => (
+              <g
+                key={camada.id}
+                dangerouslySetInnerHTML={{
+                  __html: instanciar(
+                    forcarCor(camada.desenho[molde.lado]!, corDaCamada(camada)),
+                    uid,
+                  ),
+                }}
+              />
+            ))}
+          </svg>
         )}
 
         <img
@@ -126,7 +129,7 @@ function Zona({
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full object-contain mix-blend-multiply"
         />
-      </>
+      </div>
     );
   }
 
