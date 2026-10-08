@@ -101,7 +101,7 @@ def chaves_do_codigo() -> dict[str, set[str]]:
         anotar(next(g for g in m.groups() if g is not None), 'components/SiteLanding.tsx')
     # zonas da peça e o tema "Liso" (kitDemo) — traduzidos ao desenhar o painel
     s = open(f'{RAIZ}/src/lib/kitDemo.ts').read()
-    for m in re.finditer(r"nome: '(Cor base|Gola|Punhos|Linha da gola|Liso)'", s):
+    for m in re.finditer(r"nome: '(Cor base|Gola|Punhos|Linha da gola|Liso|Gola 1|Gola 2)'", s):
         anotar(m.group(1), 'lib/kitDemo.ts')
     # nomes de temas DESCRITIVOS (vêm da base de dados; os nomes próprios —
     # Dino, Aska, Milan, Canarinho — ficam como estão em todas as línguas)

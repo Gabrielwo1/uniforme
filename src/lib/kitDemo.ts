@@ -56,7 +56,7 @@ const RAIZ_MOLDES = '/moldes/jog';
  */
 const GOLA_ESTILOS: Record<
   string,
-  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean; linhaSegueGola?: boolean; peleSob?: boolean }
+  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean; linhaSegueGola?: boolean; duasGolas?: boolean; peleSob?: boolean }
 > = {
   // `corpo`: o estilo traz um corpo-<estilo>-<lado>.png — a camisola do
   // designer MAIS o clone de tecido que fecha o anel que a gola antiga
@@ -66,7 +66,7 @@ const GOLA_ESTILOS: Record<
   // 2 CORES V (reenvio 2026-10-04): colar cruzado em DUAS zonas
   // recoloríveis (parte direita = gola, parte esquerda = linha); o colar
   // pendura À FRENTE do pescoço → a pele compõe SOB as zonas (peleSob)
-  bico2: { pele: true, verso: true, corpo: true, linha: true, peleSob: true },
+  bico2: { pele: true, verso: true, corpo: true, linha: true, duasGolas: true, peleSob: true },
   // bico em V: a banda grossa (zona gola) e o debrum `linha` por cima
   // (linha-<estilo>-<lado>.png). O debrum é SEMPRE da cor da gola — sem
   // seletor próprio (pedido do cliente, 2026-10-08).
@@ -93,6 +93,7 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
   const zonas: ZonaPeca[] = [
     corpo,
     { id: 'gola', nome: 'Gola',
+      ...(def?.duasGolas && estilo && { nome: 'Gola 1' }),
       imagem: estilo
         ? `${RAIZ_MOLDES}/gola-${estilo}-${lado}.png`
         : `${RAIZ_MOLDES}/vestida-gola-${lado}.png`,
@@ -104,6 +105,7 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
       imagem: `${RAIZ_MOLDES}/linha-${estilo}-${lado}.png`,
       corPadrao: '#1F2A44',
       ...(def.linhaSegueGola && { segue: 'gola' }),
+      ...(def.duasGolas && { nome: 'Gola 2' }),
     });
   }
   zonas.push({

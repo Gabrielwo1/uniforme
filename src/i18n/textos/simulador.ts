@@ -46,6 +46,8 @@ export const SIMULADOR: Linha[] = [
   ["Cor base", "Base color", "Color base", "Couleur de base", "Grundfarbe", "Colore base"],
   ["Gola", "Collar", "Cuello", "Col", "Kragen", "Colletto"],
   ["Linha da gola", "Collar trim", "Ribete del cuello", "Liseré du col", "Kragenstreifen", "Filo del colletto"],
+  ["Gola 1", "Collar 1", "Cuello 1", "Col 1", "Kragen 1", "Colletto 1"],
+  ["Gola 2", "Collar 2", "Cuello 2", "Col 2", "Kragen 2", "Colletto 2"],
   ["Punhos", "Cuffs", "Puños", "Poignets", "Bündchen", "Polsini"],
   ["Camada {letra}", "Layer {letra}", "Capa {letra}", "Calque {letra}", "Ebene {letra}", "Livello {letra}"],
   ["Liso", "Plain", "Liso", "Uni", "Einfarbig", "Tinta unita"],
