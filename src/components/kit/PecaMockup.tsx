@@ -109,7 +109,10 @@ function Zona({
                 <g
                   key={camada.id}
                   dangerouslySetInnerHTML={{
-                    __html: forcarCor(camada.desenho[molde.lado]!, corDaCamada(camada)),
+                    __html: instanciar(
+                      forcarCor(camada.desenho[molde.lado]!, corDaCamada(camada)),
+                      uid,
+                    ),
                   }}
                 />
               ))}
@@ -145,7 +148,10 @@ function Zona({
             <g
               key={camada.id}
               dangerouslySetInnerHTML={{
-                __html: forcarCor(camada.desenho[molde.lado]!, corDaCamada(camada)),
+                __html: instanciar(
+                  forcarCor(camada.desenho[molde.lado]!, corDaCamada(camada)),
+                  uid,
+                ),
               }}
             />
           ))}
@@ -153,6 +159,17 @@ function Zona({
       )}
     </svg>
   );
+}
+
+/**
+ * Dá ids ÚNICOS aos recortes (`clipPath`) da arte: a mesma arte monta no DOM
+ * várias vezes ao mesmo tempo (palco, miniaturas, painéis escondidos em
+ * mobile) e `url(#id)` resolve para o PRIMEIRO elemento com esse id — se esse
+ * estiver num ramo `display:none`, o recorte falha e a arte escorre pela manga.
+ * A arte escreve `__U__` onde quer o id único; aqui troca-se pelo uid desta zona.
+ */
+export function instanciar(svgInterno: string, uid: string): string {
+  return svgInterno.split('__U__').join(uid);
 }
 
 /**

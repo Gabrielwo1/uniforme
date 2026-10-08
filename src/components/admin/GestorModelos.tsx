@@ -302,7 +302,7 @@ function Resultado({ molde, ficheiro }: { molde: MoldeConvertido; ficheiro: stri
           preserveAspectRatio="xMidYMid meet"
         >
           {camadas.map((c) => (
-            <g key={c.id} dangerouslySetInnerHTML={{ __html: c.svg }} />
+            <g key={c.id} dangerouslySetInnerHTML={{ __html: c.svg.split('__U__').join('adm') }} />
           ))}
         </svg>
       </div>
