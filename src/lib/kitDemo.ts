@@ -56,7 +56,7 @@ const RAIZ_MOLDES = '/moldes/jog';
  */
 const GOLA_ESTILOS: Record<
   string,
-  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean; peleSob?: boolean }
+  { pele?: boolean; verso?: boolean; corpo?: boolean; golaPadrao?: boolean; linha?: boolean; linhaSegueGola?: boolean; peleSob?: boolean }
 > = {
   // `corpo`: o estilo traz um corpo-<estilo>-<lado>.png — a camisola do
   // designer MAIS o clone de tecido que fecha o anel que a gola antiga
@@ -67,9 +67,10 @@ const GOLA_ESTILOS: Record<
   // recoloríveis (parte direita = gola, parte esquerda = linha); o colar
   // pendura À FRENTE do pescoço → a pele compõe SOB as zonas (peleSob)
   bico2: { pele: true, verso: true, corpo: true, linha: true, peleSob: true },
-  // bico em V com DUAS zonas recoloríveis: a banda grossa (zona gola) e a
-  // `linha` de debrum por cima (zona própria, linha-<estilo>-<lado>.png)
-  vlinha: { pele: true, verso: true, corpo: true, linha: true },
+  // bico em V: a banda grossa (zona gola) e o debrum `linha` por cima
+  // (linha-<estilo>-<lado>.png). O debrum é SEMPRE da cor da gola — sem
+  // seletor próprio (pedido do cliente, 2026-10-08).
+  vlinha: { pele: true, verso: true, corpo: true, linha: true, linhaSegueGola: true },
 };
 
 function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] {
@@ -102,6 +103,7 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
       id: 'linha', nome: 'Linha da gola',
       imagem: `${RAIZ_MOLDES}/linha-${estilo}-${lado}.png`,
       corPadrao: '#1F2A44',
+      ...(def.linhaSegueGola && { segue: 'gola' }),
     });
   }
   zonas.push({

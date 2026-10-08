@@ -380,7 +380,7 @@ export function PainelCores({ peca }: { peca: PecaKit }) {
       </p>
 
       <div className="mt-2.5 flex flex-wrap gap-3">
-        {moldeDemo(peca, 'frente', estampa.golaEstilo).zonas.map((zona) => (
+        {moldeDemo(peca, 'frente', estampa.golaEstilo).zonas.filter((zona) => !zona.segue).map((zona) => (
           <Swatch
             key={zona.id}
             label={t(zona.nome)}

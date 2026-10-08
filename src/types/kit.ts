@@ -53,6 +53,9 @@ export interface ZonaPeca {
   corPadrao: string;
   /** Só a zona do corpo recebe a estampa; gola e punhos ficam de fora. */
   recebeEstampa?: boolean;
+  /** Id de outra zona cuja cor esta ACOMPANHA — não tem seletor próprio
+      (p.ex. o debrum da gola em V segue a cor da gola). */
+  segue?: string;
 }
 
 /**

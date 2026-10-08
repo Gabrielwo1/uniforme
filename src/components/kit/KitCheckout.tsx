@@ -353,7 +353,7 @@ function FichaTecnica({ item }: { item: KitOrderItem }) {
         const config = item.design.pecas[peca];
         if (!config) return null;
         const estampa = estampaDemoPorId(peca, config.estampaId);
-        const zonas = moldeDemo(peca, 'frente', estampa.golaEstilo).zonas;
+        const zonas = moldeDemo(peca, 'frente', estampa.golaEstilo).zonas.filter((z) => !z.segue);
         return (
           <div key={peca} className="rounded-md border p-2.5">
             <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">

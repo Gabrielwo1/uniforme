@@ -65,6 +65,13 @@ export function PecaMockup({
   );
 }
 
+/** Cor de uma zona; as que `segue` outra usam a cor dessa. */
+export function corDaZona(zona: ZonaPeca, molde: MoldePeca, config: PecaConfig): string {
+  const alvo = zona.segue ? molde.zonas.find((z) => z.id === zona.segue) : undefined;
+  const z = alvo ?? zona;
+  return config.coresZonas[z.id] ?? z.corPadrao;
+}
+
 function Zona({
   zona,
   molde,
@@ -77,7 +84,7 @@ function Zona({
   config: PecaConfig;
 }) {
   const uid = useId().replace(/:/g, '');
-  const cor = config.coresZonas[zona.id] ?? zona.corPadrao;
+  const cor = corDaZona(zona, molde, config);
   const corDaCamada = (c: CamadaEstampa) => config.cores[c.id] ?? c.corPadrao;
 
   const camadas = zona.recebeEstampa
