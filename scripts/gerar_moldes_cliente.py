@@ -3,9 +3,11 @@
 (Figma/Illustrator) e depois subir no painel de administração.
 
 Para cada peça (camisola, calção) e lado (frente, verso) sai um SVG no formato
-que o painel lê (ver src/lib/converterMolde.ts): a silhueta como <mask> ALFA
-com a caixa EXATA da peça no simulador (kitCaixas.ts) + um grupo preso a essa
-máscara com o retângulo de FUNDO (= cor base) onde se desenha a arte.
+que o painel lê (ver src/lib/converterMolde.ts): a silhueta como RECORTE
+(`clipPath` = PowerClip do CorelDRAW; o painel lê também <mask> do Figma) com a
+caixa EXATA da peça no simulador (kitCaixas.ts) marcada pelo retângulo QUADRO,
++ um grupo preso ao recorte com o retângulo de FUNDO (= cor base) onde se
+desenha a arte. REGRA: a arte abraça o molde todo, sem espaços vazios.
 Por fora da máscara ficam as GUIAS — o painel ignora-as:
   RECORTE   linha de corte (a silhueta, a máscara real do simulador)
   SANGRIA   a silhueta alargada SANGRIA px — a arte deve chegar até aqui
@@ -70,17 +72,20 @@ def gerar(peca, lado, saida):
     vb = f'{-MARGEM} {-MARGEM} {cw + 2 * MARGEM} {ch + 2 * MARGEM}'
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{cw + 2 * MARGEM}" height="{ch + 2 * MARGEM}" viewBox="{vb}" fill="none">
   <title>KYPZL — molde {nome}</title>
-  <!-- GUIAS: não entram no simulador (estão fora da máscara). Podem apagar-se. -->
+  <!-- GUIAS: não entram no simulador (estão fora do grupo ARTE). Podem apagar-se,
+       EXCETO o retângulo QUADRO: é ele que diz ao painel onde está a peça. -->
   <g id="GUIAS-nao-entram-no-simulador">
+    <rect id="QUADRO-nao-apagar-nem-mexer" x="0" y="0" width="{cw}" height="{ch}" stroke="#7C3AED" stroke-width="1.5"/>
     <path id="SANGRIA-a-arte-deve-chegar-aqui" d="{d_path(sangria)}" stroke="#00A3E0" stroke-width="1.5" stroke-dasharray="10 6"/>
     <path id="ZONAS-gola-e-punhos-nao-pintar" d="{d_path(zonas)}" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="3 5"/>
     <path id="RECORTE-linha-de-corte" d="{d_path(corte)}" stroke="#E5004F" stroke-width="1.5"/>
   </g>
-  <!-- MOLDE: a silhueta é a máscara. Desenhe a arte DENTRO do grupo ARTE. -->
-  <mask id="molde" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="{cw}" height="{ch}">
-    <path d="{d_path(corte)}" fill="white"/>
-  </mask>
-  <g id="ARTE" mask="url(#molde)">
+  <!-- MOLDE: a silhueta é um RECORTE (PowerClip no Corel). Desenhe a arte DENTRO do grupo ARTE. -->
+  <clipPath id="molde">
+    <path d="{d_path(corte)}"/>
+  </clipPath>
+  <g id="ARTE" clip-path="url(#molde)">
+    <!-- o fundo cobre a peça TODA: nunca fica espaço sem cor -->
     <rect id="FUNDO-cor-base" x="{-MARGEM}" y="{-MARGEM}" width="{cw + 2 * MARGEM}" height="{ch + 2 * MARGEM}" fill="#D9D9D9"/>
   </g>
 </svg>
