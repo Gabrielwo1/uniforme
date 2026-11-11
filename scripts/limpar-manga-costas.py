@@ -55,3 +55,34 @@ vazio = (a[..., 3] > 0) & ~av & ~cam
 a[..., 3] = np.where(vazio, 0, a[..., 3])
 Image.fromarray(a).save(f'{J}/vestida-mangas-verso.png', optimize=True)
 print('vestida-mangas-verso.png píxeis retirados:', int(vazio.sum()))
+
+# (corta também as 3 últimas linhas do punho: é aí que a borda serrilhada do
+# punho, semitransparente, deixava ver a cor ESCURA da manga por baixo)
+# --- franja por baixo do punho (frente E costas) ---------------------------
+# A máscara da camisola passa 5-7 px para lá da borda de baixo do punho, em
+# todas as colunas: um fio de manga ESCURA que, sobre pele, se vê como pontos
+# pretos ao longo do punho (cliente, 2026-11-11). Corta-se esse fio — só nas
+# colunas do punho, sem a ponta interior (onde começa o tronco).
+for lado in ('verso', 'frente'):
+    mg = np.array(Image.open(f'{J}/vestida-mangas-{lado}.png').convert('RGBA'))[..., 3] > 128
+    cs = np.where(mg.any(axis=0))[0]
+    meio_ = (cs.min() + cs.max()) // 2
+    lados_ = ((cs[cs < meio_], 'esq'), (cs[cs >= meio_], 'dir'))
+    for f in [f'vestida-camisola-{lado}.png'] + [q.split('/')[-1] for q in sorted(glob.glob(f'{J}/corpo-*-{lado}.png'))]:
+        img = Image.open(f'{J}/{f}').convert('RGBA')
+        a = np.array(img)
+        n = 0
+        for xs_, nome in lados_:
+            x0, x1 = xs_.min(), xs_.max()
+            interior = (x1 - 4) if nome == 'esq' else x1          # esq: o interior é o fim; dir: o início
+            ini = x0 if nome == 'esq' else x0 + 4
+            fim = interior if nome == 'esq' else x1
+            for x in range(ini, fim + 1):
+                ys = np.where(mg[:, x])[0]
+                if len(ys) == 0:
+                    continue
+                yb = ys.max()
+                n += int((a[yb - 3:yb + 9, x, 3] > 0).sum())
+                a[yb - 3:yb + 9, x, 3] = 0
+        Image.fromarray(a).save(f'{J}/{f}', optimize=True)
+        print(f, 'franja retirada:', n)
