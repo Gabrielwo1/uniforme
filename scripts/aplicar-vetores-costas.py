@@ -236,7 +236,7 @@ def main():
     fora_gola = np.zeros((H, W), bool)
     for x in range(gx.min() - 4, gx.max() + 5):
         gb = gfundo[min(max(x, gx.min()), gx.max())]
-        fora_gola[:int(gb) + 1, x] = True
+        fora_gola[:int(gb) - 2, x] = True   # a camisola entra 3 px por baixo da gola: sem fresta clara entre as duas
 
     for nome in ['vestida-camisola-verso.png'] + [f'corpo-{e}-verso.png' for e in ESTILOS]:
         r = original(nome)
