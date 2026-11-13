@@ -40,6 +40,7 @@ MEIO = 740     # entre os dois punhos
 PESCOCO = 520  # acima desta linha os corpo-<estilo> trazem o decote do estilo
 OMBRO = 90     # px, ao longo do ombro, que levam a descida junto à gola
 TOPO_GOLA = 2  # o ombro começa 2 px abaixo do topo da ponta da gola
+EXTRAPOLA = 60  # linhas acima da ponta da manga em que o bordo dela é prolongado
 PONTA = 8      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
 
 
@@ -169,6 +170,32 @@ def main():
     base = torso
     for le in ('esq', 'dir'):
         base = manga_rente_ao_punho(base, le)
+
+    # ---- mangas À FRENTE da camisola (pedido do cliente, 2026-11-13): a manga do designer
+    # (MANGA ESQUERDA/DIREITA SVG) é uma camada própria por cima do corpo e é ELA que manda
+    # no recorte do ombro; a silhueta da camisola que passava para fora dela ("a camiseta
+    # subiu") é cortada rente ao bordo exterior da manga.
+    manga = np.zeros((H, W), np.float32)
+    for le, arq in (('esq', 'MANGA ESQUERDA SVG.svg'), ('dir', 'MANGA DIREITA SVG.svg')):
+        m = manga_rente_ao_punho(vet(arq, poligono_manga[le] & cam, folga=40), le)
+        m = np.where(poligono_manga[le], m, 0)
+        manga = np.maximum(manga, m)
+        sol = m > 0.5
+        ys = np.where(sol.any(1))[0]
+        xo = np.full(H, np.nan)                                 # bordo exterior da manga, linha a linha
+        for y in range(ys.min(), H):
+            c = np.where(sol[y])[0]
+            if len(c): xo[y] = (c.min() - 0.5) if le == 'esq' else (c.max() + 0.5)
+        y0 = ys.min()
+        k = np.polyfit(np.arange(y0, y0 + 25), xo[y0:y0 + 25], 1)[0]   # inclinação do bordo junto ao ombro
+        for y in range(y0 - EXTRAPOLA, y0):                    # acima da ponta: prolonga o bordo, senão
+            xo[y] = xo[y0] + k * (y - y0)                      # fica um "corno" da camisola ao lado da manga
+        for y in range(y0 - EXTRAPOLA, H):
+            if np.isnan(xo[y]): continue
+            if le == 'esq': base[y] *= np.clip(X[0] - xo[y] + 0.5, 0, 1)
+            else: base[y] *= np.clip(xo[y] - X[0] + 0.5, 0, 1)
+    salvar('vestida-manga-frente.png', com_alfa(cam0, manga))
+    print('manga (camada à frente da camisola) gravada')
 
     # ombro rente à gola: o vetor da camisola sobe ~10 px acima das pontas da gola e
     # forma um degrau/bico junto ao pescoço. Desce o ombro até ao topo da ponta da gola
