@@ -38,6 +38,8 @@ CX, CY = costuras.CAIXA['frente'][:2]
 ESTILOS = ['cruzada', 'social', 'bico2', 'vlinha']
 MEIO = 740     # entre os dois punhos
 PESCOCO = 520  # acima desta linha os corpo-<estilo> trazem o decote do estilo
+OMBRO = 90     # px, ao longo do ombro, que levam a descida junto à gola
+TOPO_GOLA = 2  # o ombro começa 2 px abaixo do topo da ponta da gola
 PONTA = 8      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
 
 
@@ -168,6 +170,30 @@ def main():
     for le in ('esq', 'dir'):
         base = manga_rente_ao_punho(base, le)
 
+    # ombro rente à gola: o vetor da camisola sobe ~10 px acima das pontas da gola e
+    # forma um degrau/bico junto ao pescoço. Desce o ombro até ao topo da ponta da gola
+    # e deixa-o voltar suavemente à linha original ao longo de OMBRO px.
+    gcol = np.where((gola > 0.5).any(0))[0]
+    for lado in (-1, 1):
+        xe = gcol.min() if lado < 0 else gcol.max()
+        gtop = np.where(gola[:, max(xe - 3, 0):xe + 4].max(1) > 0.5)[0].min()
+        t0 = np.where(base[:, xe + lado * 3] > 0.5)[0].min()
+        desce = max(0.0, gtop + TOPO_GOLA - t0)
+        for d in range(-2, OMBRO + 1):          # inclui as colunas da própria ponta da gola
+            x = xe + lado * (d + 2)
+            t = np.where(base[:, x] > 0.5)[0].min()
+            f = 1 - max(d, 0) / OMBRO
+            corte = t + desce * f * f * (3 - 2 * f)
+            base[:int(corte), x] = 0
+            base[int(corte), x] *= 1 - (corte - int(corte))
+        print(f'ombro {"esq" if lado < 0 else "dir"}: desce {desce:.0f}px junto à gola')
+
+    topo_ombro = np.zeros(W)       # por coluna da gola: topo do ombro (da coluna vizinha, fora da gola)
+    for x in range(gcol.min(), gcol.max() + 1):
+        xv = gcol.min() - 3 if x < (gcol.min() + gcol.max()) // 2 else gcol.max() + 3
+        topo_ombro[x] = np.where(base[:, xv] > 0.5)[0].min()
+        base[:int(topo_ombro[x]), x] = 0   # a gola fica por cima, mas o corpo por baixo não pode espreitar acima do ombro
+
     # corpo recortado onde a gola passa: por coluna, tira o que está acima do fundo da gola
     gfundo = np.full(W, -1.0)
     for x in range(W):
@@ -186,6 +212,8 @@ def main():
             novo = np.where(fora_gola, 0, base)
         else:                                           # a silhueta nova + o decote do estilo
             extra = (r[..., 3] > 128) & (cam0[..., 3] <= 128) & (YY < PESCOCO)
+            extra &= (X >= gcol.min() - 1) & (X <= gcol.max() + 1)    # fora da gola só ficavam bicos do ombro antigo
+            extra &= YY >= topo_ombro[None, :]                         # e nas pontas da gola não passa o ombro já descido
             novo = np.maximum(base, extra.astype(np.float32))
         salvar(nome, com_alfa(r, novo))
         print('corpo:', nome)
