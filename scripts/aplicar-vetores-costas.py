@@ -16,8 +16,9 @@ O que faz (sempre a partir dos PNG da revisão ORIGEM, por isso é idempotente):
          punho) e o corpo é recortado onde a gola passa (sem pontas pretas);
        · a cintura ganha uma curva suave (pedido do cliente: costas "não tão retas");
        · RGB = sombreamento do designer, encaixado na silhueta.
-  2. vestida-mangas-verso → alfa = as duas tiras do punho (vetor), RGB = o
-     mesmo sombreamento da camisola (o designer sombreia a peça toda de uma vez).
+  2. vestida-mangas-verso → alfa = as duas tiras do punho (vetor); RGB = o do PNG
+     antigo (o sombreamento da camisola traz restos da pele no fim das mangas e o
+     das tiras nunca veio), sem as pontas escuras e 8 px mais curto no sovaco.
   3. vestida-gola-verso   → alfa = a gola (vetor), RGB = sombreamento da gola.
 Os vetores de manga (MANGA LADO …) já não são precisos: a silhueta da camisola
 traz as mangas. O vetor vem cortado à medida e sem posição na tela; vetor.py
