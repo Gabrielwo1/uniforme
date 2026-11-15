@@ -36,13 +36,15 @@ DES = sys.argv[1] if len(sys.argv) > 1 else '/Users/syntax/Downloads/PARTE CAMIS
 W, H = 1520, 2460
 CX, CY = costuras.CAIXA['frente'][:2]
 ESTILOS = ['cruzada', 'social', 'bico2', 'vlinha']
+PISO_SOVACO = 118  # luminosidade mínima do sombreado no sovaco
+INTERIOR = 24  # px do punho, junto ao sovaco, onde se limpa a sombra do braço
 MEIO = 740     # entre os dois punhos
 PESCOCO = 520  # acima desta linha os corpo-<estilo> trazem o decote do estilo
 OMBRO = 90     # px, ao longo do ombro, que levam a descida junto à gola
 TOPO_GOLA = 2  # o ombro começa 2 px abaixo do topo da ponta da gola
 EXTRAPOLA = 60  # linhas acima da ponta da manga em que o bordo dela é prolongado
 VINCO = 0.30   # força do vinco da costura da manga (0 = sem)
-PONTA = 8      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
+PONTA = 0      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
 
 
 def original(nome):
@@ -124,11 +126,30 @@ def sem_escuros(rgba, limiar=95, ponta=60):
     bom = solido & (lum >= limiar)
     cols = np.where(solido.any(0))[0]
     X = np.arange(W)[None, :]
-    mau = solido & ~bom & ((X < cols.min() + ponta) | (X > cols.max() - ponta))
+    # pontas exteriores (`ponta` px) e interiores (junto ao sovaco, INTERIOR px): em ambas o PNG antigo traz sombra do braço
+    interior = np.zeros((1, W), bool)
+    for lado in (cols[cols < MEIO], cols[cols >= MEIO]):
+        if len(lado): interior[0, (lado.max() - INTERIOR if lado.max() < MEIO else lado.min()):(lado.max() + 1 if lado.max() < MEIO else lado.min() + INTERIOR + 1)] = True
+    mau = solido & ~bom & ((X < cols.min() + ponta) | (X > cols.max() - ponta) | interior)
     idx = ndi.distance_transform_edt(~bom, return_distances=False, return_indices=True)
     out = rgba.copy()
     for c in range(3):
         out[..., c] = np.where(mau, rgba[..., c][idx[0], idx[1]], rgba[..., c])
+    return out
+
+
+def suavizar_sovaco(rgba, janelas):
+    """O sombreado antigo traz no sovaco um vinco quase preto e recortado (degraus do
+    recorte da foto). Levanta os escuros nessas janelas (x0, x1, y0, y1) e suaviza, com
+    transição suave para fora da janela."""
+    out = rgba.copy()
+    for x0, x1, y0, y1 in janelas:
+        peso = np.zeros((H, W), np.float32)
+        peso[y0:y1, x0:x1] = 1
+        peso = ndi.gaussian_filter(peso, 4)
+        for c in range(3):
+            v = ndi.gaussian_filter(np.maximum(out[..., c], PISO_SOVACO), 1.6)
+            out[..., c] = out[..., c] * (1 - peso) + v * peso
     return out
 
 
@@ -157,7 +178,15 @@ def main():
         else: tira_png[:, MEIO:cols.min() + PONTA] = 0
     salvar('vestida-mangas-frente.png', sem_escuros(com_alfa(man0, tira_png)))
     salvar('vestida-gola-frente.png', com_alfa(gol0, gola))
-    print('punho e gola trocados')
+
+    janelas = []                       # sovaco de cada lado, junto ao fim interior do punho
+    for esq in (True, False):
+        cols = np.where(tira_png.max(0) > 0.5)[0]
+        cols = cols[cols < MEIO] if esq else cols[cols >= MEIO]
+        xi = cols.max() if esq else cols.min()
+        ys = np.where(tira_png[:, xi - 3 if esq else xi + 3] > 0.5)[0]
+        janelas.append((xi - 25 if esq else xi - 30, xi + 30 if esq else xi + 25, ys.min() - 110, ys.max() + 20))
+    print('punho e gola trocados; janelas do sovaco:', janelas)
 
     # fundo do punho por coluna (a manga acaba aí); fora das colunas do punho usa a mais próxima
     fundo = np.full(W, -1.0)
@@ -248,7 +277,7 @@ def main():
             vinco[y] = np.minimum(vinco[y], np.where(d >= -0.5, 1 - VINCO * np.exp(-(np.maximum(d, 0) / 2.4) ** 2), 1))
     sm = com_alfa(cam0, manga)
     sm[..., :3] *= vinco[..., None]
-    salvar('vestida-manga-frente.png', sm)
+    salvar('vestida-manga-frente.png', suavizar_sovaco(sm, janelas))
     print('manga (camada à frente da camisola) gravada')
 
     # ombro rente à gola: o vetor da camisola sobe ~10 px acima das pontas da gola e
@@ -296,7 +325,7 @@ def main():
             extra &= (X >= gcol.min() - 1) & (X <= gcol.max() + 1)    # fora da gola só ficavam bicos do ombro antigo
             extra &= YY >= topo_ombro[None, :]                         # e nas pontas da gola não passa o ombro já descido
             novo = np.maximum(base, extra.astype(np.float32))
-        salvar(nome, com_alfa(r, novo))
+        salvar(nome, suavizar_sovaco(com_alfa(r, novo), janelas))
         print('corpo:', nome)
 
 
