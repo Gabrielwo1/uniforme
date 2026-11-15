@@ -123,6 +123,63 @@ Deno.serve(async (req) => {
         return resposta({ ok: true });
       }
 
+      // ---- ajustes da prancheta (editor de camadas) ---------------------
+      case 'ajustes': {
+        const { data, error } = await db
+          .from('molde_ajustes')
+          .select('lado, publicado, rascunho, atualizado_em');
+        if (error) throw error;
+        return resposta({ ajustes: data ?? [] });
+      }
+
+      case 'ajustes-rascunho': {
+        const { error } = await db
+          .from('molde_ajustes')
+          .upsert(
+            { lado: dados.lado, rascunho: dados.camadas, atualizado_em: new Date().toISOString() },
+            { onConflict: 'lado' },
+          );
+        if (error) throw error;
+        return resposta({ ok: true });
+      }
+
+      case 'ajustes-publicar': {
+        // guarda a versão que vai ser substituída ANTES de a substituir
+        const { data: atual } = await db
+          .from('molde_ajustes')
+          .select('publicado')
+          .eq('lado', dados.lado)
+          .maybeSingle();
+        if (atual) {
+          const { error: eh } = await db
+            .from('molde_ajustes_hist')
+            .insert({ lado: dados.lado, dados: atual.publicado, nota: 'antes de publicar' });
+          if (eh) throw eh;
+        }
+        const { error } = await db.from('molde_ajustes').upsert(
+          {
+            lado: dados.lado,
+            publicado: dados.camadas,
+            rascunho: dados.camadas,
+            atualizado_em: new Date().toISOString(),
+          },
+          { onConflict: 'lado' },
+        );
+        if (error) throw error;
+        return resposta({ ok: true });
+      }
+
+      case 'ajustes-historico': {
+        const { data, error } = await db
+          .from('molde_ajustes_hist')
+          .select('id, dados, nota, criado_em')
+          .eq('lado', dados.lado)
+          .order('criado_em', { ascending: false })
+          .limit(30);
+        if (error) throw error;
+        return resposta({ historico: data ?? [] });
+      }
+
       default:
         return resposta({ erro: `Ação desconhecida: ${acao}` }, 400);
     }

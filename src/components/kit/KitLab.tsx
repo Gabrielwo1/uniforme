@@ -1,3 +1,4 @@
+import { useAjustesStore } from '@/lib/ajustes';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BadgePlus, ClipboardList, Moon, Palette, Plus, RotateCcw, Shirt, Sun, Type } from 'lucide-react';
 import logoUrl from '@/assets/kypzl-logo.png';
@@ -106,7 +107,10 @@ export function KitLab() {
       registarReais();
       // os do painel de administração entram a seguir; se a rede falhar,
       // ficam os que vieram no código e o simulador abre na mesma
-      await registarDaBaseDeDados();
+      await Promise.all([
+        registarDaBaseDeDados(),
+        useAjustesStore.getState().carregar(), // ajustes da prancheta publicados no admin
+      ]);
       if (!vivo) return;
       reset();
       setProntas(true);

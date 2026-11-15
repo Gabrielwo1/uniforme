@@ -13,6 +13,7 @@ import {
   type PecaKit,
 } from '@/types/kit';
 import { cn } from '@/lib/utils';
+import { CamadaFixa } from './CamadaFixa';
 import { PecaMockup } from './PecaMockup';
 import { AMOSTRAS } from '@/lib/kitCaixas';
 import { CamadaAplicacoes } from './CamadaAplicacoes';
@@ -138,22 +139,12 @@ function ConjuntoLado({ lado }: { lado: LadoKit }) {
         {/* mockup do designer: o avatar já vestido é o fundo. As peças
             recoloridas assentam-lhe por cima ao pixel (mesma prancheta),
             por isso não há folgas onde o kit do avatar espreite. */}
-        <img
-          src={`/moldes/jog/jogador-${lado}.png`}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
-        />
+        <CamadaFixa tipo="jogador" lado={lado} className="z-0" />
         <PecaSlot peca="camisola" lado={lado} className="absolute inset-0 z-30" />
         <PecaSlot peca="calcao" lado={lado} className="absolute inset-0 z-20" />
         <PecaSlot peca="meiao" lado={lado} className="absolute inset-0 z-10" />
         {/* chuteiras: camada estática, não recolorem */}
-        <img
-          src={`/moldes/jog/botas-${lado}.png`}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-contain"
-        />
+        <CamadaFixa tipo="botas" lado={lado} className="z-[15]" />
       </div>
     </div>
   );

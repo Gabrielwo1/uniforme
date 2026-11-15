@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, Loader2, LogOut, Moon, Shirt, Sun, Users } from 'lucide-react';
+import { BarChart3, Layers, Loader2, LogOut, Moon, Shirt, Sun, Users } from 'lucide-react';
 import { useAdminStore } from '@/store/useAdminStore';
 import { useTemaStore } from '@/store/useTemaStore';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -8,21 +8,24 @@ import logoUrl from '@/assets/kypzl-logo.png';
 import { Button } from '../ui/button';
 import { PainelPrincipal } from './PainelPrincipal';
 import { GestorModelos } from './GestorModelos';
+import { EditorPrancheta } from './EditorPrancheta';
 
 /**
  * Área de administração da KYPZL — `/admin`.
  *
  *   · Painel: KPIs do funil em cima, tabela de leads em baixo.
  *   · Modelos: inserir a arte de camisola, calção e meião.
+ *   · Prancheta: editor de camadas — afinar ao décimo de píxel cada peça do jogador.
  *
  * Fica atrás de código porque os leads têm dados pessoais — e o código é
  * conferido no servidor, não aqui (ver src/lib/adminApi.ts).
  */
-type Separador = 'painel' | 'modelos';
+type Separador = 'painel' | 'modelos' | 'prancheta';
 
 const SEPARADORES: { id: Separador; rotulo: string; Icone: typeof Users }[] = [
   { id: 'painel', rotulo: 'Painel', Icone: BarChart3 },
   { id: 'modelos', rotulo: 'Modelos', Icone: Shirt },
+  { id: 'prancheta', rotulo: 'Prancheta', Icone: Layers },
 ];
 
 export function AdminPanel() {
@@ -105,7 +108,7 @@ export function AdminPanel() {
       </nav>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
-        {separador === 'painel' ? <PainelPrincipal /> : <GestorModelos />}
+        {separador === 'painel' ? <PainelPrincipal /> : separador === 'modelos' ? <GestorModelos /> : <EditorPrancheta />}
       </div>
     </div>
   );

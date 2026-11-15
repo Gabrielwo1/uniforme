@@ -7,6 +7,7 @@ import type {
   ZonaPeca,
 } from '@/types/kit';
 import { cn } from '@/lib/utils';
+import { chaveZona, estiloAjuste, useAjuste } from '@/lib/ajustes';
 
 /**
  * Motor de composição de uma peça — o coração do simulador por template.
@@ -39,10 +40,13 @@ export function PecaMockup({
   /** Camada de personalização (nome/número/logos) sobreposta à peça. */
   children?: React.ReactNode;
 }) {
+  const ajustePele = useAjuste(molde.lado, chaveZona(molde.peca, 'pele'));
   const detalhes = molde.detalhes && (
     <svg
       viewBox={molde.viewBox}
       className="pointer-events-none absolute inset-0 h-full w-full"
+      data-camada={chaveZona(molde.peca, 'pele')}
+      style={estiloAjuste(ajustePele)}
       dangerouslySetInnerHTML={{ __html: molde.detalhes }}
     />
   );
@@ -84,6 +88,7 @@ function Zona({
   config: PecaConfig;
 }) {
   const uid = useId().replace(/:/g, '');
+  const ajuste = useAjuste(molde.lado, chaveZona(molde.peca, zona.id));
   const cor = corDaZona(zona, molde, config);
   const corDaCamada = (c: CamadaEstampa) => config.cores[c.id] ?? c.corPadrao;
 
@@ -111,7 +116,11 @@ function Zona({
     // semitransparente, o multiply devolve a cor da própria textura (clara) e
     // nascia uma linha branca à volta de calções/meiões ESCUROS (013, 2026-10-08).
     return (
-      <div className="absolute inset-0 isolate" style={mascara}>
+      <div
+        className="absolute inset-0 isolate"
+        data-camada={chaveZona(molde.peca, zona.id)}
+        style={{ ...mascara, ...estiloAjuste(ajuste) }}
+      >
         <div className="absolute inset-0" style={{ backgroundColor: cor }} />
 
         {camadas.length > 0 && (
@@ -145,7 +154,12 @@ function Zona({
   const clipId = `clip-${uid}`;
 
   return (
-    <svg viewBox={molde.viewBox} className="absolute inset-0 h-full w-full">
+    <svg
+      viewBox={molde.viewBox}
+      className="absolute inset-0 h-full w-full"
+      data-camada={chaveZona(molde.peca, zona.id)}
+      style={estiloAjuste(ajuste)}
+    >
       <defs>
         <clipPath id={clipId}>
           <path d={zona.silhueta} />

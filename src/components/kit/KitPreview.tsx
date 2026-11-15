@@ -1,6 +1,7 @@
 import { estampaDemoPorId, moldeDemo } from '@/lib/kitDemo';
 import { PECAS_KIT, type KitDesign, type LadoKit } from '@/types/kit';
 import { cn } from '@/lib/utils';
+import { CamadaFixa } from './CamadaFixa';
 import { PecaMockup } from './PecaMockup';
 import { CamadaAplicacoes } from './CamadaAplicacoes';
 
@@ -29,12 +30,7 @@ export function KitPreview({
           as peças recoloridas por cima ao pixel, as chuteiras entre o meião
           e o calção. Sem ele a miniatura eram peças a flutuar, que não é o
           que o cliente aprovou no ecrã anterior. */}
-      <img
-        src={`/moldes/jog/jogador-${lado}.png`}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 z-0 h-full w-full object-contain"
-      />
+      <CamadaFixa tipo="jogador" lado={lado} className="z-0" />
       {PECAS_KIT.map((peca, i) => {
         const config = design.pecas[peca];
         if (!config) return null;
@@ -59,12 +55,7 @@ export function KitPreview({
           </PecaMockup>
         );
       })}
-      <img
-        src={`/moldes/jog/botas-${lado}.png`}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 z-[15] h-full w-full object-contain"
-      />
+      <CamadaFixa tipo="botas" lado={lado} className="z-[15]" />
     </div>
   );
 }

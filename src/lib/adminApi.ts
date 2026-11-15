@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import type { KitTemplateRow, LeadRow, NovoKitTemplate } from './api';
+import type { AjustesLado } from './ajustes';
+import type { LadoKit } from '@/types/kit';
 
 /**
  * Ponte para a Edge Function `admin`.
@@ -43,6 +45,20 @@ async function lerErro(error: unknown): Promise<string | null> {
   }
 }
 
+export interface LinhaAjustes {
+  lado: LadoKit;
+  publicado: AjustesLado;
+  rascunho: AjustesLado | null;
+  atualizado_em: string;
+}
+
+export interface VersaoAjustes {
+  id: number;
+  dados: AjustesLado;
+  nota: string | null;
+  criado_em: string;
+}
+
 export const admin = {
   entrar: (codigo: string) => chamar<{ ok: true }>(codigo, 'entrar'),
 
@@ -61,4 +77,19 @@ export const admin = {
 
   apagarModelo: (codigo: string, id: string) =>
     chamar<{ ok: true }>(codigo, 'apagar-modelo', { id }),
+
+  /** Ajustes da prancheta: o publicado e o rascunho de cada lado. */
+  ajustes: (codigo: string) =>
+    chamar<{ ajustes: LinhaAjustes[] }>(codigo, 'ajustes').then((r) => r.ajustes),
+
+  guardarRascunho: (codigo: string, lado: LadoKit, camadas: AjustesLado) =>
+    chamar<{ ok: true }>(codigo, 'ajustes-rascunho', { lado, camadas }),
+
+  publicarAjustes: (codigo: string, lado: LadoKit, camadas: AjustesLado) =>
+    chamar<{ ok: true }>(codigo, 'ajustes-publicar', { lado, camadas }),
+
+  historicoAjustes: (codigo: string, lado: LadoKit) =>
+    chamar<{ historico: VersaoAjustes[] }>(codigo, 'ajustes-historico', { lado }).then(
+      (r) => r.historico,
+    ),
 };
