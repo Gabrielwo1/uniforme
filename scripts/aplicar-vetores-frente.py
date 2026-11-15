@@ -41,6 +41,7 @@ PESCOCO = 520  # acima desta linha os corpo-<estilo> trazem o decote do estilo
 OMBRO = 90     # px, ao longo do ombro, que levam a descida junto à gola
 TOPO_GOLA = 2  # o ombro começa 2 px abaixo do topo da ponta da gola
 EXTRAPOLA = 60  # linhas acima da ponta da manga em que o bordo dela é prolongado
+VINCO = 0.30   # força do vinco da costura da manga (0 = sem)
 PONTA = 8      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
 
 
@@ -194,7 +195,21 @@ def main():
             if np.isnan(xo[y]): continue
             if le == 'esq': base[y] *= np.clip(X[0] - xo[y] + 0.5, 0, 1)
             else: base[y] *= np.clip(xo[y] - X[0] + 0.5, 0, 1)
-    salvar('vestida-manga-frente.png', com_alfa(cam0, manga))
+    # linha da costura: o bordo interior (junto ao corpo) de cada manga leva um vinco escuro
+    # e fino no sombreado — é o que mostra a manga assente POR CIMA da camisola. Os
+    # SOMBREAMENTO MANGA * do designer chegaram sem as imagens, por isso desenha-se aqui.
+    vinco = np.ones((H, W), np.float32)
+    for le in ('esq', 'dir'):
+        sl = slice(0, MEIO) if le == 'esq' else slice(MEIO, W)
+        sol = manga[:, sl] > 0.5
+        for y in np.where(sol.any(1))[0]:
+            c = np.where(sol[y])[0] + sl.start
+            xi = c.max() if le == 'esq' else c.min()             # bordo para o corpo
+            d = (xi - X[0]) if le == 'esq' else (X[0] - xi)       # >= 0 do lado da manga
+            vinco[y] = np.minimum(vinco[y], np.where(d >= -0.5, 1 - VINCO * np.exp(-(np.maximum(d, 0) / 2.4) ** 2), 1))
+    sm = com_alfa(cam0, manga)
+    sm[..., :3] *= vinco[..., None]
+    salvar('vestida-manga-frente.png', sm)
     print('manga (camada à frente da camisola) gravada')
 
     # ombro rente à gola: o vetor da camisola sobe ~10 px acima das pontas da gola e
