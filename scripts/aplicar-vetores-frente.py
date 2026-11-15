@@ -42,7 +42,7 @@ MEIO = 740     # entre os dois punhos
 PESCOCO = 520  # acima desta linha os corpo-<estilo> trazem o decote do estilo
 OMBRO = 90     # px, ao longo do ombro, que levam a descida junto à gola
 TOPO_GOLA = 2  # o ombro começa 2 px abaixo do topo da ponta da gola
-EXTRAPOLA = 60  # linhas acima da ponta da manga em que o bordo dela é prolongado
+EXTRAPOLA = 50  # linhas acima da ponta da manga em que o ombro da camisola se junta ao bordo dela
 VINCO = 0.30   # força do vinco da costura da manga (0 = sem)
 PONTA = 0      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
 
@@ -256,9 +256,13 @@ def main():
             c = np.where(sol[y])[0]
             if len(c): xo[y] = (c.min() - 0.5) if le == 'esq' else (c.max() + 0.5)
         y0 = ys.min()
-        k = np.polyfit(np.arange(y0, y0 + 25), xo[y0:y0 + 25], 1)[0]   # inclinação do bordo junto ao ombro
-        for y in range(y0 - EXTRAPOLA, y0):                    # acima da ponta: prolonga o bordo, senão
-            xo[y] = xo[y0] + k * (y - y0)                      # fica um "corno" da camisola ao lado da manga
+        sl = slice(0, MEIO) if le == 'esq' else slice(MEIO, W)
+        for y in range(y0 - EXTRAPOLA, y0):                    # acima da ponta: o bordo da camisola vai-se
+            c = np.where(base[y, sl] > 0.5)[0]                 # juntando ao da manga numa curva suave; sem
+            if not len(c): continue                            # isto sobra um bico vertical da camisola
+            xt = (c.min() if le == 'esq' else c.max() + 1) + sl.start
+            f = (y - (y0 - EXTRAPOLA)) / EXTRAPOLA
+            xo[y] = xt + (xo[y0] - xt) * f * f * (3 - 2 * f)
         for y in range(y0 - EXTRAPOLA, H):
             if np.isnan(xo[y]): continue
             if le == 'esq': base[y] *= np.clip(X[0] - xo[y] + 0.5, 0, 1)
