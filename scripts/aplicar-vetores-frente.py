@@ -61,6 +61,45 @@ def vet(arq, alvo, folga=24):
     return vetor.rasterizar(subs, sx, sy, tx + b[0], ty + b[1], (W, H), ss=4)
 
 
+def vet_manga(arq, alvo, torso, le, folga=40):
+    """Como `vet`, mas depois do encaixe grosso afina escala/posição para o bordo EXTERIOR da
+    manga coincidir com o bordo exterior da camisola em vetor (são o mesmo desenho do
+    designer): o IoU contra o polígono aproximado deixava 2-6 px de diferença."""
+    vb, subs = vetor.carregar(f'{DES}/{arq}')
+    ys, xs = np.where(alvo)
+    b = (max(xs.min() - 40, 0), max(ys.min() - 40, 0), xs.max() + 40, ys.max() + 40)
+    iou, (sx, sy, tx, ty) = vetor.encaixar(subs, vb, alvo[b[1]:b[3], b[0]:b[2]], folga=folga)
+    tx, ty = tx + b[0], ty + b[1]
+    ref = torso > 0.5
+
+    def borda(m):
+        c = (m > 0.5)
+        sub = c[:, :MEIO] if le == 'esq' else c[:, MEIO:]
+        tem = sub.any(1)
+        x = np.where(tem, sub.argmax(1) if le == 'esq' else sub.shape[1] - 1 - sub[:, ::-1].argmax(1), -1)
+        return x, tem
+
+    def custo(sx_, sy_, tx_, ty_):
+        m = vetor.rasterizar(subs, sx_, sy_, tx_, ty_, (W, H), ss=1)
+        xm, tm = borda(m); xr, tr = borda(ref.astype(float))
+        yy = np.where(tm)[0]
+        yy = yy[10:-25]                                   # fora a ponta e o fundo (punho)
+        yy = yy[tr[yy]]
+        return np.abs(xm[yy] - xr[yy]).mean() if len(yy) else 1e9
+
+    melhor = (custo(sx, sy, tx, ty), sx, sy, tx, ty)
+    for passo, rng in ((2.0, 6), (1.0, 2)):
+        c0 = melhor
+        for ds in (-0.015, -0.0075, 0, 0.0075, 0.015) if passo > 1 else (-0.003, 0, 0.003):
+            for dx in range(-rng, rng + 1):
+                for dy in range(-rng, rng + 1):
+                    sx2, sy2 = c0[1] * (1 + ds), c0[2] * (1 + ds)
+                    r = (custo(sx2, sy2, c0[3] + dx * passo / 2, c0[4] + dy * passo / 2), sx2, sy2, c0[3] + dx * passo / 2, c0[4] + dy * passo / 2)
+                    if r[0] < melhor[0]: melhor = r
+    print(f'  {os.path.basename(arq)}: IoU {iou:.3f}, desvio do bordo {custo(sx, sy, tx, ty):.2f} -> {melhor[0]:.2f} px')
+    return vetor.rasterizar(subs, melhor[1], melhor[2], melhor[3], melhor[4], (W, H), ss=4)
+
+
 def com_alfa(rgba, alfa):
     """RGBA com o alfa novo. O RGB (sombreado) dos píxeis que passam a ser peça
     vem do vizinho mais próximo do MIOLO do PNG antigo (erodido 3 px): a orla
@@ -178,7 +217,7 @@ def main():
     # subiu") é cortada rente ao bordo exterior da manga.
     manga = np.zeros((H, W), np.float32)
     for le, arq in (('esq', 'MANGA ESQUERDA SVG.svg'), ('dir', 'MANGA DIREITA SVG.svg')):
-        m = manga_rente_ao_punho(vet(arq, poligono_manga[le] & cam, folga=40), le)
+        m = manga_rente_ao_punho(vet_manga(arq, poligono_manga[le] & cam, torso, le), le)
         m = np.where(poligono_manga[le], m, 0)
         manga = np.maximum(manga, m)
         sol = m > 0.5
