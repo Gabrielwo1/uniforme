@@ -56,8 +56,8 @@ export const useAjustesStore = create<AjustesStore>((set) => ({
       return;
     }
     const todos: AjustesTodos = { frente: {}, verso: {} };
-    for (const l of data ?? []) {
-      if (l.lado === 'frente' || l.lado === 'verso') todos[l.lado] = (l.publicado ?? {}) as AjustesLado;
+    for (const l of (data ?? []) as { lado: string; publicado: AjustesLado | null }[]) {
+      if (l.lado === 'frente' || l.lado === 'verso') todos[l.lado] = l.publicado ?? {};
     }
     set({ publicados: todos });
   },
