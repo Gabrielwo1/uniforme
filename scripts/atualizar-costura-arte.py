@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Passa a arte dos modelos com costura (010, 013, 014, 015) da costura ANTIGA para a NOVA
-quando costuras-designer.json muda (por ex. a manga esticada até à borda do sombreado).
+"""Passa a arte de TODOS os modelos com costura da costura ANTIGA para a NOVA quando
+costuras-designer.json muda (por ex. a manga esticada até à borda do sombreado).
 
 A arte foi gravada com os polígonos gerados por costuras.poligono_tronco_real /
-poligono_manga_real a partir do json anterior. Gera-se o texto desses polígonos com o json
-ANTIGO e com o NOVO, e troca-se um pelo outro (replace) na arte actual — só dados.
+poligono_manga_real (os modelos 010/013/014/015) ou por src/lib/costurasPadrao.ts (os que
+entram pelo painel de administração, mesmo formato de texto) a partir do json anterior.
+Gera-se o texto desses polígonos com o json ANTIGO e com o NOVO, e troca-se um pelo outro
+(replace) na arte actual — só dados. Percorre todos os cod_modelo da base.
 
 Uso: python3 scripts/atualizar-costura-arte.py <json-antigo> <saida_dir> [lado ...]
   grava <saida>/antes-<cod>-<lado>.json (cópia) e <saida>/update-<cod>-<lado>.sql.
@@ -38,9 +40,11 @@ def main():
     os.makedirs(saida, exist_ok=True)
     novo = json.load(open(NOVO_JSON))
     shutil.copy(NOVO_JSON, f'{saida}/costuras-novo.json')
-    for cod in ('010', '013', '014', '015'):
+    for cod in P.codigos():
         for lado in lados:
             r = P.linha(cod, lado)
+            if not r:
+                continue
             q = r['quadro']
             json.dump(r, open(f'{saida}/antes-{cod}-{lado}.json', 'w'), separators=(',', ':'))
             txt = json.dumps(r['camadas'], ensure_ascii=False, separators=(',', ':'))

@@ -1,5 +1,21 @@
 # Guia de exportação — Simulador KYPZL
 
+> **Formato em uso hoje (CorelDRAW, desde Nov/2026).** O designer entrega **um SVG por peça com a
+> frente e o verso lado a lado** (frente à ESQUERDA) e o painel `/admin` lê-o directamente — não há
+> passo manual. Cada lado tem de trazer:
+>
+> - o **corpo** com a arte dentro de um PowerClip (`clip-path`), mais o contentor do corpo (a forma
+>   com a cor de fundo logo antes do grupo);
+> - a **gola**, as **duas mangas** e os **dois punhos** como peças soltas à volta do corpo, pintadas
+>   com as cores por omissão (a gola → zona Gola, os punhos → zona Mangas, as mangas → camada de cor);
+> - opcionalmente um retângulo-guia `QUADRO` (sem preenchimento, traço finíssimo). Sem ele, o quadro é
+>   o corpo + gola + mangas.
+>
+> O painel monta cada lado no padrão da casa (fundo, arte, mangas pela costura real do designer) e
+> alinha as camadas de cor entre a frente e o verso. Se o ficheiro vier com o verso à esquerda, o
+> painel tem o botão «Trocar frente e verso». O resto deste guia descreve o formato antigo
+> (Illustrator) e mantém-se por referência.
+
 Este documento diz **exatamente** que ficheiros o simulador precisa e como
 exportá-los a partir do Illustrator/Photoshop.
 

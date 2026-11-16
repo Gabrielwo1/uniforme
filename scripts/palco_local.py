@@ -34,6 +34,13 @@ def linha(cod, lado):
     return r[0] if r else None
 
 
+def codigos():
+    """Todos os cod_modelo que têm camisola na base — o painel de administração cria modelos novos."""
+    rq = urllib.request.Request(f'{URL}?peca=eq.camisola&select=cod_modelo',
+                                headers={'apikey': chave(), 'Authorization': f'Bearer {chave()}'})
+    return sorted({r['cod_modelo'] for r in json.load(urllib.request.urlopen(rq))})
+
+
 def hex_rgb(h):
     h = h.lstrip('#'); return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 

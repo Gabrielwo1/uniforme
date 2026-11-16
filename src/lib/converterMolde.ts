@@ -23,6 +23,9 @@
  * encontrou (e o que não encontrou) antes de deixar guardar.
  */
 
+import type { LadoKit } from '@/types/kit';
+import { daManga, doFundo } from './costurasPadrao';
+
 const FORMAS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line'] as const;
 type Forma = (typeof FORMAS)[number];
 
@@ -67,11 +70,30 @@ export interface CamadaConvertida {
   svg: string;
 }
 
+/** O que o molde traz FORA do grupo da arte: a gola, as mangas e os punhos, desenhados
+    como peças soltas à volta do corpo (é assim o template do designer, ver o 015). */
+export interface PecasSoltas {
+  gola?: string;
+  punho?: string;
+  mangaEsq?: string;
+  mangaDir?: string;
+}
+
 export interface MoldeConvertido {
   quadro: Quadro;
   corFundo: string | null;
   camadas: CamadaConvertida[];
   /** Tudo o que a pessoa tem de saber antes de guardar. */
+  avisos: string[];
+  /** Cores por omissão das zonas (gola, punhos) — vão para `cores_zonas`. */
+  coresZonas: Record<string, string> | null;
+}
+
+/** Um ficheiro, um modelo: a frente e o verso que lá estão, já alinhados entre si. */
+export interface ModeloConvertido {
+  frente: MoldeConvertido | null;
+  verso: MoldeConvertido | null;
+  /** Avisos do ficheiro como um todo (o que se perdeu, o que se assumiu). */
   avisos: string[];
 }
 
@@ -464,10 +486,26 @@ function guiaDoQuadro(doc: Document, recorte: Quadro): Quadro | null {
   return null;
 }
 
-/** Molde do tipo Corel: o grupo preso a um `clip-path` com a maior silhueta que
-    contém arte com cor (os recortes que só prendem <image> não contam). */
-function molde_por_recorte(doc: Document): { grupo: Element; quadro: Quadro; contorno: string; fundo: string | null } | null {
-  let melhor: { grupo: Element; caixa: Quadro; clip: Element } | null = null;
+/** Um molde do tipo Corel: o grupo preso a um `clip-path` (PowerClip) com a silhueta e arte com
+    cor lá dentro (os recortes que só prendem <image> não contam). */
+interface Candidato {
+  grupo: Element;
+  quadro: Quadro;
+  /** O quadro veio do retângulo-guia `QUADRO` do molde — esse manda, não se alarga. */
+  comGuia: boolean;
+  contorno: string;
+  fundo: string | null;
+}
+
+/**
+ * TODOS os moldes do ficheiro, da esquerda para a direita.
+ *
+ * O template do designer traz a frente e o verso lado a lado no mesmo desenho. Os moldes são os
+ * grupos de topo: um grupo recortado DENTRO de outro é arte do molde, não outra peça. E só contam
+ * os que têm tamanho de peça — a arte deixa recortes pequenos espalhados.
+ */
+function moldesPorRecorte(doc: Document): Candidato[] {
+  const todos: { grupo: Element; caixa: Quadro }[] = [];
   for (const g of Array.from(doc.querySelectorAll('g'))) {
     const id = idDoRecorte(g);
     const clip = id ? recorteDe(doc, id) : null;
@@ -478,70 +516,74 @@ function molde_por_recorte(doc: Document): { grupo: Element; quadro: Quadro; con
     for (const el of desenhaveis(g)) {
       if (FORMAS.includes(el.localName as Forma) && corDe(el)) { temArte = true; break; }
     }
-    if (!temArte) continue;
-    if (!melhor || caixa.w * caixa.h > melhor.caixa.w * melhor.caixa.h * 1.001) melhor = { grupo: g, caixa, clip };
+    if (temArte) todos.push({ grupo: g, caixa });
   }
-  if (!melhor) return null;
-  const contorno = Array.from(melhor.clip.querySelectorAll('path'))
-    .map((p) => p.getAttribute('d') ?? '').join(' ');
-  // no Corel o PowerClip tem um CONTENTOR: a forma que está logo antes do grupo,
-  // com a silhueta e a cor da peça — essa cor é o fundo
-  let fundo: string | null = null;
-  const alvo = melhor.caixa;
-  for (let ir = melhor.grupo.previousElementSibling; ir && !fundo; ir = ir.previousElementSibling) {
-    const b = FORMAS.includes(ir.localName as Forma) ? caixaDoElemento(ir) : null;
-    const c = b ? corDe(ir) : null;
-    if (b && c && c.atr === 'fill' && !c.cor.startsWith('url(')
-      && Math.abs(b.w - alvo.w) < alvo.w * 0.02 && Math.abs(b.h - alvo.h) < alvo.h * 0.02) fundo = c.cor;
-    if (ir.localName === 'g' && idDoRecorte(ir)) break;
-  }
-  return { grupo: melhor.grupo, quadro: guiaDoQuadro(doc, melhor.caixa) ?? melhor.caixa, contorno, fundo };
+  const topo = todos.filter((a) => !todos.some((b) => b !== a && b.grupo.contains(a.grupo)));
+  if (topo.length === 0) return [];
+  const maior = Math.max(...topo.map((a) => a.caixa.w * a.caixa.h));
+  return topo
+    .filter((a) => a.caixa.w * a.caixa.h >= maior * 0.25)
+    .sort((a, b) => a.caixa.x - b.caixa.x)
+    .map(({ grupo, caixa }) => {
+      const id = idDoRecorte(grupo)!;
+      const contorno = Array.from(recorteDe(doc, id)!.querySelectorAll('path'))
+        .map((p) => p.getAttribute('d') ?? '').join(' ');
+      // no Corel o PowerClip tem um CONTENTOR: a forma que está logo antes do grupo,
+      // com a silhueta e a cor da peça — essa cor é o fundo
+      let fundo: string | null = null;
+      for (let ir = grupo.previousElementSibling; ir && !fundo; ir = ir.previousElementSibling) {
+        const b = FORMAS.includes(ir.localName as Forma) ? caixaDoElemento(ir) : null;
+        const c = b ? corDe(ir) : null;
+        if (b && c && c.atr === 'fill' && !c.cor.startsWith('url(')
+          && Math.abs(b.w - caixa.w) < caixa.w * 0.02 && Math.abs(b.h - caixa.h) < caixa.h * 0.02) fundo = c.cor;
+        if (ir.localName === 'g' && idDoRecorte(ir)) break;
+      }
+      const guia = guiaDoQuadro(doc, caixa);
+      return { grupo, quadro: guia ?? caixa, comGuia: guia !== null, contorno, fundo };
+    });
 }
 
-export async function converterMolde(textoSvg: string): Promise<MoldeConvertido> {
-  const doc = new DOMParser().parseFromString(textoSvg, 'image/svg+xml');
-  if (doc.querySelector('parsererror')) {
-    throw new ErroDeMolde('O ficheiro não é um SVG válido.');
+/**
+ * Gola, mangas e punhos: as peças soltas à volta do corpo, lidas pela POSIÇÃO no molde.
+ * Pela posição e não pela cor: o designer pinta-as como quiser, mas o template tem sempre a
+ * gola no meio e no topo, as mangas nos lados (altas e compridas) e os punhos por baixo delas
+ * (baixos e largos). Tudo o que tem tamanho de peça inteira (o contentor do corpo) fica de fora.
+ */
+function lerPecasSoltas(
+  doc: Document,
+  grupo: Element,
+  q: Quadro,
+): { soltas: PecasSoltas; extensao: Quadro } {
+  const out: PecasSoltas = {};
+  let extensao: Quadro = q;
+  for (const el of Array.from(doc.querySelectorAll('path,rect,polygon'))) {
+    if (el.closest('defs,clipPath,mask') || grupo.contains(el)) continue;
+    const c = corDe(el);
+    if (!c || c.atr !== 'fill' || c.cor.startsWith('url(')) continue;
+    const b = caixaDoElemento(el);
+    if (!b || b.w <= 0 || b.h <= 0) continue;
+    const rx = (b.x + b.w / 2 - q.x) / q.w, ry = (b.y + b.h / 2 - q.y) / q.h;
+    const rw = b.w / q.w, rh = b.h / q.h;
+    if (rx < -0.05 || rx > 1.05 || ry < -0.05 || ry > 1.05 || rw > 0.6) continue;
+    const lado = rx < 0.3 ? 'Esq' : rx > 0.7 ? 'Dir' : null;
+    if (!lado && Math.abs(rx - 0.5) < 0.2 && ry < 0.22 && rh < 0.3) out.gola = c.cor;
+    else if (lado && rw < 0.35 && rh >= 0.15 && ry > 0.08 && ry < 0.5) out[`manga${lado}`] = c.cor;
+    else if (lado && rw < 0.35 && rh < 0.15 && ry >= 0.25) out.punho = c.cor;
+    else continue;
+    extensao = uniao(extensao, b)!;
   }
+  return { soltas: out, extensao };
+}
 
-  aplicarEstilos(doc);
+interface Bruto extends MoldeConvertido {
+  /** O fundo é uma forma do desenho (o contentor do Corel), não uma cor inferida. */
+  fundoReal: boolean;
+  soltas: PecasSoltas;
+}
 
-  // 1) Figma/Illustrator: a silhueta é uma <mask> ALFA e o molde é o grupo preso a ela
-  // 2) Corel: sem máscara — a silhueta é um `clip-path` (PowerClip)
-  const mascaras = new Map<string, Element>();
-  for (const m of Array.from(doc.querySelectorAll('mask'))) {
-    if (m.id) mascaras.set(m.id, m);
-  }
-  let grupo: Element | undefined;
-  let quadro: Quadro | null = null;
-  let contorno = '';
-  let fundoDoContentor: string | null = null;
-
-  if (mascaras.size > 0) {
-    // o molde é a máscara ALFA; as de luminância que aparecem lá dentro são
-    // efeitos do Figma e o grupo delas não é o molde
-    grupo = Array.from(doc.querySelectorAll('g[mask]')).find((g) => {
-      const ref = /url\(#([^)]+)\)/.exec(g.getAttribute('mask') ?? '')?.[1];
-      const m = ref ? mascaras.get(ref) : undefined;
-      return m && !(m.getAttribute('style') ?? '').includes('luminance');
-    });
-    if (!grupo) throw new ErroDeMolde('SVG sem grupo preso a uma máscara alfa.');
-    const ref = /url\(#([^)]+)\)/.exec(grupo.getAttribute('mask') ?? '')![1];
-    quadro = caixaDaMascara(mascaras.get(ref)!);
-  } else {
-    const r = molde_por_recorte(doc);
-    if (!r) {
-      throw new ErroDeMolde(
-        'Não encontrei o molde neste SVG: nem uma <mask> nem um grupo recortado (clip-path) ' +
-          'com arte lá dentro. Desenhe a arte DENTRO do molde da KYPZL e exporte com o recorte.',
-      );
-    }
-    ({ grupo, quadro, contorno } = r);
-    fundoDoContentor = r.fundo;
-  }
-  if (!quadro || !grupo) throw new ErroDeMolde('Não foi possível medir a caixa do molde.');
-  const caixa: Quadro = quadro;
-  const raizMolde: Element = grupo;
+/** Uma peça do ficheiro → as suas camadas de cor. */
+async function converterGrupo(doc: Document, molde: Candidato): Promise<Bruto> {
+  const { grupo: raizMolde, quadro: caixa, contorno } = molde;
 
   /** O elemento que cobre o molde inteiro é o fundo, não uma camada. */
   const eFundo = (el: Element) => {
@@ -573,7 +615,8 @@ export async function converterMolde(textoSvg: string): Promise<MoldeConvertido>
 
   const porCor = new Map<string, string[]>();
   const avisos: string[] = [];
-  let corFundo: string | null = fundoDoContentor;
+  let corFundo: string | null = molde.fundo;
+  let fundoReal = molde.fundo !== null;
   let semCor = 0;
   let naoRecoloriveis = 0;
   let guias = 0;
@@ -603,6 +646,7 @@ export async function converterMolde(textoSvg: string): Promise<MoldeConvertido>
     }
     if (eFundo(el)) {
       corFundo = c.cor;
+      fundoReal = true;
       continue;
     }
     const lista = porCor.get(c.cor) ?? [];
@@ -653,13 +697,6 @@ export async function converterMolde(textoSvg: string): Promise<MoldeConvertido>
       );
     }
   }
-  const imagens = doc.querySelectorAll('image').length;
-  if (imagens > 0) {
-    avisos.push(
-      `${imagens} imagem(ns) do ficheiro foram ignoradas (sombreados do Corel): o simulador `
-        + 'tem o seu próprio sombreado de tecido.',
-    );
-  }
   if (naoRecoloriveis > 0) {
     avisos.push(
       `${naoRecoloriveis} forma(s) com gradiente ou padrão foram ignoradas: `
@@ -674,14 +711,172 @@ export async function converterMolde(textoSvg: string): Promise<MoldeConvertido>
       `${guias} traço(s) finos demais para se verem (guias do molde) foram ignorados.`,
     );
   }
-  if (camadas.length > 8) {
+
+  // sem retângulo-guia, o quadro é a PEÇA TODA: o corpo mais a gola e as mangas que o rodeiam
+  // (o PowerClip do corpo acaba no ombro, a gola sobe acima dele). Foi assim que se mediu o 015.
+  const { soltas, extensao } = lerPecasSoltas(doc, raizMolde, caixa);
+  const um = (n: number) => Math.round(n * 10) / 10;
+  return {
+    quadro: molde.comGuia
+      ? caixa
+      : { x: um(extensao.x), y: um(extensao.y), w: um(extensao.w), h: um(extensao.h) },
+    corFundo,
+    camadas,
+    avisos,
+    coresZonas: null,
+    fundoReal,
+    soltas,
+  };
+}
+
+const maiusculas = (c: string | undefined) => (c ? c.toUpperCase() : undefined);
+
+/**
+ * Põe a frente e o verso no PADRÃO da casa — o do 015 — e alinhados entre si.
+ *
+ *   camada 1       fundo com sangria (só se o molde tem fundo de verdade)
+ *   camadas 2…n    a arte, uma por cor
+ *   última(s)      as mangas, pela costura REAL do designer, POR CIMA da arte
+ *
+ * As camadas são POSICIONAIS: a camada i pinta a frente E o verso com o mesmo controlo de
+ * cor, por isso uma cor que só existe num dos lados entra no outro como camada vazia em vez
+ * de empurrar as seguintes. É o mesmo princípio de `kitReal.registar`.
+ */
+function montarLados(
+  lados: Partial<Record<LadoKit, Bruto>>,
+  camisola: boolean,
+): Partial<Record<LadoKit, MoldeConvertido>> {
+  const entradas = Object.entries(lados) as [LadoKit, Bruto][];
+  const familias: { chave: string; cor: string }[] = [];
+  const nova = (chave: string, cor: string) => {
+    if (!familias.some((f) => f.chave === chave)) familias.push({ chave, cor });
+  };
+
+  const fundoCor = entradas.map(([, b]) => (b.fundoReal ? b.corFundo : null)).find(Boolean) ?? null;
+  if (fundoCor) nova('fundo', fundoCor);
+  for (const [, b] of entradas) for (const c of b.camadas) nova(`arte:${c.cor}`, c.cor);
+  const mangas = (b: Bruto) => (camisola ? [b.soltas.mangaEsq, b.soltas.mangaDir] : []);
+  for (const [, b] of entradas) for (const cor of mangas(b)) if (cor) nova(`manga:${cor}`, cor);
+
+  const saida: Partial<Record<LadoKit, MoldeConvertido>> = {};
+  for (const [lado, b] of entradas) {
+    const q = b.quadro;
+    const camadas = familias.map((f, i) => {
+      let svg = '<g/>';
+      if (f.chave === 'fundo' && b.fundoReal) {
+        svg = `<path fill="${f.cor}" d="${doFundo(lado, q)}"/>`;
+      } else if (f.chave.startsWith('arte:')) {
+        svg = b.camadas.find((c) => c.cor === f.cor)?.svg ?? '<g/>';
+      } else if (f.chave.startsWith('manga:')) {
+        const d = (['Esq', 'Dir'] as const)
+          .filter((le) => b.soltas[`manga${le}`] === f.cor)
+          .map((le) => daManga(lado, q, le === 'Esq' ? 'esq' : 'dir')).join(' ');
+        if (d) svg = `<path fill="${f.cor}" d="${d}"/>`;
+      }
+      return { id: `cor${i + 1}`, cor: f.cor, svg };
+    });
+    const zonas: Record<string, string> = {};
+    const gola = maiusculas(b.soltas.gola), punho = maiusculas(b.soltas.punho);
+    if (camisola && gola) zonas.gola = gola;
+    if (camisola && punho) zonas.mangas = punho;
+    saida[lado] = {
+      quadro: q,
+      corFundo: b.corFundo,
+      camadas,
+      avisos: b.avisos,
+      coresZonas: Object.keys(zonas).length ? zonas : null,
+    };
+  }
+  return saida;
+}
+
+export async function converterModelo(
+  textoSvg: string,
+  opcoes: { camisola?: boolean; trocar?: boolean } = {},
+): Promise<ModeloConvertido> {
+  const doc = new DOMParser().parseFromString(textoSvg, 'image/svg+xml');
+  if (doc.querySelector('parsererror')) {
+    throw new ErroDeMolde('O ficheiro não é um SVG válido.');
+  }
+
+  aplicarEstilos(doc);
+  const avisos: string[] = [];
+
+  // 1) Figma/Illustrator: a silhueta é uma <mask> ALFA e o molde é o grupo preso a ela
+  // 2) Corel: sem máscara — a silhueta é um `clip-path` (PowerClip), uma por lado
+  const mascaras = new Map<string, Element>();
+  for (const m of Array.from(doc.querySelectorAll('mask'))) {
+    if (m.id) mascaras.set(m.id, m);
+  }
+  let moldes: Candidato[];
+
+  if (mascaras.size > 0) {
+    // o molde é a máscara ALFA; as de luminância que aparecem lá dentro são
+    // efeitos do Figma e o grupo delas não é o molde
+    const grupo = Array.from(doc.querySelectorAll('g[mask]')).find((g) => {
+      const ref = /url\(#([^)]+)\)/.exec(g.getAttribute('mask') ?? '')?.[1];
+      const m = ref ? mascaras.get(ref) : undefined;
+      return m && !(m.getAttribute('style') ?? '').includes('luminance');
+    });
+    if (!grupo) throw new ErroDeMolde('SVG sem grupo preso a uma máscara alfa.');
+    const ref = /url\(#([^)]+)\)/.exec(grupo.getAttribute('mask') ?? '')![1];
+    const quadro = caixaDaMascara(mascaras.get(ref)!);
+    if (!quadro) throw new ErroDeMolde('Não foi possível medir a caixa do molde.');
+    moldes = [{ grupo, quadro, comGuia: true, contorno: '', fundo: null }];
+  } else {
+    moldes = moldesPorRecorte(doc);
+    if (moldes.length === 0) {
+      throw new ErroDeMolde(
+        'Não encontrei o molde neste SVG: nem uma <mask> nem um grupo recortado (clip-path) ' +
+          'com arte lá dentro. Desenhe a arte DENTRO do molde da KYPZL e exporte com o recorte.',
+      );
+    }
+  }
+
+  if (moldes.length > 2) {
     avisos.push(
-      `${camadas.length} camadas de cor — o painel fica longo. Se algumas `
-        + 'forem a mesma cor no desenho, junte-as no ficheiro de origem.',
+      `Encontrei ${moldes.length} peças no ficheiro; só uso as duas maiores à esquerda (frente e verso).`,
+    );
+    moldes = moldes.slice(0, 2);
+  }
+  // a ordem do Corel é frente à esquerda, verso à direita; `trocar` desfaz-a quando vem ao contrário
+  if (opcoes.trocar) moldes.reverse();
+  const brutos: Partial<Record<LadoKit, Bruto>> = {};
+  brutos.frente = await converterGrupo(doc, moldes[0]);
+  if (moldes[1]) brutos.verso = await converterGrupo(doc, moldes[1]);
+
+  const imagens = doc.querySelectorAll('image').length;
+  if (imagens > 0) {
+    avisos.push(
+      `${imagens} imagem(ns) do ficheiro foram ignoradas (sombreados do Corel): o simulador `
+        + 'tem o seu próprio sombreado de tecido.',
+    );
+  }
+  if (moldes.length === 1) {
+    avisos.push(
+      'Só encontrei UMA peça no ficheiro — ficou como frente. O verso é a segunda peça, à '
+        + 'direita da frente, com a arte desenhada dentro do molde.',
     );
   }
 
-  return { quadro: caixa, corFundo, camadas, avisos };
+  const camisola = opcoes.camisola ?? false;
+  const lados = montarLados(brutos, camisola);
+  for (const l of Object.values(lados)) {
+    if (l.camadas.length > 8) {
+      avisos.push(
+        `${l.camadas.length} camadas de cor — o painel fica longo. Se algumas `
+          + 'forem a mesma cor no desenho, junte-as no ficheiro de origem.',
+      );
+      break;
+    }
+  }
+  if (camisola && brutos.frente && !brutos.frente.soltas.gola && !brutos.frente.soltas.punho) {
+    avisos.push(
+      'Não encontrei a gola nem os punhos como peças soltas à volta do corpo — ficam com a cor '
+        + 'por omissão do simulador.',
+    );
+  }
+  return { frente: lados.frente ?? null, verso: lados.verso ?? null, avisos };
 }
 
 /** Peso do que vai para a base de dados, para o painel avisar a tempo. */

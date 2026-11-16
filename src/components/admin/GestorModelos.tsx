@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowLeftRight,
   Check,
   Eye,
   EyeOff,
@@ -15,12 +16,13 @@ import { admin } from '@/lib/adminApi';
 import type { KitTemplateRow } from '@/lib/api';
 import { useAdminStore } from '@/store/useAdminStore';
 import {
-  converterMolde,
+  converterModelo,
   ErroDeMolde,
   pesoAproximado,
+  type ModeloConvertido,
   type MoldeConvertido,
 } from '@/lib/converterMolde';
-import { PECAS_KIT, PECA_LABEL, type PecaKit } from '@/types/kit';
+import { LADOS_KIT, LADO_LABEL, PECAS_KIT, PECA_LABEL, type PecaKit } from '@/types/kit';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Espera } from './PainelKpis';
@@ -34,6 +36,12 @@ import { Espera } from './PainelKpis';
  * simulador usa para sincronizar. Um tema com só a camisola é válido: as
  * outras peças ficam com a cor base.
  *
+ * O ficheiro é o do Corel do designer, com a FRENTE e o VERSO lado a lado
+ * (frente à esquerda). Um só envio grava os dois lados, já no padrão da casa:
+ * fundo, arte, mangas pela costura real, e a cor da gola e dos punhos lida
+ * das peças soltas do molde. Se o ficheiro vier com o verso à esquerda, há um
+ * botão para trocar.
+ *
  * Nada é guardado às cegas. Cada ficheiro é convertido AQUI, no browser, e o
  * painel mostra o que encontrou — caixa do molde, cor de fundo, camadas —
  * antes de deixar gravar. Se o ficheiro não estiver no formato, diz porquê
@@ -42,7 +50,7 @@ import { Espera } from './PainelKpis';
 type Estado =
   | { fase: 'vazio' }
   | { fase: 'erro'; mensagem: string; ficheiro: string }
-  | { fase: 'pronto'; molde: MoldeConvertido; ficheiro: string };
+  | { fase: 'pronto'; modelo: ModeloConvertido; ficheiro: string; texto: string; trocado: boolean };
 
 export function GestorModelos() {
   const codigo = useAdminStore((s) => s.codigo)!;
@@ -79,18 +87,21 @@ export function GestorModelos() {
       for (const peca of prontas) {
         const estado = pecas[peca];
         if (estado.fase !== 'pronto') continue;
-        await admin.guardarModelo(codigo, {
-          cod_modelo: codModelo.trim(),
-          nome: nome.trim(),
-          peca,
-          lado: 'frente',
-          quadro: estado.molde.quadro,
-          cor_fundo: estado.molde.corFundo,
-          camadas: estado.molde.camadas,
-          // o conversor de moldes não conhece zonas — as cores de gola/punhos
-          // por omissão entram por dados (pipeline) ou à mão na base
-          cores_zonas: null,
-        });
+        for (const lado of LADOS_KIT) {
+          const molde = estado.modelo[lado];
+          if (!molde) continue;
+          await admin.guardarModelo(codigo, {
+            cod_modelo: codModelo.trim(),
+            nome: nome.trim(),
+            peca,
+            lado,
+            quadro: molde.quadro,
+            cor_fundo: molde.corFundo,
+            camadas: molde.camadas,
+            // gola e punhos: lidos das peças soltas do molde (só a camisola)
+            cores_zonas: molde.coresZonas,
+          });
+        }
       }
       toast.success(
         `${nome.trim()} guardado — ${prontas.map((p) => PECA_LABEL[p]).join(', ')}.`,
@@ -198,23 +209,27 @@ function ZonaDaPeca({
 }) {
   const [sobre, setSobre] = useState(false);
 
+  const converter = async (texto: string, ficheiro: string, trocado: boolean) => {
+    try {
+      const modelo = await converterModelo(texto, { camisola: peca === 'camisola', trocar: trocado });
+      onEstado({ fase: 'pronto', modelo, ficheiro, texto, trocado });
+    } catch (e) {
+      onEstado({
+        fase: 'erro',
+        ficheiro,
+        mensagem:
+          e instanceof ErroDeMolde ? e.message : 'Não foi possível ler este ficheiro.',
+      });
+    }
+  };
+
   const ler = async (f: File | undefined) => {
     if (!f) return;
     if (!/\.svg$/i.test(f.name)) {
       onEstado({ fase: 'erro', ficheiro: f.name, mensagem: 'O ficheiro tem de ser .svg.' });
       return;
     }
-    try {
-      const molde = await converterMolde(await f.text());
-      onEstado({ fase: 'pronto', molde, ficheiro: f.name });
-    } catch (e) {
-      onEstado({
-        fase: 'erro',
-        ficheiro: f.name,
-        mensagem:
-          e instanceof ErroDeMolde ? e.message : 'Não foi possível ler este ficheiro.',
-      });
-    }
+    await converter(await f.text(), f.name, false);
   };
 
   return (
@@ -254,9 +269,9 @@ function ZonaDaPeca({
         <label className="flex cursor-pointer flex-col items-center gap-1.5 py-5 text-center">
           <FileUp className="h-5 w-5 text-muted-foreground" />
           <span className="text-[11px] text-muted-foreground">
-            Arraste o SVG do molde
+            Arraste o SVG do Corel
             <br />
-            ou clique para escolher
+            (frente + verso) ou clique
           </span>
           <input
             type="file"
@@ -277,35 +292,55 @@ function ZonaDaPeca({
         </div>
       )}
 
-      {estado.fase === 'pronto' && <Resultado molde={estado.molde} ficheiro={estado.ficheiro} />}
+      {estado.fase === 'pronto' && (
+        <Resultado
+          modelo={estado.modelo}
+          ficheiro={estado.ficheiro}
+          peca={peca}
+          aTrocar={() => converter(estado.texto, estado.ficheiro, !estado.trocado)}
+        />
+      )}
     </div>
   );
 }
 
 /** O que a conversão encontrou, desenhado — é a prova de que vai funcionar
-    antes de haver qualquer coisa gravada. */
-function Resultado({ molde, ficheiro }: { molde: MoldeConvertido; ficheiro: string }) {
-  const { quadro, corFundo, camadas, avisos } = molde;
-  const kb = Math.round(pesoAproximado(molde) / 1024);
+    antes de haver qualquer coisa gravada. Frente e verso lado a lado. */
+function Resultado({
+  modelo,
+  ficheiro,
+  peca,
+  aTrocar,
+}: {
+  modelo: ModeloConvertido;
+  ficheiro: string;
+  peca: PecaKit;
+  aTrocar: () => void;
+}) {
+  const { frente, verso } = modelo;
+  const avisos = [...new Set([...modelo.avisos, ...(frente?.avisos ?? []), ...(verso?.avisos ?? [])])];
+  const camadas = (frente ?? verso)!.camadas;
+  const zonas = (frente ?? verso)!.coresZonas;
+  const kb = Math.round(((frente ? pesoAproximado(frente) : 0) + (verso ? pesoAproximado(verso) : 0)) / 1024);
 
   return (
     <div className="space-y-2">
       <p className="truncate text-[11px] font-semibold">{ficheiro}</p>
 
-      <div
-        className="overflow-hidden rounded-md border"
-        style={{ backgroundColor: corFundo ?? 'transparent' }}
-      >
-        <svg
-          viewBox={`${quadro.x} ${quadro.y} ${quadro.w} ${quadro.h}`}
-          className="h-32 w-full"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {camadas.map((c) => (
-            <g key={c.id} dangerouslySetInnerHTML={{ __html: c.svg.split('__U__').join('adm') }} />
-          ))}
-        </svg>
+      <div className="grid grid-cols-2 gap-1.5">
+        {LADOS_KIT.map((lado) => (
+          <PreviaLado key={lado} lado={lado} molde={modelo[lado]} silhueta={peca === 'camisola'} />
+        ))}
       </div>
+      {frente && verso && (
+        <button
+          onClick={aTrocar}
+          className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground underline-offset-2 transition hover:text-foreground hover:underline"
+        >
+          <ArrowLeftRight className="h-3 w-3" />
+          Trocar frente e verso
+        </button>
+      )}
 
       <div className="flex flex-wrap items-center gap-1">
         {camadas.map((c, i) => (
@@ -321,12 +356,88 @@ function Resultado({ molde, ficheiro }: { molde: MoldeConvertido; ficheiro: stri
         </span>
       </div>
 
+      {zonas && (
+        <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+          {Object.entries(zonas).map(([zona, cor]) => (
+            <span key={zona} className="flex items-center gap-1">
+              <span className="h-3 w-3 rounded-sm border" style={{ backgroundColor: cor }} />
+              {zona === 'gola' ? 'Gola' : 'Punhos'}
+            </span>
+          ))}
+        </div>
+      )}
+
       {avisos.map((a) => (
         <p key={a} className="flex items-start gap-1.5 text-[10px] text-muted-foreground">
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
           {a}
         </p>
       ))}
+    </div>
+  );
+}
+
+/** Caixa da camisola no palco (x, y, w, h) nas máscaras 1520×2460 — de scripts/costuras.py. */
+const CAIXA_MASCARA = {
+  frente: { x: 384, y: 410, w: 710, h: 824 },
+  verso: { x: 292, y: 396, w: 733, h: 878 },
+} as const;
+
+/** A camisola recortada pela silhueta REAL do palco (corpo + mangas), como o simulador a mostra:
+    sem isto as mangas, que passam muito para fora do molde, parecem manchas enormes. */
+function estiloSilhueta(lado: 'frente' | 'verso'): React.CSSProperties {
+  const { x, y, w, h } = CAIXA_MASCARA[lado];
+  const imagens = [`vestida-camisola-${lado}`, `vestida-manga-${lado}`]
+    .map((n) => `url(/moldes/jog/${n}.png)`)
+    .join(',');
+  const tamanho = `${(1520 / w) * 100}% ${(2460 / h) * 100}%`;
+  const posicao = `${(x / (1520 - w)) * 100}% ${(y / (2460 - h)) * 100}%`;
+  return {
+    aspectRatio: `${w} / ${h}`,
+    maskImage: imagens,
+    maskSize: `${tamanho},${tamanho}`,
+    maskPosition: `${posicao},${posicao}`,
+    maskRepeat: 'no-repeat',
+    WebkitMaskImage: imagens,
+    WebkitMaskSize: `${tamanho},${tamanho}`,
+    WebkitMaskPosition: `${posicao},${posicao}`,
+    WebkitMaskRepeat: 'no-repeat',
+  };
+}
+
+function PreviaLado({
+  lado,
+  molde,
+  silhueta,
+}: {
+  lado: 'frente' | 'verso';
+  molde: MoldeConvertido | null;
+  silhueta: boolean;
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex h-36 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+        {molde ? (
+          <div
+            className="h-full"
+            style={{ backgroundColor: molde.corFundo ?? undefined, ...(silhueta ? estiloSilhueta(lado) : {}) }}
+          >
+            <svg
+              viewBox={`${molde.quadro.x} ${molde.quadro.y} ${molde.quadro.w} ${molde.quadro.h}`}
+              className="h-full w-full"
+              // a arte estica ao molde nos dois eixos, como no palco
+              preserveAspectRatio={silhueta ? 'none' : 'xMidYMid meet'}
+            >
+              {molde.camadas.map((c) => (
+                <g key={c.id} dangerouslySetInnerHTML={{ __html: c.svg.split('__U__').join(`adm${lado}`) }} />
+              ))}
+            </svg>
+          </div>
+        ) : (
+          <span className="px-2 text-center text-[10px] text-muted-foreground">sem {LADO_LABEL[lado].toLowerCase()}</span>
+        )}
+      </div>
+      <p className="text-center text-[10px] font-semibold text-muted-foreground">{LADO_LABEL[lado]}</p>
     </div>
   );
 }
