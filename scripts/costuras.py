@@ -90,6 +90,20 @@ def poligono_manga_real(lado, lado_ecra, largo=240):
     return [(cw + largo, topo), (x0, topo)] + pts + [(cw + largo, max(fundo, yl))]
 
 
+def poligono_tronco_real(lado, topo=-120, fundo=None, folga=16):
+    """O tronco com a costura REAL do designer nos dois ombros (ver `poligono_manga_real`),
+    em vez da reta ombro→sovaco de `poligono_tronco`. Debaixo da manga o contorno sai
+    para fora, como no original — a máscara da peça faz o resto."""
+    import json
+    seam = json.load(open(f'{RAIZ}/scripts/costuras-designer.json'))[lado]
+    cw, ch = CAIXA[lado][2:]; fundo = fundo or ch + 120
+    g = GEO[lado]
+    e = [tuple(p) for p in seam['esq']]; d = [tuple(p) for p in seam['dir']]
+    ya = max(g['esq'][1] + folga, e[-1][1]); yb = max(g['dir'][1] + folga, d[-1][1])
+    return ([(e[0][0], topo), (d[0][0], topo)] + d + [(d[-1][0], yb), (cw + 300, yb), (cw + 300, fundo),
+            (-300, fundo), (-300, ya), (e[-1][0], ya)] + e[::-1])
+
+
 def contorno_manga(lado, lado_ecra, y0=None, y1=None):
     """Pontos (x, y) da silhueta exterior da manga, do ombro ao punho."""
     g = GEO[lado]; y0 = y0 if y0 is not None else g['yT'] - 18
