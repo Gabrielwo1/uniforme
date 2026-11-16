@@ -72,6 +72,24 @@ def poligono_manga(lado, lado_ecra, largo=240, folga=16):
     return [(cw + largo, topo), (t[0], topo), t, a, (a[0], fundo), (cw + largo, fundo)]
 
 
+def poligono_manga_real(lado, lado_ecra, largo=240):
+    """A manga com a COSTURA REAL do designer (a barriga no sovaco incluída), em vez da reta
+    ombro→sovaco de `poligono_manga`. A costura vem de costuras-designer.json, gravado por
+    aplicar-vetores-frente.py / aplicar-vetores-costas.py a partir do bordo interior da manga
+    do designer ("ARQUIIVO MANGAS DINO", 2026-11-16). Mesma convenção: caixa da peça."""
+    import json
+    seam = json.load(open(f'{RAIZ}/scripts/costuras-designer.json'))[lado][lado_ecra]
+    cw, ch = CAIXA[lado][2:]; g = GEO[lado]
+    topo, fundo = -120, g[lado_ecra][1] + 16
+    x0, y0 = seam[0]
+    pts = [tuple(p) for p in seam]
+    xl, yl = pts[-1]
+    pts += [(xl, max(fundo, yl))]
+    if lado_ecra == 'esq':
+        return [(-largo, topo), (x0, topo)] + pts + [(-largo, max(fundo, yl))]
+    return [(cw + largo, topo), (x0, topo)] + pts + [(cw + largo, max(fundo, yl))]
+
+
 def contorno_manga(lado, lado_ecra, y0=None, y1=None):
     """Pontos (x, y) da silhueta exterior da manga, do ombro ao punho."""
     g = GEO[lado]; y0 = y0 if y0 is not None else g['yT'] - 18

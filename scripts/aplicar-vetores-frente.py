@@ -203,10 +203,19 @@ def main():
     abaixo = np.clip(YY - fundo[None, :] + 0.5, 0, 1)   # 0 acima do fundo do punho, 1 abaixo
 
     poligono_manga = {}
+    pol_larga = {}
     for le in ('esq', 'dir'):
         im = Image.new('1', (W, H), 0)
         ImageDraw.Draw(im).polygon([(x + CX, y + CY) for x, y in costuras.poligono_manga('frente', le)], fill=1)
         poligono_manga[le] = np.array(im)
+        # polígono LARGO só para recortar a manga rente ao punho: o bordo interior do vetor do
+        # designer tem curva (barriga no sovaco) e não pode ser cortado pela costura reta
+        pts = [(x + CX, y + CY) for x, y in costuras.poligono_manga('frente', le)]
+        dx = 90 if le == 'esq' else -90
+        pts = [(x + dx, y) if (0 < i < 5) else (x, y) for i, (x, y) in enumerate(pts)]
+        im = Image.new('1', (W, H), 0)
+        ImageDraw.Draw(im).polygon(pts, fill=1)
+        pol_larga[le] = np.array(im)
 
     def contorno_exterior(alfa, le):
         """x do bordo exterior de cada linha (NaN onde vazio)."""
@@ -216,10 +225,10 @@ def main():
             if len(c): xs[y] = c.min() if le == 'esq' else c.max()
         return xs
 
-    def manga_rente_ao_punho(alfa, le):
+    def manga_rente_ao_punho(alfa, le, pol=None):
         """Manga da silhueta, cortada rente ao fundo do punho e com o bordo exterior a
         fechar no extremo exterior do punho (sem cunha ao lado do punho)."""
-        pol = poligono_manga[le]
+        pol = poligono_manga[le] if pol is None else pol
         v = np.where(pol, alfa * (1 - abaixo), alfa)
         dirp = 1 if le == 'esq' else -1                    # sentido para DENTRO da manga
         alvo = contorno_exterior(np.where(pol, v, 0), le)
@@ -248,8 +257,8 @@ def main():
     # subiu") é cortada rente ao bordo exterior da manga.
     manga = np.zeros((H, W), np.float32)
     for le, arq in (('esq', 'MANGA ESQUERDA VETOR FRENTE.svg'), ('dir', 'MANGA DIREITA FRENTE.svg')):
-        m = manga_rente_ao_punho(vet_manga(arq, poligono_manga[le] & cam, torso, le, pasta=MANGAS), le)
-        m = np.where(poligono_manga[le], m, 0)
+        m = manga_rente_ao_punho(vet_manga(arq, poligono_manga[le] & cam, torso, le, pasta=MANGAS), le, pol=pol_larga[le])
+        m = np.where(pol_larga[le], m, 0)
         manga = np.maximum(manga, m)
         sol = m > 0.5
         ys = np.where(sol.any(1))[0]
@@ -269,6 +278,25 @@ def main():
             if np.isnan(xo[y]): continue
             if le == 'esq': base[y] *= np.clip(X[0] - xo[y] + 0.5, 0, 1)
             else: base[y] *= np.clip(xo[y] - X[0] + 0.5, 0, 1)
+    # costura REAL do designer (bordo interior de cada manga, em coordenadas da caixa): é o que
+    # scripts/costuras.py e a arte dos modelos (scripts/costurar-manga-015.py) passam a usar em
+    # vez da reta ombro→sovaco
+    seam = {}
+    for le in ('esq', 'dir'):
+        sl = slice(0, MEIO) if le == 'esq' else slice(MEIO, W)
+        sol = manga[:, sl] > 0.5
+        rows = np.where(sol.any(1))[0]
+        pts = []
+        for y in range(rows.min(), rows.max() + 1, 4):
+            c = np.where(sol[y])[0] + sl.start
+            x = (c.max() + 0.5) if le == 'esq' else (c.min() - 0.5)
+            pts.append([round(float(x - CX), 1), round(float(y - CY), 1)])
+        seam[le] = pts
+    import json
+    arq_json = os.path.join(os.path.dirname(__file__), 'costuras-designer.json')
+    todos = json.load(open(arq_json)) if os.path.exists(arq_json) else {}
+    todos['frente'] = seam
+    json.dump(todos, open(arq_json, 'w'), separators=(',', ':'))
     # linha da costura: o bordo interior (junto ao corpo) de cada manga leva um vinco escuro
     # e fino no sombreado — é o que mostra a manga assente POR CIMA da camisola. Os
     # SOMBREAMENTO MANGA * do designer chegaram sem as imagens, por isso desenha-se aqui.
