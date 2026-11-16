@@ -46,6 +46,9 @@ OMBRO = 90     # px, ao longo do ombro, que levam a descida junto à gola
 TOPO_GOLA = 2  # o ombro começa 2 px abaixo do topo da ponta da gola
 EXTRAPOLA = 50  # linhas acima da ponta da manga em que o ombro da camisola se junta ao bordo dela
 VINCO = 0.30   # força do vinco da costura da manga (0 = sem)
+# bordo interior da manga ESQUERDA do ecrã (a "direita" do jogador) esticado até à borda do
+# sombreado da camisola, marcada pelo cliente em 2026-11-16: (y, x) na tela 1520x2460
+ESTICA_ESQ = [(620, 482.0), (656, 504.5), (696, 526.5), (763, 525.0), (796, 517.0)]
 PONTA = 0      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores
 
 
@@ -247,6 +250,20 @@ def main():
         dentro = np.clip((X - alvo[:, None]) * dirp + 0.5, 0, 1)
         return np.where(pol & ~np.isnan(alvo)[:, None], v * dentro, v)
 
+    def esticar_interior(m, pts):
+        """Estica o bordo interior da manga (lado esq. do ecrã) até à linha pts = [(y, x)…];
+        Respeita o fundo do punho (`abaixo`)."""
+        ys = np.array([p[0] for p in pts], float); xs = np.array([p[1] for p in pts], float)
+        for y in range(int(ys[0]), int(ys[-1]) + 1):
+            xt = float(np.interp(y, ys, xs))
+            c = np.where(m[y] > 0.5)[0]
+            if xt <= 0 or not len(c) or xt <= c.max() + 0.5: continue
+            x1 = int(xt)
+            m[y, c.max():x1 + 1] = 1.0      # inclui o píxel antiassinalado do bordo antigo
+            m[y, x1 + 1] = max(m[y, x1 + 1], xt - x1)
+            m[y] *= (1 - abaixo[y])
+        return m
+
     base = torso
     for le in ('esq', 'dir'):
         base = manga_rente_ao_punho(base, le)
@@ -259,6 +276,8 @@ def main():
     for le, arq in (('esq', 'MANGA ESQUERDA VETOR FRENTE.svg'), ('dir', 'MANGA DIREITA FRENTE.svg')):
         m = manga_rente_ao_punho(vet_manga(arq, poligono_manga[le] & cam, torso, le, pasta=MANGAS), le, pol=pol_larga[le])
         m = np.where(pol_larga[le], m, 0)
+        if le == 'esq':
+            m = esticar_interior(m, ESTICA_ESQ)
         manga = np.maximum(manga, m)
         sol = m > 0.5
         ys = np.where(sol.any(1))[0]
