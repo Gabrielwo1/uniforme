@@ -38,7 +38,13 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 J = f'{RAIZ}/public/moldes/jog'
 ORIGEM = '0113d40'  # revisão com as máscaras raster originais
 DES = sys.argv[1] if len(sys.argv) > 1 else '/Users/syntax/Downloads/parte 2 simulador dino peças'
+# mangas e tiras com as costuras certas (envio 2026-11-16, pasta "ARQUIIVO MANGAS DINO")
+MANGAS = sys.argv[2] if len(sys.argv) > 2 else '/Users/syntax/Downloads/ARQUIIVO MANGAS DINO/COSTAS'
 W, H = 1520, 2460
+MEIO = 660     # entre os dois punhos
+EXTRAPOLA = 50  # linhas acima da ponta da manga em que o ombro da camisola se junta ao bordo dela
+PONTA = 0      # px que o punho pára antes do fim do PNG antigo, nas pontas interiores (0: chega ao sovaco)
+VINCO = 0.30   # força do vinco da costura da manga (0 = sem)
 CX, CY = costuras.CAIXA['verso'][:2]
 ESTILOS = ['cruzada', 'social', 'bico2', 'vlinha']
 CURVA = 0.030  # fração da meia-largura que a cintura recolhe no ponto mais estreito
@@ -51,15 +57,66 @@ def original(nome):
     return np.array(Image.open(io.BytesIO(b)).convert('RGBA')).astype(np.float32)
 
 
-def vet(arq, alvo, folga=24):
+def principal(subs):
+    """O Corel exporta lascas minúsculas (degeneradas) ao lado do contorno: só conta a maior."""
+    area = lambda s: np.ptp(np.array(s)[:, 0]) * np.ptp(np.array(s)[:, 1])
+    return [max(subs, key=area)]
+
+
+def vet(arq, alvo, folga=24, pasta=None, so_principal=False):
     """(alfa 0..1 na tela inteira, caixa do vetor na tela) do vetor encaixado em `alvo` (bool)."""
-    vb, subs = vetor.carregar(f'{DES}/{arq}')
+    vb, subs = vetor.carregar(f'{pasta or DES}/{arq}')
+    if so_principal:
+        subs = principal(subs)
+        px = np.array(subs[0]); vb = (0.0, 0.0, px[:, 0].max(), px[:, 1].max())
     ys, xs = np.where(alvo)
     b = (max(xs.min() - 40, 0), max(ys.min() - 40, 0), xs.max() + 40, ys.max() + 40)
     iou, (sx, sy, tx, ty) = vetor.encaixar(subs, vb, alvo[b[1]:b[3], b[0]:b[2]], folga=folga)
     print(f'  {os.path.basename(arq)}: IoU {iou:.3f}')
     tx, ty = tx + b[0], ty + b[1]
     return vetor.rasterizar(subs, sx, sy, tx, ty, (W, H), ss=4), (tx, ty, vb[2] * sx, vb[3] * sy)
+
+
+def vet_manga(arq, alvo, torso, le, folga=40):
+    """Como `vet`, mas depois do encaixe grosso afina escala/posição para o bordo EXTERIOR da
+    manga coincidir com o da camisola em vetor (mesmo desenho do designer)."""
+    vb, subs = vetor.carregar(f'{MANGAS}/{arq}')
+    subs = principal(subs)
+    px = np.array(subs[0]); vb = (0.0, 0.0, px[:, 0].max(), px[:, 1].max())
+    ys, xs = np.where(alvo)
+    b = (max(xs.min() - 40, 0), max(ys.min() - 40, 0), xs.max() + 40, ys.max() + 40)
+    iou, (sx, sy, tx, ty) = vetor.encaixar(subs, vb, alvo[b[1]:b[3], b[0]:b[2]], folga=folga)
+    tx, ty = tx + b[0], ty + b[1]
+    ref = torso > 0.5
+
+    def borda(m):
+        c = m > 0.5
+        sub = c[:, :MEIO] if le == 'esq' else c[:, MEIO:]
+        tem = sub.any(1)
+        x = np.where(tem, sub.argmax(1) if le == 'esq' else sub.shape[1] - 1 - sub[:, ::-1].argmax(1), -1)
+        return x, tem
+
+    xr, tr = borda(ref.astype(float))
+
+    def custo(sx_, sy_, tx_, ty_):
+        m = vetor.rasterizar(subs, sx_, sy_, tx_, ty_, (W, H), ss=1)
+        xm, tm = borda(m)
+        yy = np.where(tm)[0]
+        yy = yy[10:-25]                                   # fora a ponta e o fundo (punho)
+        yy = yy[tr[yy]]
+        return np.abs(xm[yy] - xr[yy]).mean() if len(yy) else 1e9
+
+    melhor = (custo(sx, sy, tx, ty), sx, sy, tx, ty)
+    for passo, rng in ((2.0, 6), (1.0, 2)):
+        c0 = melhor
+        for ds in ((-0.015, -0.0075, 0, 0.0075, 0.015) if passo > 1 else (-0.003, 0, 0.003)):
+            for dx in range(-rng, rng + 1):
+                for dy in range(-rng, rng + 1):
+                    sx2, sy2 = c0[1] * (1 + ds), c0[2] * (1 + ds)
+                    r = (custo(sx2, sy2, c0[3] + dx * passo / 2, c0[4] + dy * passo / 2), sx2, sy2, c0[3] + dx * passo / 2, c0[4] + dy * passo / 2)
+                    if r[0] < melhor[0]: melhor = r
+    print(f'  {os.path.basename(arq)}: IoU {iou:.3f}, desvio do bordo {custo(sx, sy, tx, ty):.2f} -> {melhor[0]:.2f} px')
+    return vetor.rasterizar(subs, melhor[1], melhor[2], melhor[3], melhor[4], (W, H), ss=4)
 
 
 def sombreado(png, caixa):
@@ -154,8 +211,8 @@ def main():
     X, YY = np.arange(W)[None, :], np.arange(H)[:, None]
 
     torso, cx = vet('costas camiseta.svg', cam | man | gol, folga=40)
-    tira = np.maximum(vet('mangas com tiras/TIRA MANGA LADO ESQUERDO COSTAS.svg', man & (X < 660))[0],
-                      vet('mangas com tiras/TIRA MANGA LADO DIREITO COSTAS.svg', man & (X >= 660))[0])
+    tira = np.maximum(vet('TIRA MANGA ESQUERDA COSTAS.svg', man & (X < 660), pasta=MANGAS)[0],
+                      vet('TIRA MANGA DIREITA COSTAS.svg', man & (X >= 660), pasta=MANGAS)[0])
     gola, cg = vet('GOLA SVG.svg', gol)
     sombra = sombreado(f'{DES}/costas camiseta sombreamento_Images/costas camiseta sombreamento_ImgID1.png', cx)
     sombra_gola = sombreado(f'{DES}/GOLA SOMBREAMENTO_Images/GOLA SOMBREAMENTO_ImgID1.png', cg)
@@ -168,8 +225,8 @@ def main():
     tira_png = tira.copy()
     for sl, ref in ((slice(0, 660), 'esq'), (slice(660, W), 'dir')):
         cols = np.where(man[:, sl].any(0))[0] + sl.start
-        if ref == 'esq': tira_png[:, cols.max() - 8:660] = 0
-        else: tira_png[:, 660:cols.min() + 8] = 0
+        if ref == 'esq': tira_png[:, cols.max() - PONTA:660] = 0
+        else: tira_png[:, 660:cols.min() + PONTA] = 0
     salvar('vestida-mangas-verso.png', sem_escuros(com_alfa(man0, tira_png)))
     salvar('vestida-gola-verso.png', com_rgb(sombra_gola, gola))
     print('punho e gola trocados')
@@ -227,6 +284,48 @@ def main():
     base = torso
     for le in ('esq', 'dir'):
         base = manga_rente_ao_punho(base, le)
+
+    # ---- mangas À FRENTE da camisola (como na frente): a manga do designer é uma camada própria
+    # por cima do corpo e é o bordo exterior dela que recorta o ombro; a silhueta da camisola que
+    # passava para fora dela é cortada rente a esse bordo. O ombro da camisola junta-se ao bordo
+    # da manga numa curva suave acima da ponta (senão sobra um bico da camisola ao lado da manga).
+    manga = np.zeros((H, W), np.float32)
+    for le, arq in (('esq', 'MANGA ESQUERDA COSTA.svg'), ('dir', 'MANGA DIREITA COSTA.svg')):
+        m = manga_rente_ao_punho(vet_manga(arq, poligono_manga[le] & cam, torso, le), le)
+        m = np.where(poligono_manga[le], m, 0)
+        manga = np.maximum(manga, m)
+        sol = m > 0.5
+        ys = np.where(sol.any(1))[0]
+        y0 = ys.min()
+        sl = slice(0, MEIO) if le == 'esq' else slice(MEIO, W)
+        xo = np.full(H, np.nan)                                 # bordo exterior da manga, linha a linha
+        for y in range(y0, H):
+            c = np.where(sol[y])[0]
+            if len(c): xo[y] = (c.min() - 0.5) if le == 'esq' else (c.max() + 0.5)
+        for y in range(y0 - EXTRAPOLA, y0):
+            c = np.where(base[y, sl] > 0.5)[0]
+            if not len(c): continue
+            xt = (c.min() if le == 'esq' else c.max() + 1) + sl.start
+            f = (y - (y0 - EXTRAPOLA)) / EXTRAPOLA
+            xo[y] = xt + (xo[y0] - xt) * f * f * (3 - 2 * f)
+        for y in range(y0 - EXTRAPOLA, H):
+            if np.isnan(xo[y]): continue
+            if le == 'esq': base[y] *= np.clip(X[0] - xo[y] + 0.5, 0, 1)
+            else: base[y] *= np.clip(xo[y] - X[0] + 0.5, 0, 1)
+    # vinco da costura: o bordo interior de cada manga leva um vinco escuro e fino no sombreado
+    vinco = np.ones((H, W), np.float32)
+    for le in ('esq', 'dir'):
+        sl = slice(0, MEIO) if le == 'esq' else slice(MEIO, W)
+        sol = manga[:, sl] > 0.5
+        for y in np.where(sol.any(1))[0]:
+            c = np.where(sol[y])[0] + sl.start
+            xi = c.max() if le == 'esq' else c.min()
+            d = (xi - X[0]) if le == 'esq' else (X[0] - xi)
+            vinco[y] = np.minimum(vinco[y], np.where(d >= -0.5, 1 - VINCO * np.exp(-(np.maximum(d, 0) / 2.4) ** 2), 1))
+    sm = com_rgb(sombra, manga)
+    sm[..., :3] *= vinco[..., None]
+    salvar('vestida-manga-verso.png', sm)
+    print('manga (camada à frente da camisola) gravada')
 
     # corpo recortado onde a gola passa: por coluna, tira o que está acima do fundo da gola
     gfundo = np.full(W, -1.0)

@@ -92,6 +92,11 @@ function zonasDe(peca: PecaKit, lado: LadoKit, golaEstilo?: string): ZonaPeca[] 
   const estilo = def && !def.golaPadrao && (lado === 'frente' || def.verso) ? golaEstilo : null;
   const zonas: ZonaPeca[] = [
     corpo,
+    // As MANGAS são uma camada do designer À FRENTE da camisola: é o
+    // bordo delas que recorta o ombro. Seguem a cor do corpo (sem seletor) e
+    // recebem a mesma estampa, por isso a arte continua pela manga.
+    { id: 'manga', nome: 'Mangas', imagem: `${RAIZ_MOLDES}/vestida-manga-${lado}.png`,
+      corPadrao: '#221f20', recebeEstampa: true, segue: 'corpo' },
     { id: 'gola', nome: 'Gola',
       ...(def?.duasGolas && estilo && { nome: 'Gola 1' }),
       imagem: estilo
